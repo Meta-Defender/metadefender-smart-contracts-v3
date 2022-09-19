@@ -1,0 +1,17 @@
+{
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "hardhat": "^2.11.2",
+    "prettier": "^2.7.1"
+  },
+  "dependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.3",
+    "@openzeppelin/contracts": "^4.7.3",
+    "@typescript-eslint/eslint-plugin": "^5.37.0",
+    "eslint": "8.22.0",
+    "ethereum-waffle": "^3.4.4",
+    "moment": "^2.29.4"
+  }
+}
