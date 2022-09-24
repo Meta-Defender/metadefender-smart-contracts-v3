@@ -2,12 +2,35 @@
 pragma solidity 0.8.9;
 
 interface IMetaDefender {
+
     struct Liquidity {
-        uint aUSDTotalLiquidity;
-        uint aUSDLockedLiquidity;
+        uint totalCertificateLiquidity;
+        uint totalReserveLiquidity;
     }
 
-    function liquidity() external view returns (uint, uint);
+    struct GlobalInfo {
+        uint rewardPerShare;
+        uint shadowPerShare;
+        uint shadowFreedPerShare;
+        uint totalCoverage;
+        // keep kLast stable when the policy is expired
+        uint kLast;
+        // keep fee stable when user provides/removes liquidity
+        uint fee;
+        uint claimableTeamReward;
+        // the timestamp in the latest freed policy
+        uint currentFreedTs;
+        // η
+        uint exchangeRate;
+
+        // fees
+        uint minimumFee;
+        uint initialFee;
+
+        // liquidity
+        uint totalCertificateLiquidity;
+        uint totalMedalLiquidity;
+    }
 
     function getLiquidity() external view returns (Liquidity memory);
 
@@ -15,21 +38,21 @@ interface IMetaDefender {
 
     function buyCover(uint _coverage) external;
 
-    function getRewards(address _provider) external view returns (uint);
+    function getRewards(uint certificateId) external view returns (uint);
 
-    function getWithdrawalAndShadow(address _provider) external view returns (uint, uint);
+    function claimRewards(uint certificateId) external;
 
-    function claimRewards() external;
+    function providerEntrance(address beneficiary, uint _amount) external;
 
-    function providerExit() external;
+    function certificateProviderExit(uint certificateId) external;
 
-    function providerEntrance(uint _amount) external;
+    function getWithdrawalAndShadowByCertificate(uint certificateId) external view returns (uint, uint);
 
-    function getWithdrawalAndShadowHistorical(address _provider) external view returns (uint, uint);
+    function getWithdrawalAndShadowByMedal(uint medalId) external view returns (uint, uint);
 
-    function historicalProviderWithdraw() external;
+    function medalProviderWithdraw(uint medalId) external;
 
-    function cancelPolicy(uint _id) external;
+    function cancelPolicy(uint policyId) external;
 
     function policyClaimApply(uint _id) external;
 

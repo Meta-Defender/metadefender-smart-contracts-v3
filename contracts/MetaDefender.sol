@@ -1,40 +1,52 @@
 //SPDX-License-Identifier: ISC
 pragma solidity ^0.8.9;
 
+// test contracts
 import "hardhat/console.sol";
+
+// openzeppelin contracts
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "./storage/PolicyHolderStorage.sol";
-import "./storage/ProviderStorage.sol";
+// interfaces
 import "./interfaces/IMetaDefender.sol";
 import "./interfaces/IRiskReserve.sol";
-import "./Lib/SafeDecimalMath.sol";
-import "./interfaces/ILiquidityToken.sol";
-import "./interfaces/IMetaDefenderGlobals.sol";
-import "./storage/marketInfoStorage.sol";
-import "./storage/ProviderStorage.sol";
+import "./interfaces/ILiquidityCertificate.sol";
+import "./interfaces/ILiquidityMedal.sol";
+import "./interfaces/IPolicy.sol";
 
-contract MetaDefender is IMetaDefender, ReentrancyGuard, PolicyStorage, ProviderStorage, Ownable, marketInfoStorage {
+import "./Lib/SafeDecimalMath.sol";
+
+contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     using SafeMath for uint;
     using SafeDecimalMath for uint;
 
     IERC20 internal aUSD;
-    ILiquidityToken internal saUSD;
+    // liquidity storage
+    Liquidity public liquidityProtocol;
+    // global params
+    GlobalInfo public globalInfo;
+
+    // interfaces
+    ILiquidityCertificate internal liquidityCertificate;
+    ILiquidityMedal internal liquidityMedal;
+    IPolicy internal policy;
     IRiskReserve internal riskReserve;
-    IMetaDefenderGlobals internal metaDefenderGlobals;
+
     bool public initialized = false;
     address public judger;
     address public official;
-    address public marketAddress;
+    address public protocol;
     uint public TEAM_RESERVE_RATE = 5e16;
     uint public FEE_RATE = 5e16;
     uint public MAX_COVERAGE_PERCENTAGE = 2e17;
     uint public COVER_TIME = 90 days;
-
-    Liquidity public override liquidity;
+    // index the providers
+    uint public providerCount;
+    // index the providers who exit the market
+    uint public medalCount;
 
     /// @dev Counter for reentrancy guard.
     uint internal counter = 1;
@@ -59,25 +71,29 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, PolicyStorage, Provider
      */
     function init(
         IERC20 _aUSD,
-        ILiquidityToken _saUSD,
         address _judger,
         address _official,
         // the contractAddress wanna to be insured.
-        address _marketAddress,
+        address _protocol,
         address _riskReserve,
-        IMetaDefenderGlobals _IMetaDefenderGlobals
+        ILiquidityCertificate _liquidityCertificate,
+        ILiquidityMedal _liquidityMedal,
+        IPolicy _policy
     ) external {
         if (initialized) {
             revert ContractAlreadyInitialized();
         }
         aUSD = _aUSD;
-        saUSD = _saUSD;
         judger = _judger;
         official = _official;
-        marketAddress = _marketAddress;
+
+        protocol = _protocol;
+        globalInfo.exchangeRate = SafeDecimalMath.UNIT;
+
         riskReserve = IRiskReserve(_riskReserve);
-        metaDefenderGlobals = _IMetaDefenderGlobals;
-        marketInfos[marketAddress].exchangeRate = SafeDecimalMath.UNIT;
+        liquidityCertificate = _liquidityCertificate;
+        liquidityMedal = _liquidityMedal;
+        policy = _policy;
         initialized = true;
     }
 
@@ -110,8 +126,8 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, PolicyStorage, Provider
         if (msg.sender != official) {
             revert InsufficientPrivilege();
         }
-        aUSD.transfer(official, marketInfos[marketAddress].claimableTeamReward);
-        marketInfos[marketAddress].claimableTeamReward = 0;
+        aUSD.transfer(official, globalInfo.claimableTeamReward);
+        globalInfo.claimableTeamReward = 0;
     }
 
     /**
@@ -127,15 +143,14 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, PolicyStorage, Provider
      * @dev get the usable capital of the pool
      */
     function getUsableCapital() public view override returns (uint) {
-        uint a = marketInfos[marketAddress].totalCoverage;
         return
-            liquidity.aUSDTotalLiquidity >= marketInfos[marketAddress].totalCoverage
-                ? liquidity.aUSDTotalLiquidity.sub(marketInfos[marketAddress].totalCoverage)
+            liquidityProtocol.totalCertificateLiquidity >= globalInfo.totalCoverage
+                ? liquidityProtocol.totalCertificateLiquidity.sub(globalInfo.totalCoverage)
                 : 0;
     }
 
-    function getLiquidity() public view override returns (Liquidity memory) {
-        return liquidity;
+    function getLiquidity() external view override returns (Liquidity memory) {
+        return liquidityProtocol;
     }
 
     /**
@@ -146,322 +161,238 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, PolicyStorage, Provider
         if (UsableCapital == 0) {
             revert InsufficientUsableCapital();
         }
-        return marketInfos[marketAddress].kLast.divideDecimal(UsableCapital);
+        return globalInfo.kLast.divideDecimal(UsableCapital);
     }
 
     /**
      * @dev buy Cover
-     * @param _coverage is the coverage to be secured
+     * @param coverage is the coverage to be secured
      */
-    function buyCover(uint _coverage) external override {
+    function buyCover(uint coverage) external override {
         uint UsableCapital = getUsableCapital();
         if (UsableCapital == 0) {
             revert InsufficientUsableCapital();
         }
-        if (_coverage > UsableCapital.multiplyDecimal(MAX_COVERAGE_PERCENTAGE)) {
-            revert CoverageTooLarge(_coverage, UsableCapital.multiplyDecimal(MAX_COVERAGE_PERCENTAGE));
+        if (coverage > UsableCapital.multiplyDecimal(MAX_COVERAGE_PERCENTAGE)) {
+            revert CoverageTooLarge(coverage, UsableCapital.multiplyDecimal(MAX_COVERAGE_PERCENTAGE));
         }
         uint fee = getFee();
-        uint coverFee = _coverage.multiplyDecimal(fee);
+        uint coverFee = coverage.multiplyDecimal(fee);
         uint deposit = coverFee.multiplyDecimal(FEE_RATE);
         uint totalPay = coverFee.add(deposit);
 
         aUSD.transferFrom(msg.sender, address(this), totalPay);
-
-        marketInfos[marketAddress].totalCoverage = marketInfos[marketAddress].totalCoverage.add(_coverage);
-
-        uint deltaAccSPS = _coverage.divideDecimal(saUSD.totalSupply());
-
-        marketInfos[marketAddress].accSPS = marketInfos[marketAddress].accSPS.add(deltaAccSPS);
+        globalInfo.totalCoverage = globalInfo.totalCoverage.add(coverage);
+        uint shadowImpact = coverage.divideDecimal(liquidityProtocol.totalCertificateLiquidity);
+        globalInfo.shadowPerShare = globalInfo.shadowPerShare.add(shadowImpact);
 
         uint rewardForTeam = coverFee.multiplyDecimal(TEAM_RESERVE_RATE);
-        marketInfos[marketAddress].claimableTeamReward = marketInfos[marketAddress].claimableTeamReward.add(
-            rewardForTeam
-        );
+        globalInfo.claimableTeamReward = globalInfo.claimableTeamReward.add(rewardForTeam);
         uint rewardForProviders = coverFee.sub(rewardForTeam);
-        uint deltaAccRPS = rewardForProviders.divideDecimal(saUSD.totalSupply());
-        marketInfos[marketAddress].accRPS = marketInfos[marketAddress].accRPS.add(deltaAccRPS);
+        uint rewardImpact = rewardForProviders.divideDecimal(liquidityProtocol.totalCertificateLiquidity);
+        globalInfo.rewardPerShare = globalInfo.rewardPerShare.add(rewardImpact);
 
-        // record this policy
-        policyInfo memory newPolicy = policyInfo({
-            id: policyCount,
-            beneficiary: msg.sender,
-            coverage: _coverage,
-            deposit: deposit,
-            startTime: block.timestamp,
-            effectiveUntil: block.timestamp.add(COVER_TIME),
-            latestProviderIndex: providerCount.sub(1),
-            deltaAccSPS: deltaAccSPS,
-            isClaimed: false,
-            inClaimApplying: false,
-            isCancelled: false
-        });
-        policies.push(newPolicy);
+        // mint a new policy NFT
+        uint policyId = policy.mint(
+            msg.sender,
+            coverage,
+            deposit,
+            block.timestamp,
+            block.timestamp.add(COVER_TIME),
+            shadowImpact
+        );
 
-        // record this policy to the very policyholder
-        userPolicies[msg.sender].push(policyCount);
-        policyCount++;
-        emit CoverBought(newPolicy);
+        emit NewPolicyMinted(policyId);
     }
 
     /**
      * @dev provider enters and provide the capitals
-     * @param _amount the amount of ausd to be provided
+     * @param amount the amount of ausd to be provided
      */
-    function providerEntrance(uint _amount) public {
+    function providerEntrance(address beneficiary, uint amount) external override {
         // An address will only to be act as a provider only once
-        providerInfo storage provider = providerInfos[msg.sender];
-        if (provider.participationTime != 0) {
-            revert ProviderDetected(address(msg.sender));
-        }
-
-        aUSD.transferFrom(msg.sender, address(this), _amount);
-        providerInfo memory newProvider = providerInfo({
-            index: providerCount,
-            participationTime: block.timestamp,
-            saUSDAmount: _amount.divideDecimal(marketInfos[marketAddress].exchangeRate),
-            RDebt: _amount.divideDecimal(marketInfos[marketAddress].exchangeRate).multiplyDecimal(
-                marketInfos[marketAddress].accRPS
-            ),
-            SDebt: _amount.divideDecimal(marketInfos[marketAddress].exchangeRate).multiplyDecimal(
-                marketInfos[marketAddress].accSPS
-            ),
-            accSPS: 0,
-            shadow: 0,
-            isActive: true
-        });
-
-        providerInfos[msg.sender] = newProvider;
-        saUSD.mint(msg.sender, newProvider.saUSDAmount);
-
-        uint pre = getUsableCapital();
-        liquidity.aUSDTotalLiquidity = liquidity.aUSDTotalLiquidity.add(_amount);
-        uint cur = getUsableCapital();
-        _updateKLastByProvider(pre, cur);
-        providerCount++;
-
-        emit ProviderEntered(newProvider);
+        aUSD.transferFrom(msg.sender, address(this), amount);
+        uint liquidity = amount.divideDecimal(globalInfo.exchangeRate);
+        liquidityProtocol.totalCertificateLiquidity = liquidityProtocol.totalCertificateLiquidity.add(liquidity);
+        providerCount = liquidityCertificate.mint(
+        beneficiary,
+        liquidity,
+        liquidity.multiplyDecimal(globalInfo.rewardPerShare),
+        liquidity.multiplyDecimal(globalInfo.shadowPerShare));
+        _updateKLastByProvider();
+        emit ProviderEntered(providerCount);
     }
 
     /**
      * @dev updateKLast by provider: when a new provider comes in, the fee will stay same while the k will become larger.
-     * @param _preUsableCapital is the previous usable capital
-     * @param _currentUsableCapital is the current usable capital
      */
-    function _updateKLastByProvider(uint _preUsableCapital, uint _currentUsableCapital) internal {
-        uint initialFee = metaDefenderGlobals.initialFee(address(aUSD));
+    function _updateKLastByProvider() internal {
+        uint initialFee = globalInfo.initialFee;
+        uint uc = getUsableCapital();
         // TODO: if providerCount will equal to zero?
         if (providerCount == 0) {
-            marketInfos[marketAddress].kLast = initialFee.multiplyDecimal(_currentUsableCapital);
+            globalInfo.kLast = initialFee.multiplyDecimal(uc);
         } else {
-            uint fee = marketInfos[marketAddress].kLast.divideDecimal(_preUsableCapital);
-            marketInfos[marketAddress].kLast = fee.multiplyDecimal(_currentUsableCapital);
+            globalInfo.kLast = globalInfo.fee.multiplyDecimal(uc);
         }
     }
 
     /**
      * @dev getRewards calculates the rewards for the provider
-     * @param _provider the provider address
+     * @param certificateId the certificateId
      */
-    function getRewards(address _provider) public view override returns (uint) {
-        providerInfo storage provider = providerInfos[_provider];
-        if (provider.index != 0 && provider.isActive) {
-            revert ProviderNotExistOrActive(_provider);
-        }
+    function getRewards(uint certificateId) public view override returns (uint) {
+        ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
         return
-            provider.saUSDAmount.multiplyDecimal(marketInfos[marketAddress].accRPS) > (provider.RDebt)
-                ? provider.saUSDAmount.multiplyDecimal(marketInfos[marketAddress].accRPS).sub(provider.RDebt)
+            certificateInfo.liquidity.multiplyDecimal(globalInfo.rewardPerShare) > (certificateInfo.rewardDebt)
+                ? certificateInfo.liquidity.multiplyDecimal(globalInfo.rewardPerShare).sub(certificateInfo.rewardDebt)
                 : 0;
     }
 
     /**
      * @dev claimRewards retrieve the rewards for the providers in the pool
-     *
+     * @param certificateId the certificateId
      */
-    function claimRewards() external override reentrancyGuard {
-        providerInfo storage provider = providerInfos[msg.sender];
-        uint reward = getRewards(msg.sender);
-        provider.RDebt = provider.saUSDAmount.multiplyDecimal(marketInfos[marketAddress].accRPS);
-        aUSD.transfer(msg.sender, reward);
+    function claimRewards(uint certificateId) external override reentrancyGuard {
+        uint rewards = getRewards(certificateId);
+        liquidityCertificate.addRewardDebt(certificateId, rewards);
+        aUSD.transfer(msg.sender, rewards);
     }
 
     /**
      * @dev providerExit retrieve the rewards for the providers in the pool
-     *
+     * @param certificateId the certificateId
      */
-    function providerExit() external override reentrancyGuard {
-        providerInfo storage provider = providerInfos[msg.sender];
-        if (provider.participationTime == 0 || (!provider.isActive)) {
-            revert ProviderNotExistOrActive(msg.sender);
-        }
+    function certificateProviderExit(uint certificateId) external override reentrancyGuard {
+        ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
+        (uint withdrawal, uint shadow) = getWithdrawalAndShadowByCertificate(certificateId);
+        uint rewards = getRewards(certificateId);
+        uint liquidity = certificateInfo.liquidity;
 
-        (uint withdrawal, uint shadow) = getWithdrawalAndShadow(msg.sender);
-        uint reward = provider.saUSDAmount.multiplyDecimal(marketInfos[marketAddress].accRPS).sub(provider.RDebt);
+        // now we will burn the liquidity certificate and mint a new medal for the provider
+        liquidityCertificate.burn(msg.sender, certificateId);
+        address beneficiary = liquidityCertificate.belongsTo(certificateId);
 
-        // create historicalInfos for this provider
-        _registerHistoricalProvider(provider, shadow);
-
-        // update the liquidity
-        uint pre = getUsableCapital();
-        liquidity.aUSDTotalLiquidity = liquidity.aUSDTotalLiquidity.sub(
-            provider.saUSDAmount.multiplyDecimal(marketInfos[marketAddress].exchangeRate)
+        medalCount = liquidityMedal.mint(
+            beneficiary,
+            certificateInfo.liquidity,
+            liquidity,
+            liquidity.multiplyDecimal(globalInfo.rewardPerShare),
+            liquidity.multiplyDecimal(globalInfo.shadowPerShare)
         );
-        liquidity.aUSDLockedLiquidity = liquidity.aUSDLockedLiquidity.add(shadow);
-        uint cur = getUsableCapital();
-        _updateKLastByProvider(pre, cur);
-
-        saUSD.burn(msg.sender, provider.saUSDAmount);
-        provider.saUSDAmount = 0;
-        provider.RDebt = 0;
-
-        aUSD.transfer(msg.sender, withdrawal.add(reward));
+        liquidityProtocol.totalReserveLiquidity = liquidityProtocol.totalReserveLiquidity.add(liquidity);
+        aUSD.transfer(msg.sender, withdrawal.add(rewards));
+        _updateKLastByProvider();
         emit ProviderExit(msg.sender);
     }
 
-    /**
-     * @dev build the historicalInfos for this provider
-     * @param _provider the provider info
-     * @param _shadow the shadow of the user
-     */
-    function _registerHistoricalProvider(providerInfo storage _provider, uint _shadow) internal {
-        _provider.shadow = _shadow.divideDecimal(marketInfos[marketAddress].exchangeRate);
-        _provider.accSPS = marketInfos[marketAddress].accSPS;
-        _provider.isActive = false;
-    }
 
     /**
      * @dev get the unfrozen capital for the provider
-     * @param _provider the provider address
+     * @param certificateId the certificateId
      */
-    function getWithdrawalAndShadow(address _provider) public view override returns (uint, uint) {
-        providerInfo storage provider = providerInfos[_provider];
-        uint shadow = _getShadow(provider);
-        uint withdrawal = provider.saUSDAmount.multiplyDecimal(marketInfos[marketAddress].exchangeRate) >= shadow
-            ? provider.saUSDAmount.multiplyDecimal(marketInfos[marketAddress].exchangeRate) - shadow
+    function getWithdrawalAndShadowByCertificate(uint certificateId) public view override returns (uint, uint) {
+        ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
+        uint shadow = certificateInfo.enteredAt > globalInfo.currentFreedTs
+        ? certificateInfo.liquidity.multiplyDecimal(globalInfo.shadowPerShare).sub(certificateInfo.shadowDebt)
+        : certificateInfo.liquidity.multiplyDecimal(globalInfo.shadowPerShare.sub(globalInfo.shadowFreedPerShare));
+        uint withdrawal = certificateInfo.liquidity.multiplyDecimal(globalInfo.exchangeRate) > shadow
+            ? certificateInfo.liquidity.multiplyDecimal(globalInfo.exchangeRate).sub(shadow)
             : 0;
         return (withdrawal, shadow);
     }
 
     /**
-     * @dev get the shadow of a certain provider
-     * @param _provider the provider address
+     * @dev medal/historical provider withdraw the unfrozen capital
+     * @param medalId the medalId
      */
-    function _getShadow(providerInfo storage _provider) internal view returns (uint) {
-        return
-            _provider.index > marketInfos[marketAddress].latestUnfrozenIndex
-                ? _provider.saUSDAmount.multiplyDecimal(marketInfos[marketAddress].accSPS).sub(_provider.SDebt)
-                : _provider.saUSDAmount.multiplyDecimal(
-                    marketInfos[marketAddress].accSPS.sub(marketInfos[marketAddress].accSPSDown)
-                );
+    function medalProviderWithdraw(uint medalId) external override reentrancyGuard {
+        ILiquidityMedal.MedalInfo memory medalInfo = liquidityMedal.getMedalInfo(medalId);
+        (uint withdrawal, uint shadow) = getWithdrawalAndShadowByMedal(medalId);
+        if (withdrawal > 0) {
+            aUSD.transfer(msg.sender, withdrawal);
+        } else {
+            liquidityMedal.burn(msg.sender, medalId);
+        }
+        liquidityProtocol.totalReserveLiquidity = liquidityProtocol.totalReserveLiquidity.sub(medalInfo.reserve.multiplyDecimal(globalInfo.exchangeRate).sub(shadow));
+        liquidityMedal.updateReserve(medalId, shadow.divideDecimal(globalInfo.exchangeRate));
     }
 
     /**
      * @dev getWithdrawAndShadowHistorical calculate the unfrozen capital of a certain provider
-     * @param _provider the historical provider address
+     * @param medalId the medalId
      */
-    function getWithdrawalAndShadowHistorical(address _provider) public view override returns (uint, uint) {
-        providerInfo storage providerInfo = providerInfos[_provider];
-        if (providerInfo.participationTime == 0 || providerInfo.isActive) {
-            revert ProviderNotStale(providerInfo.index);
-        }
-        uint shadow = _getShadowHistorical(providerInfo);
-        uint withdrawal = providerInfo.shadow.multiplyDecimal(marketInfos[marketAddress].exchangeRate) > shadow
-            ? providerInfo.shadow.multiplyDecimal(marketInfos[marketAddress].exchangeRate).sub(shadow)
+    function getWithdrawalAndShadowByMedal(uint medalId) public view override returns (uint, uint) {
+        ILiquidityMedal.MedalInfo memory medalInfo = liquidityMedal.getMedalInfo(medalId);
+        uint shadow = medalInfo.enteredAt > globalInfo.currentFreedTs ?
+            medalInfo.reserve.multiplyDecimal(globalInfo.shadowPerShare).sub(medalInfo.shadowDebt) :
+            medalInfo.marketShadow >= globalInfo.shadowFreedPerShare
+            ? medalInfo.reserve.multiplyDecimal(globalInfo.shadowPerShare.sub(globalInfo.shadowFreedPerShare))
             : 0;
-        return (shadow, withdrawal);
-    }
-
-    /**
-     * @dev _getShadowHistoricalProvider calculate the historical shadow of a certain provider
-     * @param _providerInfo the providerInfo
-     */
-    function _getShadowHistorical(providerInfo storage _providerInfo) internal view returns (uint) {
-        if (_providerInfo.participationTime == 0 || _providerInfo.isActive) {
-            revert ProviderNotStale(_providerInfo.index);
-        }
-        if (_providerInfo.index > marketInfos[marketAddress].latestUnfrozenIndex) {
-            return _providerInfo.saUSDAmount.multiplyDecimal(_providerInfo.accSPS).sub(_providerInfo.SDebt);
-        } else {
-            return
-                _providerInfo.accSPS >= marketInfos[marketAddress].accSPSDown
-                    ? _providerInfo.saUSDAmount.multiplyDecimal(
-                        _providerInfo.accSPS.sub(marketInfos[marketAddress].accSPSDown)
-                    )
-                    : 0;
-        }
-    }
-
-    /**
-     * @dev historical provider withdraw the unfrozen capital
-     */
-    function historicalProviderWithdraw() external override reentrancyGuard {
-        providerInfo storage providerInfo = providerInfos[msg.sender];
-        if (providerInfo.index == 0 || providerInfo.isActive) {
-            revert ProviderNotStale(providerInfo.index);
-        }
-        (uint withdrawal, uint shadow) = getWithdrawalAndShadowHistorical(msg.sender);
-        aUSD.transfer(msg.sender, withdrawal);
-
-        // liquidity.aUSDLockedLiquidity = liquidity.aUSDLockedLiquidity.sub(withdrawal);
-        // totalLiquidity = totalLiquidity - withdrawal;
-        liquidity.aUSDLockedLiquidity = liquidity.aUSDLockedLiquidity.sub(withdrawal);
-        providerInfo.shadow = shadow.divideDecimal(marketInfos[marketAddress].exchangeRate);
+        uint withdrawal = medalInfo.reserve.multiplyDecimal(globalInfo.exchangeRate) > shadow
+            ? medalInfo.reserve.multiplyDecimal(globalInfo.exchangeRate).sub(shadow)
+            : 0;
+        return (withdrawal, shadow);
     }
 
     /**
      * @dev cancel the policy by a policy id
      */
-    function cancelPolicy(uint _id) external override {
-        policyInfo storage policy = policies[_id];
-        if (policy.isCancelled) {
-            revert PolicyAlreadyCancelled(_id);
+    function cancelPolicy(uint policyId) external override {
+        IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
+        if (policyInfo.isCancelled) {
+            revert PolicyAlreadyCancelled(policyId);
         }
-        if (_id == 0) {
-            _executeCancel(policy);
+        if (policyId == 1) {
+            _executeCancel(policyId);
         } else {
-            if (!policy.isCancelled) {
-                revert PreviousPolicyNotCancelled(_id);
+            IPolicy.PolicyInfo memory previousPolicy = policy.getPolicyInfo(policyId.sub(1));
+            if (!previousPolicy.isCancelled) {
+                revert PreviousPolicyNotCancelled(policyId);
+            } else {
+                _executeCancel(policyId);
             }
-            _executeCancel(policy);
         }
-
-        emit PolicyCancelled(_id);
+        emit PolicyCancelled(policyId);
     }
 
     /**
      * @dev execute cancelling the policy
      *
-     * @param policy the policy to be cancelled
+     * @param policyId the policy to be cancelled
      */
-    function _executeCancel(policyInfo storage policy) internal {
-        if (policy.effectiveUntil > block.timestamp || policy.inClaimApplying == true) {
-            revert PolicyCanNotBeCancelled(policy.id);
+    function _executeCancel(uint policyId) internal {
+        IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
+        if (policyInfo.expiredAt > block.timestamp || policyInfo.isClaimApplying == true) {
+            revert PolicyCanNotBeCancelled(policyId);
         }
         // in one day we only allow the policyholder to cancel the policy;
-        if (block.timestamp.sub(policy.effectiveUntil) <= 86400) {
-            if (msg.sender == policy.beneficiary) {
-                _doPolicyCancel(policy, msg.sender);
+        if (block.timestamp.sub(policyInfo.expiredAt) <= 86400) {
+            if (msg.sender == policyInfo.beneficiary) {
+                _doPolicyCancel(policyId, msg.sender);
             } else {
-                revert PolicyCanOnlyCancelledByHolder(policy.id);
+                revert PolicyCanOnlyCancelledByHolder(policyId);
             }
         } else {
-            _doPolicyCancel(policy, msg.sender);
+            _doPolicyCancel(policyId, msg.sender);
         }
     }
 
     /**
      * @dev cancel the policy
      *
-     * @param _policy the policy to be cancelled
+     * @param _policyId the id of policy to be cancelled
      * @param _caller the caller address
      */
-    function _doPolicyCancel(policyInfo storage _policy, address _caller) internal {
-        marketInfos[marketAddress].totalCoverage = marketInfos[marketAddress].totalCoverage.sub(_policy.coverage);
-        marketInfos[marketAddress].accSPSDown = marketInfos[marketAddress].accSPSDown.add(_policy.deltaAccSPS);
-        _policy.isCancelled = true;
-        marketInfos[marketAddress].latestUnfrozenIndex = _policy.latestProviderIndex;
-        _updateKLastByCancel(marketInfos[marketAddress].totalCoverage);
-        aUSD.transfer(_caller, _policy.deposit);
+    function _doPolicyCancel(uint _policyId, address _caller) internal {
+        IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(_policyId);
+        globalInfo.totalCoverage = globalInfo.totalCoverage.sub(policyInfo.coverage);
+        globalInfo.shadowFreedPerShare = globalInfo.shadowFreedPerShare.add(policyInfo.shadowImpact);
+        // use a function to update policy's isCancelled status
+        policyInfo.isCancelled = true;
+        globalInfo.currentFreedTs = policyInfo.enteredAt;
+        _updateKLastByCancel(globalInfo.totalCoverage);
+        aUSD.transfer(_caller, policyInfo.deposit);
     }
 
     /**
@@ -470,18 +401,18 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, PolicyStorage, Provider
      * @param _totalCoverage the total coverage of the policies
      */
     function _updateKLastByCancel(uint _totalCoverage) internal {
-        if (liquidity.aUSDTotalLiquidity <= _totalCoverage) {
-            revert InsufficientLiquidity(liquidity.aUSDTotalLiquidity);
+        if (liquidityProtocol.totalCertificateLiquidity <= _totalCoverage) {
+            revert InsufficientLiquidity(liquidityProtocol.totalCertificateLiquidity);
         }
         // minimum klast is minimumFee * (availableLiquidity - totalCoverage);
         if (
-            marketInfos[marketAddress].kLast <
-            metaDefenderGlobals.minimumFee(address(aUSD)).multiplyDecimal(
-                liquidity.aUSDTotalLiquidity.sub(_totalCoverage)
+            globalInfo.kLast <
+            globalInfo.minimumFee.multiplyDecimal(
+                liquidityProtocol.totalCertificateLiquidity.sub(_totalCoverage)
             )
         ) {
-            marketInfos[marketAddress].kLast = metaDefenderGlobals.minimumFee(address(aUSD)).multiplyDecimal(
-                liquidity.aUSDTotalLiquidity.sub(_totalCoverage)
+            globalInfo.kLast = globalInfo.minimumFee.multiplyDecimal(
+                liquidityProtocol.totalCertificateLiquidity.sub(_totalCoverage)
             );
         }
     }
@@ -489,66 +420,62 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, PolicyStorage, Provider
     /**
      * @dev the process the policy holder applies for.
      *
-     * @param _id the policy id
+     * @param policyId the policy id
      */
-    function policyClaimApply(uint _id) external override {
-        policyInfo storage policy = policies[_id];
-        if (policy.startTime == 0) {
-            revert InvalidPolicy(_id);
+    function policyClaimApply(uint policyId) external override {
+        IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
+        if (block.timestamp > policyInfo.expiredAt) {
+            revert PolicyAlreadyStale(policyId);
         }
-        if (block.timestamp > policy.effectiveUntil) {
-            revert PolicyAlreadyStale(_id);
+        if (policyInfo.isClaimed == true) {
+            revert PolicyAlreadyClaimed(policyId);
         }
-        if (msg.sender != policy.beneficiary) {
-            revert SenderNotBeneficiary(msg.sender, policy.beneficiary);
+        if (policyInfo.beneficiary != msg.sender) {
+            revert SenderNotBeneficiary(policyInfo.beneficiary, msg.sender);
         }
-        if (policy.isClaimed == true) {
-            revert PolicyAlreadyClaimed(_id);
+        if (policyInfo.isClaimApplying == true) {
+            revert ClaimUnderProcessing(policyId);
         }
-        if (policy.inClaimApplying == true) {
-            revert ClaimUnderProcessing(_id);
+        if (policyInfo.isCancelled == true) {
+            revert PolicyAlreadyCancelled(policyId);
         }
-        if (policy.isCancelled == true) {
-            revert PolicyAlreadyCancelled(_id);
-        }
-        policy.inClaimApplying = true;
+        policy.changeStatusIsClaimApplying(policyId, true);
     }
 
     /**
      * @dev the refusal of the policy apply.
      *
-     * @param id the policy id
+     * @param policyId the policy id
      */
-    function refuseApply(uint id) external override {
+    function refuseApply(uint policyId) external override {
         if (msg.sender != judger) {
             revert InsufficientPrivilege();
         }
-        policyInfo storage policy = policies[id];
-        policy.inClaimApplying = false;
+        policy.changeStatusIsClaimApplying(policyId, false);
     }
 
     /**
      * @dev the approval of the policy apply.
      *
-     * @param _id the policy id
+     * @param policyId the policy id
      */
-    function approveApply(uint _id) external override {
+    function approveApply(uint policyId) external override {
         if (msg.sender != judger) {
             revert InsufficientPrivilege();
         }
-        policyInfo storage policy = policies[_id];
-        if (policy.inClaimApplying == false) {
-            revert ClaimNotUnderProcessing(_id);
+        IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
+        if (policyInfo.isClaimApplying == false) {
+            revert ClaimNotUnderProcessing(policyId);
         }
-        policy.inClaimApplying = false;
-        policy.isClaimed = true;
+        policy.changeStatusIsClaimApplying(policyId, false);
+        policy.changeStatusIsClaimed(policyId, true);
 
-        if (aUSD.balanceOf(address(riskReserve)) >= policy.coverage) {
-            aUSD.transferFrom(address(riskReserve), policy.beneficiary, policy.coverage);
+        if (aUSD.balanceOf(address(riskReserve)) >= policyInfo.coverage) {
+            aUSD.transferFrom(address(riskReserve), policyInfo.beneficiary, policyInfo.coverage);
         } else {
-            aUSD.transferFrom(address(riskReserve), policy.beneficiary, aUSD.balanceOf(address(riskReserve)));
-            uint exceeded = policy.coverage.sub(aUSD.balanceOf(address(riskReserve)));
-            _exceededPay(policy.beneficiary, exceeded);
+            aUSD.transferFrom(address(riskReserve), policyInfo.beneficiary, aUSD.balanceOf(address(riskReserve)));
+            uint exceeded = policyInfo.coverage.sub(aUSD.balanceOf(address(riskReserve)));
+            _exceededPay(policyInfo.beneficiary, exceeded);
         }
     }
 
@@ -559,21 +486,21 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, PolicyStorage, Provider
      * @param exceeded the exceeded amount of aUSD
      */
     function _exceededPay(address to, uint exceeded) internal {
-        uint totalLiquidity = liquidity.aUSDTotalLiquidity.add(liquidity.aUSDLockedLiquidity);
+        uint totalLiquidity = liquidityProtocol.totalCertificateLiquidity.add(liquidityProtocol.totalReserveLiquidity);
 
         // update exchangeRate
-        marketInfos[marketAddress].exchangeRate = marketInfos[marketAddress].exchangeRate.multiplyDecimal(
+        globalInfo.exchangeRate = globalInfo.exchangeRate.multiplyDecimal(
             SafeDecimalMath.UNIT.sub(exceeded.divideDecimal(totalLiquidity))
         );
-        marketInfos[marketAddress].exchangeRate = marketInfos[marketAddress].exchangeRate.multiplyDecimal(
+        globalInfo.exchangeRate = globalInfo.exchangeRate.multiplyDecimal(
             SafeDecimalMath.UNIT.sub(exceeded.divideDecimal(totalLiquidity))
         );
 
         // update liquidity
-        liquidity.aUSDTotalLiquidity = liquidity.aUSDTotalLiquidity.multiplyDecimal(
+        liquidityProtocol.totalCertificateLiquidity = liquidityProtocol.totalCertificateLiquidity.multiplyDecimal(
             SafeDecimalMath.UNIT.sub(exceeded.divideDecimal(totalLiquidity))
         );
-        liquidity.aUSDLockedLiquidity = liquidity.aUSDLockedLiquidity.multiplyDecimal(
+        liquidityProtocol.totalReserveLiquidity = liquidityProtocol.totalReserveLiquidity.multiplyDecimal(
             SafeDecimalMath.UNIT.sub(exceeded.divideDecimal(totalLiquidity))
         );
 
@@ -610,12 +537,12 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, PolicyStorage, Provider
     /**
      * @dev Emitted when the provider entered.
      */
-    event ProviderEntered(providerInfo provider);
+    event ProviderEntered(uint provider);
 
     /**
      * @dev Emitted when the user bought the cover.
      */
-    event CoverBought(policyInfo policy);
+    event NewPolicyMinted(uint policyId);
 
     /**
      * @dev Emitted when the user bought the cover.
@@ -637,7 +564,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, PolicyStorage, Provider
     error InsufficientLiquidity(uint id);
     error CoverageTooLarge(uint maxCoverage, uint coverage);
     error ProviderDetected(address providerAddress);
-    error ProviderNotExistOrActive(address providerAddress);
+    error ProviderNotExist(uint _certificateId);
     error ProviderNotStale(uint id);
     error PolicyAlreadyCancelled(uint id);
     error PreviousPolicyNotCancelled(uint id);
