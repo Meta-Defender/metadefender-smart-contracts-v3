@@ -1,8 +1,6 @@
-import { deployMockContract } from '@ethereum-waffle/mock-contract';
-import { MockContract } from 'ethereum-waffle';
 import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
-import { DAY_SEC, toBN, ZERO_ADDRESS } from '../../scripts/util/web3utils';
+import { toBN, ZERO_ADDRESS } from '../../scripts/util/web3utils';
 import {
     LiquidityToken,
     MetaDefender,

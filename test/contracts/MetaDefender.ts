@@ -285,4 +285,74 @@ describe('MetaDefender - uint tests', async () => {
             ).to.be.equal(toBN('0'));
         });
     });
+
+    describe('claim rewards', async () => {
+        it('will revert if not provider', async () => {
+            expect(
+                contracts.metaDefender.claimRewards(),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'ProviderNotExistOrActive',
+            );
+        });
+        it('will successfully claim rewards', async () => {
+            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            // provider asset
+            await contracts.metaDefender
+                .connect(provider1)
+                .providerEntrance(toBN('10000'));
+            // buy cover
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyCover(toBN('2000'));
+            // in this case provider's reward = 38
+            await contracts.metaDefender.connect(provider1).claimRewards();
+            // provider's balance = 100000 - 1000 + 38 = 98038
+            expect(
+                await contracts.test.quoteToken.balanceOf(
+                    await provider1.getAddress(),
+                ),
+            ).to.be.equal(toBN('90038'));
+        });
+    });
+
+    describe('getWithdrawalAndShadow', async () => {
+        it('will return zero if one is not the provider', async () => {
+            // provider1 is not a provider yet
+            const withdrawalAndShadow =
+                await contracts.metaDefender.getWithdrawalAndShadow(
+                    await provider1.getAddress(),
+                );
+            expect(withdrawalAndShadow[0]).to.be.equal(toBN('0'));
+            expect(withdrawalAndShadow[1]).to.be.equal(toBN('0'));
+        });
+        it('will calculate the correct shadow and withdraw', async () => {
+            // in this senario, provider index is greater than lastUnforzenIndex
+            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .providerEntrance(toBN('10000'));
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyCover(toBN('2000'));
+            const withdrawalAndShadow =
+                await contracts.metaDefender.getWithdrawalAndShadow(
+                    await provider1.getAddress(),
+                );
+            // in this case shadow = 10000 * 0.2 - 0 = 2000
+            expect(withdrawalAndShadow[1]).to.be.equal(toBN('2000'));
+            // in this case withdraw = 10000 - 2000 = 8000
+            expect(withdrawalAndShadow[0]).to.be.equal(toBN('8000'));
+        });
+    });
+
+    describe('getWithdrawalAndShadowHistorical', async () => {
+        it('will revert if one is not the provider', async () => {
+            await expect(
+                contracts.metaDefender
+                    .connect(provider1)
+                    .getWithdrawalAndShadowHistorical(),
+            );
+        });
+    });
 });
