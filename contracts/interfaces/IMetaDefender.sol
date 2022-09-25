@@ -3,7 +3,7 @@ pragma solidity 0.8.9;
 
 interface IMetaDefender {
 
-    struct Liquidity {
+    struct ProtocolLiquidity {
         uint totalCertificateLiquidity;
         uint totalReserveLiquidity;
     }
@@ -15,8 +15,6 @@ interface IMetaDefender {
         uint totalCoverage;
         // keep kLast stable when the policy is expired
         uint kLast;
-        // keep fee stable when user provides/removes liquidity
-        uint fee;
         uint claimableTeamReward;
         // the timestamp in the latest freed policy
         uint currentFreedTs;
@@ -24,15 +22,25 @@ interface IMetaDefender {
         uint exchangeRate;
 
         // fees
+        uint fee;
         uint minimumFee;
-        uint initialFee;
 
         // liquidity
         uint totalCertificateLiquidity;
         uint totalMedalLiquidity;
     }
 
-    function getLiquidity() external view returns (Liquidity memory);
+    function transferJudger(address judger) external;
+
+    function transferOfficial(address official) external;
+
+    function teamClaim() external;
+
+    function validMiningProxyManage(address proxy, bool _isValid) external;
+
+    function updateMinimumFee(uint minimumFee) external;
+
+    function getProtocolLiquidity() external view returns (ProtocolLiquidity memory);
 
     function getUsableCapital() external view returns (uint);
 

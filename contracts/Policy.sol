@@ -9,12 +9,12 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "./interfaces/IPolicy.sol";
 
 /**
- * @title LiquidityCertificate
+ * @title Policy
  * @author MetaDefender
- * @dev An ERC721 token which represents a share of the LiquidityPool.
- * It is minted when users provide, and burned when users withdraw.
+ * @dev An ERC721 token which represents a policy.
+ * It is minted when users buy the cover.
  */
-contract LiquidityCertificate is IPolicy, ERC721Enumerable {
+contract Policy is IPolicy, ERC721Enumerable {
     using SafeMath for uint;
     using SafeDecimalMath for uint;
 
@@ -35,8 +35,9 @@ contract LiquidityCertificate is IPolicy, ERC721Enumerable {
 
     /**
      * @dev Initialize the contract.
-   * @param _metaDefender MetaDefender address
-   */
+     * @param _metaDefender MetaDefender address.
+     * @param _protocol Protocol address.
+     */
     function init(address _metaDefender, address _protocol) external {
         require(!initialized, "already initialized");
         require(_metaDefender != address(0), "liquidityPool cannot be 0 address");

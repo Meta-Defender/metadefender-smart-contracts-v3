@@ -1,6 +1,8 @@
 //SPDX-License-Identifier: ISC
 pragma solidity 0.8.9;
 
+import "hardhat/console.sol";
+
 // Libraries
 import "./Lib/SafeDecimalMath.sol";
 
@@ -35,7 +37,8 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
 
     /**
      * @dev Initialize the contract.
-   * @param _metaDefender MetaDefender address
+   * @param _metaDefender MetaDefender address.
+   * @param _protocol Protocol address.
    */
     function init(address _metaDefender, address _protocol) external {
         require(!initialized, "already initialized");
