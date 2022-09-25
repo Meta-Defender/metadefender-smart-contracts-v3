@@ -2,16 +2,18 @@ import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
 import { toBN, ZERO_ADDRESS } from '../../scripts/util/web3utils';
 import {
-    LiquidityToken,
     MetaDefender,
-    MetaDefenderGlobals,
+    LiquidityCertificate,
+    LiquidityMedal,
+    Policy,
 } from '../../typechain-types';
 import { TestERC20 } from '../../typechain-types';
 
 export type TestSystemContractsType = {
-    metaDefenderGlobals: MetaDefenderGlobals;
     metaDefender: MetaDefender;
-    liquidityToken: LiquidityToken;
+    liquidityCertificate: LiquidityCertificate;
+    liquidityMedal: LiquidityMedal;
+    policy: Policy;
     test: {
         quoteToken: TestERC20;
     };
@@ -23,32 +25,37 @@ export async function deployTestContracts(
     // Deploy mocked contracts
 
     // Deploy real contracts
-    const metaDefenderGlobals = (await (
-        await ethers.getContractFactory('MetaDefenderGlobals')
-    )
-        .connect(deployer)
-        .deploy()) as MetaDefenderGlobals;
-
     const metaDefender = (await (
         await ethers.getContractFactory('MetaDefender')
     )
         .connect(deployer)
         .deploy()) as MetaDefender;
 
-    const liquidityToken = (await (
-        await ethers.getContractFactory('LiquidityToken')
+    const liquidityCertificate = (await (
+        await ethers.getContractFactory('LiquidityCertificate')
     )
         .connect(deployer)
-        .deploy('LT', 'LT')) as LiquidityToken;
+        .deploy('protocolLC', 'protocolLC')) as LiquidityCertificate;
+
+    const liquidityMedal = (await (
+        await ethers.getContractFactory('LiquidityMedal')
+    )
+        .connect(deployer)
+        .deploy('protocolLM', 'protocolLM')) as LiquidityMedal;
+
+    const policy = (await (await ethers.getContractFactory('Policy'))
+        .connect(deployer)
+        .deploy('protocolPolicy', 'protocolPolicy')) as Policy;
 
     const quoteToken = (await (await ethers.getContractFactory('TestERC20'))
         .connect(deployer)
         .deploy('TQA', 'TQA')) as TestERC20;
 
     return {
-        metaDefenderGlobals,
         metaDefender,
-        liquidityToken,
+        liquidityCertificate,
+        liquidityMedal,
+        policy,
         test: {
             quoteToken,
         },
@@ -61,30 +68,33 @@ export async function initTestSystem(
 ) {
     // permit
     await c.test.quoteToken.permitMint(c.metaDefender.address, true);
-    await c.liquidityToken.permitMint(c.metaDefender.address, true);
-
-    // set initial fee
-    await c.metaDefenderGlobals.setInitialFee(
-        c.test.quoteToken.address,
-        // the initial fee is 2%
-        toBN('0.02'),
-    );
-
-    // set minimum fee
-    await c.metaDefenderGlobals.setMinimumFee(
-        c.test.quoteToken.address,
-        // the minimum fee is 2%
-        toBN('0.02'),
-    );
 
     await c.metaDefender.init(
         c.test.quoteToken.address,
-        c.liquidityToken.address,
-        overrides.judger,
-        overrides.official,
-        overrides.marketAddress,
-        overrides.riskReserve,
-        c.metaDefenderGlobals.address,
+        overrides.judger || ZERO_ADDRESS,
+        overrides.official || ZERO_ADDRESS,
+        overrides.protocol || ZERO_ADDRESS,
+        overrides.riskReserve || ZERO_ADDRESS,
+        c.liquidityCertificate.address || ZERO_ADDRESS,
+        c.liquidityMedal.address || ZERO_ADDRESS,
+        c.policy.address || ZERO_ADDRESS,
+        overrides.initialFee || toBN('0.02'),
+        overrides.minimumFee || toBN('0.02'),
+    );
+
+    await c.liquidityCertificate.init(
+        c.metaDefender.address,
+        overrides.protocol || ZERO_ADDRESS,
+    );
+
+    await c.liquidityMedal.init(
+        c.metaDefender.address,
+        overrides.protocol || ZERO_ADDRESS,
+    );
+
+    await c.policy.init(
+        c.metaDefender.address,
+        overrides.protocol || ZERO_ADDRESS,
     );
 }
 
@@ -96,8 +106,6 @@ export async function deployTestSystem(
     await initTestSystem(c, {
         judger: deployerAddress,
         official: deployerAddress,
-        marketAddress: ZERO_ADDRESS,
-        riskReserve: ZERO_ADDRESS,
     });
     return c;
 }
