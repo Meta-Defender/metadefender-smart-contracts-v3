@@ -121,6 +121,26 @@ contract Policy is IPolicy, ERC721Enumerable {
     }
 
     /**
+     * @notice isCancelAvailable the to check if the policy can be cancelled now.
+   *
+   * @param policyId The id of the policy.
+   */
+    function isCancelAvailable(uint policyId) external view override returns (bool) {
+        require(_policyInfo[policyId].enteredAt != 0, "policy does not exist");
+        require(_policyInfo[policyId].expiredAt < block.timestamp, "policy is not expired");
+        require(_policyInfo[policyId].isCancelled == false, "policy is already cancelled");
+        require(_policyInfo[policyId].isClaimApplying == false, "policy is applying for claim");
+        require(_policyInfo[policyId].isClaimed == false, "policy is already claimed");
+        if (policyId == 0) {
+            return true;
+        } else {
+            return _policyInfo[policyId-1].isCancelled;
+        }
+    }
+
+
+
+    /**
      * @notice Burns the LiquidityCertificate.
    *
    * @param spender The account which is performing the burn.
