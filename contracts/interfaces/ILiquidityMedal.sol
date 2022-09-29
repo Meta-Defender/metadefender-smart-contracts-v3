@@ -8,7 +8,9 @@ interface ILiquidityMedal {
         uint enteredAt;
         // the time one exit from the liquidity pool
         uint exitedAt;
-        // the liquidity when the medal was minted
+        // the liquidity one entered the pool with
+        uint liquidity;
+        // the reserve when the medal was minted
         uint reserve;
         // the amount of shadowDebt when the medal was minted
         uint shadowDebt;
@@ -32,10 +34,13 @@ interface ILiquidityMedal {
 
     function updateReserve(uint medalId, uint reserve) external;
 
+    function belongsTo(uint medalId) external view returns (address);
+
     function mint(
         address owner,
         uint enteredAt,
         uint liquidity,
+        uint reserve,
         uint shadowDebt,
         uint marketShadow
     ) external returns (uint);

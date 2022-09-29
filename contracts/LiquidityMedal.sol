@@ -115,6 +115,16 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
     }
 
     /**
+     * @dev find out which address is this medal belongs to.
+    *
+    * @param medalId The id of the medal provider.
+    */
+    function belongsTo(uint medalId) external view returns (address) {
+        return ownerOf(medalId);
+    }
+
+
+    /**
      * @dev Mints a new certificate and transfers it to `owner`.
    *
    * @param owner The account that will own the medal.
@@ -127,6 +137,7 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
         address owner,
         uint enteredAt,
         uint liquidity,
+        uint reserve,
         uint shadowDebt,
         uint marketShadow
     ) external override returns (uint) {
@@ -135,10 +146,10 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
         }
 
         uint medalId = nextId++;
-        _medalInfo[medalId] = MedalInfo(enteredAt,block.timestamp,liquidity,shadowDebt,marketShadow);
+        _medalInfo[medalId] = MedalInfo(enteredAt,block.timestamp,liquidity,reserve,shadowDebt,marketShadow);
         _mint(owner, medalId);
 
-        emit newMedalMinted(enteredAt,block.timestamp,liquidity,shadowDebt,marketShadow);
+        emit newMedalMinted(enteredAt,block.timestamp,liquidity,reserve,shadowDebt,marketShadow);
         return medalId;
     }
 
@@ -171,5 +182,5 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
     error InsufficientPrivilege();
     error InsufficientLiquidity();
 
-    event newMedalMinted(uint enteredAT, uint exitedAt, uint liquidity, uint shadowDebt, uint marketShadow);
+    event newMedalMinted(uint enteredAT, uint exitedAt, uint liquidity, uint reserve, uint shadowDebt, uint marketShadow);
 }
