@@ -719,10 +719,7 @@ describe('MetaDefender - uint tests', async () => {
                 await fastForward(45 * 86400);
                 await expect(
                     contracts.metaDefender.cancelPolicy('0'),
-                ).to.be.revertedWithCustomError(
-                    contracts.metaDefender,
-                    'PolicyCanNotBeCancelled',
-                );
+                ).to.be.revertedWith('policy is not expired');
             });
             it('will revert if the other one cancel the policy in one day', async () => {
                 await seedTestSystem(deployer, contracts, [
@@ -810,10 +807,7 @@ describe('MetaDefender - uint tests', async () => {
                     contracts.metaDefender
                         .connect(coverBuyer1)
                         .cancelPolicy('0'),
-                ).to.be.revertedWithCustomError(
-                    contracts.metaDefender,
-                    'PolicyAlreadyCancelled',
-                );
+                ).to.be.revertedWith('policy is already cancelled');
             });
         });
     });

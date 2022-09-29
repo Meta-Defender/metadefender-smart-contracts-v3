@@ -40,6 +40,8 @@ interface IPolicy {
 
     function belongsTo(uint policyId) external view returns (address);
 
+    function isCancelAvailable(uint policyId) external view returns (bool);
+
     function changeStatusIsClaimed(uint policyId, bool status) external;
 
     function changeStatusIsClaimApplying(uint policyId, bool status) external;

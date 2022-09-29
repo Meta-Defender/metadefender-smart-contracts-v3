@@ -369,45 +369,24 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
 
     /**
      * @dev cancel the policy by a policy id
+     * @param policyId the Id of policy.
      */
     function cancelPolicy(uint policyId) external override {
         IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
-        if (policyInfo.isCancelled) {
-            revert PolicyAlreadyCancelled(policyId);
-        }
-        if (policyId == 0) {
-            _executeCancel(policyId);
-        } else {
-            IPolicy.PolicyInfo memory previousPolicy = policy.getPolicyInfo(policyId.sub(1));
-            if (!previousPolicy.isCancelled) {
-                revert PreviousPolicyNotCancelled(policyId);
+        if (policy.isCancelAvailable(policyId)) {
+            if (block.timestamp.sub(policyInfo.expiredAt) <= 86400) {
+                if (msg.sender == policyInfo.beneficiary) {
+                    _doPolicyCancel(policyId, msg.sender);
+                } else {
+                    revert PolicyCanOnlyCancelledByHolder(policyId);
+                }
             } else {
-                _executeCancel(policyId);
+                _doPolicyCancel(policyId, msg.sender);
             }
+        } else {
+            revert PreviousPolicyNotCancelled(policyId);
         }
         emit PolicyCancelled(policyId);
-    }
-
-    /**
-     * @dev execute cancelling the policy
-     *
-     * @param policyId the policy to be cancelled
-     */
-    function _executeCancel(uint policyId) internal {
-        IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
-        if (policyInfo.expiredAt > block.timestamp || policyInfo.isClaimApplying == true) {
-            revert PolicyCanNotBeCancelled(policyId);
-        }
-        // in one day we only allow the policyholder to cancel the policy;
-        if (block.timestamp.sub(policyInfo.expiredAt) <= 86400) {
-            if (msg.sender == policyInfo.beneficiary) {
-                _doPolicyCancel(policyId, msg.sender);
-            } else {
-                revert PolicyCanOnlyCancelledByHolder(policyId);
-            }
-        } else {
-            _doPolicyCancel(policyId, msg.sender);
-        }
     }
 
     /**
