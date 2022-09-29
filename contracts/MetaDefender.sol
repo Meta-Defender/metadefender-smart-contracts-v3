@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 // interfaces
 import "./interfaces/IMetaDefender.sol";
-import "./interfaces/IRiskReserve.sol";
+import "./interfaces/IMockRiskReserve.sol";
 import "./interfaces/ILiquidityCertificate.sol";
 import "./interfaces/ILiquidityMedal.sol";
 import "./interfaces/IPolicy.sol";
@@ -33,7 +33,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     ILiquidityCertificate internal liquidityCertificate;
     ILiquidityMedal internal liquidityMedal;
     IPolicy internal policy;
-    IRiskReserve internal riskReserve;
+    IMockRiskReserve internal mockRiskReserve;
 
     bool public initialized = false;
     address public judger;
@@ -67,7 +67,8 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @param _aUSD the IERC20 instance of AcalaUSD
      * @param _judger the address of judger
      * @param _official the address of official
-     * @param _riskReserve the address of risk reserve pool
+     * @param _protocol the address of protocol
+     * @param _mockRiskReserve the address of risk reserve pool
      */
     function init(
         // basic information
@@ -78,7 +79,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         address _protocol,
 
         // riskReserve
-        address _riskReserve,
+        IMockRiskReserve _mockRiskReserve,
 
         // NFT LPs and policy NFT
         ILiquidityCertificate _liquidityCertificate,
@@ -99,7 +100,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         protocol = _protocol;
         globalInfo.exchangeRate = SafeDecimalMath.UNIT;
 
-        riskReserve = IRiskReserve(_riskReserve);
+        mockRiskReserve = _mockRiskReserve;
         liquidityCertificate = _liquidityCertificate;
         liquidityMedal = _liquidityMedal;
         policy = _policy;
@@ -292,6 +293,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         (uint withdrawal, uint shadow) = getWithdrawalAndShadowByCertificate(certificateId);
         uint rewards = getRewards(certificateId);
         uint liquidity = certificateInfo.liquidity;
+        uint reserve = liquidity.multiplyDecimal(globalInfo.exchangeRate).sub(withdrawal);
         protocolLiquidity.totalCertificateLiquidity = protocolLiquidity.totalCertificateLiquidity.sub(liquidity.multiplyDecimal(globalInfo.exchangeRate));
 
         // now we will burn the liquidity certificate and mint a new medal for the provider
@@ -302,7 +304,8 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             beneficiary,
             certificateInfo.liquidity,
             liquidity,
-            liquidity.multiplyDecimal(globalInfo.rewardPerShare),
+            reserve,
+            certificateInfo.shadowDebt,
             liquidity.multiplyDecimal(globalInfo.shadowPerShare)
         );
         aUSD.transfer(msg.sender, withdrawal.add(rewards));
@@ -332,6 +335,9 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      */
     function medalProviderWithdraw(uint medalId) external override reentrancyGuard {
         ILiquidityMedal.MedalInfo memory medalInfo = liquidityMedal.getMedalInfo(medalId);
+        if (msg.sender != (liquidityMedal.belongsTo(medalId))) {
+            revert InsufficientPrivilege();
+        }
         (uint withdrawal, uint shadow) = getWithdrawalAndShadowByMedal(medalId);
         if (withdrawal > 0) {
             aUSD.transfer(msg.sender, withdrawal);
@@ -343,7 +349,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev getWithdrawAndShadowHistorical calculate the unfrozen capital of a certain provider
+     * @dev getWithdrawalAndShadowByMedal calculate the capital can be withdrawn by the medalId.
      * @param medalId the medalId
      */
     function getWithdrawalAndShadowByMedal(uint medalId) public view override returns (uint, uint) {
@@ -351,9 +357,9 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         // TODO: this function seems to be risky
         uint shadow = 0;
         if (medalInfo.enteredAt > globalInfo.currentFreedTs) {
-            shadow = medalInfo.reserve.multiplyDecimal(globalInfo.shadowPerShare).sub(medalInfo.shadowDebt);
+            shadow = medalInfo.liquidity.multiplyDecimal(globalInfo.shadowPerShare).sub(medalInfo.shadowDebt);
         } else if (medalInfo.marketShadow >= globalInfo.shadowFreedPerShare) {
-            shadow = medalInfo.reserve.multiplyDecimal(globalInfo.shadowPerShare.sub(globalInfo.shadowFreedPerShare));
+            shadow = medalInfo.liquidity.multiplyDecimal(globalInfo.shadowPerShare.sub(globalInfo.shadowFreedPerShare));
         } else {
             shadow = 0;
         }
@@ -369,7 +375,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         if (policyInfo.isCancelled) {
             revert PolicyAlreadyCancelled(policyId);
         }
-        if (policyId == 1) {
+        if (policyId == 0) {
             _executeCancel(policyId);
         } else {
             IPolicy.PolicyInfo memory previousPolicy = policy.getPolicyInfo(policyId.sub(1));
@@ -415,7 +421,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         globalInfo.totalCoverage = globalInfo.totalCoverage.sub(policyInfo.coverage);
         globalInfo.shadowFreedPerShare = globalInfo.shadowFreedPerShare.add(policyInfo.shadowImpact);
         // use a function to update policy's isCancelled status
-        policyInfo.isCancelled = true;
+        policy.changeStatusIsCancelled(_policyId,true);
         globalInfo.currentFreedTs = policyInfo.enteredAt;
         _updateKLastByCancel(globalInfo.totalCoverage);
         aUSD.transfer(_caller, policyInfo.deposit);
@@ -462,9 +468,6 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         if (policyInfo.isClaimApplying == true) {
             revert ClaimUnderProcessing(policyId);
         }
-        if (policyInfo.isCancelled == true) {
-            revert PolicyAlreadyCancelled(policyId);
-        }
         policy.changeStatusIsClaimApplying(policyId, true);
     }
 
@@ -476,6 +479,10 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     function refuseApply(uint policyId) external override {
         if (msg.sender != judger) {
             revert InsufficientPrivilege();
+        }
+        IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
+        if (policyInfo.isClaimApplying == false) {
+            revert ClaimNotUnderProcessing(policyId);
         }
         policy.changeStatusIsClaimApplying(policyId, false);
     }
@@ -496,11 +503,13 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         policy.changeStatusIsClaimApplying(policyId, false);
         policy.changeStatusIsClaimed(policyId, true);
 
-        if (aUSD.balanceOf(address(riskReserve)) >= policyInfo.coverage) {
-            aUSD.transferFrom(address(riskReserve), policyInfo.beneficiary, policyInfo.coverage);
+        if (aUSD.balanceOf(address(mockRiskReserve)) >= policyInfo.coverage) {
+            mockRiskReserve.payTo(policyInfo.beneficiary, policyInfo.coverage);
         } else {
-            aUSD.transferFrom(address(riskReserve), policyInfo.beneficiary, aUSD.balanceOf(address(riskReserve)));
-            uint exceeded = policyInfo.coverage.sub(aUSD.balanceOf(address(riskReserve)));
+            // we will pay as more as we can.
+            uint remains = aUSD.balanceOf(address(mockRiskReserve));
+            mockRiskReserve.payTo(policyInfo.beneficiary,remains);
+            uint exceeded = policyInfo.coverage.sub(remains);
             _exceededPay(policyInfo.beneficiary, exceeded);
         }
     }

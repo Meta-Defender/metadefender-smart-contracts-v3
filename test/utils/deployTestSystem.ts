@@ -6,6 +6,7 @@ import {
     LiquidityCertificate,
     LiquidityMedal,
     Policy,
+    MockRiskReserve,
 } from '../../typechain-types';
 import { TestERC20 } from '../../typechain-types';
 
@@ -13,6 +14,7 @@ export type TestSystemContractsType = {
     metaDefender: MetaDefender;
     liquidityCertificate: LiquidityCertificate;
     liquidityMedal: LiquidityMedal;
+    mockRiskReserve: MockRiskReserve;
     policy: Policy;
     test: {
         quoteToken: TestERC20;
@@ -47,6 +49,12 @@ export async function deployTestContracts(
         .connect(deployer)
         .deploy('protocolPolicy', 'protocolPolicy')) as Policy;
 
+    const mockRiskReserve = (await (
+        await ethers.getContractFactory('MockRiskReserve')
+    )
+        .connect(deployer)
+        .deploy()) as MockRiskReserve;
+
     const quoteToken = (await (await ethers.getContractFactory('TestERC20'))
         .connect(deployer)
         .deploy('TQA', 'TQA')) as TestERC20;
@@ -55,6 +63,7 @@ export async function deployTestContracts(
         metaDefender,
         liquidityCertificate,
         liquidityMedal,
+        mockRiskReserve,
         policy,
         test: {
             quoteToken,
@@ -96,6 +105,11 @@ export async function initTestSystem(
         c.metaDefender.address,
         overrides.protocol || ZERO_ADDRESS,
     );
+
+    await c.mockRiskReserve.init(
+        c.test.quoteToken.address,
+        c.metaDefender.address,
+    );
 }
 
 export async function deployTestSystem(
@@ -106,6 +120,7 @@ export async function deployTestSystem(
     await initTestSystem(c, {
         judger: deployerAddress,
         official: deployerAddress,
+        riskReserve: c.mockRiskReserve.address,
     });
     return c;
 }

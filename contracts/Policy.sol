@@ -156,6 +156,7 @@ contract Policy is IPolicy, ERC721Enumerable {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
+        require(_policyInfo[policyId].enteredAt != 0, "policy does not exist");
         _policyInfo[policyId].isCancelled = status;
     }
 

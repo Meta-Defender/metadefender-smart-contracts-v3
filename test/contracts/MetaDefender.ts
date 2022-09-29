@@ -439,4 +439,382 @@ describe('MetaDefender - uint tests', async () => {
             );
         });
     });
+
+    describe('policy claim apply', async () => {
+        it('should revert if the policy is expired', async () => {
+            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .providerEntrance(await provider1.getAddress(), toBN('10000'));
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyCover(toBN('2000'));
+            // in this case, the policy is expired
+            await fastForward(91 * 86400);
+            await expect(
+                contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .policyClaimApply('0'),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'PolicyAlreadyStale',
+            );
+        });
+        it('should revert if the policy has been under claim applying', async () => {
+            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .providerEntrance(await provider1.getAddress(), toBN('10000'));
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyCover(toBN('2000'));
+            // in this case, the policy is expired
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .policyClaimApply('0');
+            await expect(
+                contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .policyClaimApply('0'),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'ClaimUnderProcessing',
+            );
+        });
+        it('should revert if the msg.sender is not the beneficiary', async () => {
+            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .providerEntrance(await provider1.getAddress(), toBN('10000'));
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyCover(toBN('2000'));
+            await expect(
+                contracts.metaDefender.connect(provider1).policyClaimApply('0'),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'SenderNotBeneficiary',
+            );
+        });
+        it('should revert if the policy has been claimed', async () => {
+            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await contracts.mockRiskReserve.mockMint(toBN('10000'));
+            await contracts.metaDefender
+                .connect(provider1)
+                .providerEntrance(await provider1.getAddress(), toBN('10000'));
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyCover(toBN('2000'));
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .policyClaimApply('0');
+            await contracts.metaDefender.connect(deployer).approveApply('0');
+            await expect(
+                contracts.metaDefender.policyClaimApply('0'),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'PolicyAlreadyClaimed',
+            );
+        });
+    });
+
+    describe('refuse claim apply', async () => {
+        it('should revert if the msg.sender is not the judger', async () => {
+            await expect(
+                contracts.metaDefender.connect(provider1).refuseApply('0'),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'InsufficientPrivilege',
+            );
+        });
+        it('should revert if the policyId is invalid', async () => {
+            await expect(
+                contracts.metaDefender.connect(deployer).refuseApply('7777'),
+            ).to.be.revertedWith('policy does not exist');
+        });
+        it('should revert if the policy is not applying for claim', async () => {
+            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .providerEntrance(await provider1.getAddress(), toBN('10000'));
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyCover(toBN('2000'));
+            await expect(
+                contracts.metaDefender.connect(deployer).refuseApply('0'),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'ClaimNotUnderProcessing',
+            );
+        });
+        it('should successfully refuse the claim apply', async () => {
+            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .providerEntrance(await provider1.getAddress(), toBN('10000'));
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyCover(toBN('2000'));
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .policyClaimApply('0');
+            const policyInfoBeforeRefuseApply =
+                await contracts.policy.getPolicyInfo('0');
+            expect(policyInfoBeforeRefuseApply.isClaimApplying).to.be.equal(
+                true,
+            );
+            await contracts.metaDefender.connect(deployer).refuseApply('0');
+            const policyInfoAfterRefuseApply =
+                await contracts.policy.getPolicyInfo('0');
+            expect(policyInfoAfterRefuseApply.isClaimApplying).to.be.equal(
+                false,
+            );
+        });
+    });
+
+    describe('approve apply', async () => {
+        it('should revert if the msg.sender is not the judger', async () => {
+            await expect(
+                contracts.metaDefender.connect(provider1).approveApply('0'),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'InsufficientPrivilege',
+            );
+        });
+        it('should revert if the policyId is invalid', async () => {
+            await expect(
+                contracts.metaDefender.connect(deployer).approveApply('7777'),
+            ).to.be.revertedWith('policy does not exist');
+        });
+        it('should revert if the policy is not applying for claim', async () => {
+            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .providerEntrance(await provider1.getAddress(), toBN('10000'));
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyCover(toBN('2000'));
+            await expect(
+                contracts.metaDefender.connect(deployer).approveApply('0'),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'ClaimNotUnderProcessing',
+            );
+        });
+        it('should pay exact the coverage when there are enough funds in risk reserve contract', async () => {
+            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await contracts.mockRiskReserve.mockMint(toBN('10000'));
+            await contracts.metaDefender
+                .connect(provider1)
+                .providerEntrance(await provider1.getAddress(), toBN('10000'));
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyCover(toBN('2000'));
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .policyClaimApply('0');
+            await contracts.metaDefender.connect(deployer).approveApply('0');
+
+            // coverBuyer1 should get 2000 tokens: 100000 - 2000 * 0.02 - 2000 *0.02 *0.05 + 2000 = 101958
+            expect(
+                await contracts.test.quoteToken.balanceOf(
+                    await coverBuyer1.getAddress(),
+                ),
+            ).to.be.equal(toBN('101958'));
+
+            expect(
+                await contracts.test.quoteToken.balanceOf(
+                    contracts.mockRiskReserve.address,
+                ),
+            ).to.be.equal(toBN('8000'));
+        });
+    });
+
+    describe('get fee', async () => {
+        it('will revert when insufficient usable funds', async () => {
+            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await expect(
+                contracts.metaDefender.connect(provider1).getFee(),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'InsufficientUsableCapital',
+            );
+        });
+    });
+
+    describe('medal provider withdraw', async () => {
+        it('will revert if the medalId is not exist', async () => {
+            await expect(
+                contracts.metaDefender
+                    .connect(provider1)
+                    .medalProviderWithdraw('7777'),
+            ).to.be.revertedWith('medal does not exist');
+        });
+    });
+
+    describe('medal provider withdraw', async () => {
+        it('will revert if the medalId is not exist', async () => {
+            await expect(
+                contracts.metaDefender
+                    .connect(provider1)
+                    .medalProviderWithdraw('7777'),
+            ).to.be.revertedWith('medal does not exist');
+        });
+        it('will revert if the medalId is not belong to the msg.sender', async () => {
+            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .providerEntrance(await provider1.getAddress(), toBN('10000'));
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyCover(toBN('2000'));
+            await contracts.metaDefender
+                .connect(provider1)
+                .certificateProviderExit('0');
+            await expect(
+                contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .medalProviderWithdraw('0'),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'InsufficientPrivilege',
+            );
+        });
+        it('will get the shadow and withdrawal successfully when medalInfo.enteredAt > globalInfo.currentFreedTs', async () => {
+            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .providerEntrance(await provider1.getAddress(), toBN('10000'));
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyCover(toBN('2000'));
+            await contracts.metaDefender
+                .connect(provider1)
+                .certificateProviderExit('0');
+            const withdrawalAndAShadowByMedal =
+                await contracts.metaDefender.getWithdrawalAndShadowByMedal('0');
+            // which means one can withdraw 0 from the medal.
+            expect(withdrawalAndAShadowByMedal[0]).to.be.equal(toBN('0'));
+            // and he still has 2000 locked in the medal.
+            expect(withdrawalAndAShadowByMedal[1]).to.be.equal(toBN('2000'));
+            await contracts.metaDefender
+                .connect(provider1)
+                .medalProviderWithdraw('0');
+        });
+        describe('cancel policy', async () => {
+            it('will revert when policy is not expired', async () => {
+                await seedTestSystem(deployer, contracts, [
+                    provider1,
+                    coverBuyer1,
+                ]);
+                await contracts.metaDefender
+                    .connect(provider1)
+                    .providerEntrance(
+                        await provider1.getAddress(),
+                        toBN('10000'),
+                    );
+                await contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .buyCover(toBN('2000'));
+                await fastForward(45 * 86400);
+                await expect(
+                    contracts.metaDefender.cancelPolicy('0'),
+                ).to.be.revertedWithCustomError(
+                    contracts.metaDefender,
+                    'PolicyCanNotBeCancelled',
+                );
+            });
+            it('will revert if the other one cancel the policy in one day', async () => {
+                await seedTestSystem(deployer, contracts, [
+                    provider1,
+                    coverBuyer1,
+                ]);
+                await contracts.metaDefender
+                    .connect(provider1)
+                    .providerEntrance(
+                        await provider1.getAddress(),
+                        toBN('10000'),
+                    );
+                await contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .buyCover(toBN('2000'));
+                // after 90 day and a half
+                await fastForward(90 * 86400 + 43200);
+                await expect(
+                    contracts.metaDefender.connect(provider1).cancelPolicy('0'),
+                ).to.be.revertedWithCustomError(
+                    contracts.metaDefender,
+                    'PolicyCanOnlyCancelledByHolder',
+                );
+            });
+            it('will successfully cancel the policy in one day', async () => {
+                await seedTestSystem(deployer, contracts, [
+                    provider1,
+                    coverBuyer1,
+                ]);
+                await contracts.metaDefender
+                    .connect(provider1)
+                    .providerEntrance(
+                        await provider1.getAddress(),
+                        toBN('10000'),
+                    );
+                await contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .buyCover(toBN('2000'));
+                // after 90 day and a half
+                await fastForward(90 * 86400 + 43200);
+                await contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .cancelPolicy('0');
+            });
+            it('will successfully cancel the policy after one day by another', async () => {
+                await seedTestSystem(deployer, contracts, [
+                    provider1,
+                    coverBuyer1,
+                ]);
+                await contracts.metaDefender
+                    .connect(provider1)
+                    .providerEntrance(
+                        await provider1.getAddress(),
+                        toBN('10000'),
+                    );
+                await contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .buyCover(toBN('2000'));
+                // after 91 days and a half
+                await fastForward(91 * 86400);
+                await contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .cancelPolicy('0');
+            });
+            it('will revert if the policy is already cancelled', async () => {
+                await seedTestSystem(deployer, contracts, [
+                    provider1,
+                    coverBuyer1,
+                ]);
+                await contracts.metaDefender
+                    .connect(provider1)
+                    .providerEntrance(
+                        await provider1.getAddress(),
+                        toBN('10000'),
+                    );
+                await contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .buyCover(toBN('2000'));
+                // after 91 days and a half
+                await fastForward(91 * 86400);
+                await contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .cancelPolicy('0');
+                await expect(
+                    contracts.metaDefender
+                        .connect(coverBuyer1)
+                        .cancelPolicy('0'),
+                ).to.be.revertedWithCustomError(
+                    contracts.metaDefender,
+                    'PolicyAlreadyCancelled',
+                );
+            });
+        });
+    });
 });

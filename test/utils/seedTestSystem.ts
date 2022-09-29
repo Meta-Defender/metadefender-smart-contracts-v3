@@ -24,4 +24,6 @@ export async function seedTestSystem(
                 .approve(c.metaDefender.address, toBN('100000'));
         }
     }
+
+    await c.test.quoteToken.permitMint(c.mockRiskReserve.address, true);
 }
