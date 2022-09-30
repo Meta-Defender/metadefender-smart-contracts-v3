@@ -24,10 +24,12 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     using SafeDecimalMath for uint;
 
     IERC20 internal aUSD;
-    // liquidity storage
-    ProtocolLiquidity public protocolLiquidity;
+    // capital storage
+    Capital public capital;
     // global params
     GlobalInfo public globalInfo;
+    // validMiningProxy
+    mapping(address => bool) public validMiningProxy;
 
     // interfaces
     ILiquidityCertificate internal liquidityCertificate;
@@ -50,9 +52,6 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
 
     /// @dev Counter for reentrancy guard.
     uint internal counter = 1;
-
-    // validMiningProxy
-    mapping(address => bool) internal validMiningProxy;
 
     constructor() {}
 
@@ -168,28 +167,14 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev get the usable capital of the pool
-     */
-    function getUsableCapital() public view override returns (uint) {
-        return
-            protocolLiquidity.totalCertificateLiquidity >= globalInfo.totalCoverage
-                ? protocolLiquidity.totalCertificateLiquidity.sub(globalInfo.totalCoverage)
-                : 0;
-    }
-
-    function getProtocolLiquidity() external view override returns (ProtocolLiquidity memory) {
-        return protocolLiquidity;
-    }
-
-    /**
      * @dev get the fee rate of the pool
      */
-    function getFee() public view returns (uint) {
-        uint UsableCapital = getUsableCapital();
+    function getFeeAndUsableCapital() public view returns (uint,uint) {
+        uint UsableCapital = capital.freeCapital>= globalInfo.totalCoverage? capital.freeCapital.sub(globalInfo.totalCoverage): 0;
         if (UsableCapital == 0) {
             revert InsufficientUsableCapital();
         }
-        return globalInfo.kLast.divideDecimal(UsableCapital);
+        return (globalInfo.kLast.divideDecimal(UsableCapital), UsableCapital);
     }
 
     /**
@@ -197,27 +182,23 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @param coverage is the coverage to be secured
      */
     function buyCover(uint coverage) external override {
-        uint UsableCapital = getUsableCapital();
-        if (UsableCapital == 0) {
-            revert InsufficientUsableCapital();
+        (uint fee, uint uc) = getFeeAndUsableCapital();
+        if (coverage > uc.multiplyDecimal(MAX_COVERAGE_PERCENTAGE)) {
+            revert CoverageTooLarge(coverage, uc.multiplyDecimal(MAX_COVERAGE_PERCENTAGE));
         }
-        if (coverage > UsableCapital.multiplyDecimal(MAX_COVERAGE_PERCENTAGE)) {
-            revert CoverageTooLarge(coverage, UsableCapital.multiplyDecimal(MAX_COVERAGE_PERCENTAGE));
-        }
-        uint fee = getFee();
         uint coverFee = coverage.multiplyDecimal(fee);
         uint deposit = coverFee.multiplyDecimal(FEE_RATE);
         uint totalPay = coverFee.add(deposit);
 
         aUSD.transferFrom(msg.sender, address(this), totalPay);
         globalInfo.totalCoverage = globalInfo.totalCoverage.add(coverage);
-        uint shadowImpact = coverage.divideDecimal(protocolLiquidity.totalCertificateLiquidity);
+        uint shadowImpact = coverage.divideDecimal(liquidityCertificate.totalCertificateLiquidity());
         globalInfo.shadowPerShare = globalInfo.shadowPerShare.add(shadowImpact);
 
         uint rewardForTeam = coverFee.multiplyDecimal(TEAM_RESERVE_RATE);
         globalInfo.claimableTeamReward = globalInfo.claimableTeamReward.add(rewardForTeam);
         uint rewardForProviders = coverFee.sub(rewardForTeam);
-        uint rewardImpact = rewardForProviders.divideDecimal(protocolLiquidity.totalCertificateLiquidity);
+        uint rewardImpact = rewardForProviders.divideDecimal(liquidityCertificate.totalCertificateLiquidity());
         globalInfo.rewardPerShare = globalInfo.rewardPerShare.add(rewardImpact);
 
         // mint a new policy NFT
@@ -241,7 +222,8 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         // An address will only to be act as a provider only once
         aUSD.transferFrom(msg.sender, address(this), amount);
         uint liquidity = amount.divideDecimal(globalInfo.exchangeRate);
-        protocolLiquidity.totalCertificateLiquidity = protocolLiquidity.totalCertificateLiquidity.add(liquidity);
+        // we have to add total capital in this pool.
+        capital.freeCapital = capital.freeCapital.add(amount);
         providerCount = liquidityCertificate.mint(
         beneficiary,
         liquidity,
@@ -255,7 +237,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @dev updateKLast by provider: when a new provider comes in, the fee will stay same while the k will become larger.
      */
     function _updateKLastByProvider() internal {
-        uint uc = getUsableCapital();
+        (, uint uc) = getFeeAndUsableCapital();
         globalInfo.kLast = globalInfo.fee.multiplyDecimal(uc);
     }
 
@@ -290,11 +272,14 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      */
     function certificateProviderExit(uint certificateId) external override reentrancyGuard {
         ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
-        (uint withdrawal, uint shadow) = getWithdrawalAndShadowByCertificate(certificateId);
+        (uint withdrawal, ) = getWithdrawalAndShadowByCertificate(certificateId);
         uint rewards = getRewards(certificateId);
-        uint liquidity = certificateInfo.liquidity;
-        uint reserve = liquidity.multiplyDecimal(globalInfo.exchangeRate).sub(withdrawal);
-        protocolLiquidity.totalCertificateLiquidity = protocolLiquidity.totalCertificateLiquidity.sub(liquidity.multiplyDecimal(globalInfo.exchangeRate));
+        uint reserve = certificateInfo.liquidity.multiplyDecimal(globalInfo.exchangeRate).sub(withdrawal);
+
+        // update the freeCapital;
+        capital.freeCapital = capital.freeCapital.sub(certificateInfo.liquidity.multiplyDecimal(globalInfo.exchangeRate));
+        // update the frozenCapital;
+        capital.frozenCapital = capital.frozenCapital.add(certificateInfo.liquidity.multiplyDecimal(globalInfo.exchangeRate)).sub(withdrawal);
 
         // now we will burn the liquidity certificate and mint a new medal for the provider
         address beneficiary = liquidityCertificate.belongsTo(certificateId);
@@ -302,11 +287,11 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
 
         medalCount = liquidityMedal.mint(
             beneficiary,
+            certificateInfo.enteredAt,
             certificateInfo.liquidity,
-            liquidity,
             reserve,
             certificateInfo.shadowDebt,
-            liquidity.multiplyDecimal(globalInfo.shadowPerShare)
+            certificateInfo.liquidity.multiplyDecimal(globalInfo.shadowPerShare)
         );
         aUSD.transfer(msg.sender, withdrawal.add(rewards));
         _updateKLastByProvider();
@@ -334,17 +319,14 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @param medalId the medalId
      */
     function medalProviderWithdraw(uint medalId) external override reentrancyGuard {
-        ILiquidityMedal.MedalInfo memory medalInfo = liquidityMedal.getMedalInfo(medalId);
         if (msg.sender != (liquidityMedal.belongsTo(medalId))) {
             revert InsufficientPrivilege();
         }
         (uint withdrawal, uint shadow) = getWithdrawalAndShadowByMedal(medalId);
         if (withdrawal > 0) {
             aUSD.transfer(msg.sender, withdrawal);
-        } else {
-            liquidityMedal.burn(msg.sender, medalId);
+            capital.frozenCapital = capital.frozenCapital.sub(withdrawal);
         }
-        protocolLiquidity.totalReserveLiquidity = protocolLiquidity.totalReserveLiquidity.sub(medalInfo.reserve.multiplyDecimal(globalInfo.exchangeRate).sub(shadow));
         liquidityMedal.updateReserve(medalId, shadow.divideDecimal(globalInfo.exchangeRate));
     }
 
@@ -412,18 +394,18 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @param _totalCoverage the total coverage of the policies
      */
     function _updateKLastByCancel(uint _totalCoverage) internal {
-        if (protocolLiquidity.totalCertificateLiquidity <= _totalCoverage) {
-            revert InsufficientLiquidity(protocolLiquidity.totalCertificateLiquidity);
+        if (capital.freeCapital < _totalCoverage) {
+            revert InsufficientLiquidity(capital.freeCapital);
         }
         // minimum klast is minimumFee * (availableLiquidity - totalCoverage);
         if (
             globalInfo.kLast <
             globalInfo.minimumFee.multiplyDecimal(
-                protocolLiquidity.totalCertificateLiquidity.sub(_totalCoverage)
+                capital.freeCapital.sub(_totalCoverage)
             )
         ) {
             globalInfo.kLast = globalInfo.minimumFee.multiplyDecimal(
-                protocolLiquidity.totalCertificateLiquidity.sub(_totalCoverage)
+                capital.freeCapital.sub(_totalCoverage)
             );
         }
     }
@@ -500,22 +482,18 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @param exceeded the exceeded amount of aUSD
      */
     function _exceededPay(address to, uint exceeded) internal {
-        uint totalLiquidity = protocolLiquidity.totalCertificateLiquidity.add(protocolLiquidity.totalReserveLiquidity);
-
+        uint total = capital.freeCapital.add(capital.frozenCapital);
         // update exchangeRate
         globalInfo.exchangeRate = globalInfo.exchangeRate.multiplyDecimal(
-            SafeDecimalMath.UNIT.sub(exceeded.divideDecimal(totalLiquidity))
-        );
-        globalInfo.exchangeRate = globalInfo.exchangeRate.multiplyDecimal(
-            SafeDecimalMath.UNIT.sub(exceeded.divideDecimal(totalLiquidity))
+            SafeDecimalMath.UNIT.sub(exceeded.divideDecimal(total))
         );
 
         // update liquidity
-        protocolLiquidity.totalCertificateLiquidity = protocolLiquidity.totalCertificateLiquidity.multiplyDecimal(
-            SafeDecimalMath.UNIT.sub(exceeded.divideDecimal(totalLiquidity))
+        capital.freeCapital=capital.freeCapital.multiplyDecimal(
+            SafeDecimalMath.UNIT.sub(exceeded.divideDecimal(total))
         );
-        protocolLiquidity.totalReserveLiquidity = protocolLiquidity.totalReserveLiquidity.multiplyDecimal(
-            SafeDecimalMath.UNIT.sub(exceeded.divideDecimal(totalLiquidity))
+        capital.frozenCapital=capital.frozenCapital.multiplyDecimal(
+            SafeDecimalMath.UNIT.sub(exceeded.divideDecimal(total))
         );
 
         aUSD.transfer(to, exceeded);
@@ -530,6 +508,9 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     function mine(uint _amount, address _to) external override {
         if (msg.sender != judger) {
             revert InsufficientPrivilege();
+        }
+        if (_to == address(0)) {
+            revert InvalidAddress(_to);
         }
         if (validMiningProxy[_to] == false) {
             revert InvalidMiningProxy(_to);
@@ -592,4 +573,5 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     error ClaimNotUnderProcessing(uint id);
     error InvalidMiningProxy(address proxy);
     error ReentrancyGuardDetected();
+    error InvalidAddress(address addr);
 }
