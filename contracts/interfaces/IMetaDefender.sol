@@ -3,9 +3,9 @@ pragma solidity 0.8.9;
 
 interface IMetaDefender {
 
-    struct ProtocolLiquidity {
-        uint totalCertificateLiquidity;
-        uint totalReserveLiquidity;
+    struct Capital {
+        uint freeCapital;
+        uint frozenCapital;
     }
 
     struct GlobalInfo {
@@ -40,9 +40,7 @@ interface IMetaDefender {
 
     function updateMinimumFee(uint minimumFee) external;
 
-    function getProtocolLiquidity() external view returns (ProtocolLiquidity memory);
-
-    function getUsableCapital() external view returns (uint);
+    function getFeeAndUsableCapital() external view returns (uint fee, uint usableCapital);
 
     function buyCover(uint _coverage) external;
 

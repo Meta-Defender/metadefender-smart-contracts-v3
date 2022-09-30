@@ -27,6 +27,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     mapping(uint => CertificateInfo) internal _certificateInfo;
     address public override metaDefender;
     address public override protocol;
+    uint public override totalCertificateLiquidity;
     bool internal initialized = false;
 
     /**
@@ -144,6 +145,8 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
 
         uint certificateId = nextId++;
         _certificateInfo[certificateId] = CertificateInfo(block.timestamp,liquidity,rewardDebt,shadowDebt);
+        // add totalLiquidity.
+        totalCertificateLiquidity = totalCertificateLiquidity.add(liquidity);
         _mint(owner, certificateId);
 
         emit newLPMinted(block.timestamp,0,liquidity,rewardDebt,shadowDebt);
@@ -162,6 +165,8 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         }
         require(_isApprovedOrOwner(spender, certificateId), "attempted to burn nonexistent certificate, or not owner");
         delete _certificateInfo[certificateId];
+        // remove liquidity from totalCertificateLiquidity.
+        totalCertificateLiquidity = totalCertificateLiquidity.sub(_certificateInfo[certificateId].liquidity);
         _burn(certificateId);
     }
 

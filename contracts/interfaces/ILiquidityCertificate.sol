@@ -17,6 +17,9 @@ interface ILiquidityCertificate {
     // get the metaDefender address
     function metaDefender() external view returns (address);
 
+    // get the totalCertificateLiquidity.
+    function totalCertificateLiquidity() external view returns (uint);
+
     function MIN_LIQUIDITY() external view returns (uint);
 
     function getLiquidityProviders(address owner) external view returns (uint[] memory);
