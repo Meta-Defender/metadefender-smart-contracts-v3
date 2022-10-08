@@ -42,8 +42,8 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
    * @param _protocol Protocol address.
    */
     function init(address _metaDefender, address _protocol) external {
-        require(!initialized, "already initialized");
         require(_metaDefender != address(0), "liquidityPool cannot be 0 address");
+        require(!initialized, "already initialized");
         metaDefender = _metaDefender;
         protocol = _protocol;
         initialized = true;
@@ -168,17 +168,6 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         // remove liquidity from totalCertificateLiquidity.
         totalCertificateLiquidity = totalCertificateLiquidity.sub(_certificateInfo[certificateId].liquidity);
         _burn(certificateId);
-    }
-
-    /**
-     * @dev Hook that is called before any token transfer. This includes minting and burning.
-   */
-    function _beforeTokenTransfer(
-        address, // from
-        address, // to
-        uint tokenId
-    ) internal view override {
-        // TODO: Any hooks we need for transferring the token?
     }
 
     error InsufficientPrivilege();

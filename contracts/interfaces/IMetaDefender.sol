@@ -42,7 +42,7 @@ interface IMetaDefender {
 
     function getFeeAndUsableCapital() external view returns (uint fee, uint usableCapital);
 
-    function buyCover(uint _coverage) external;
+    function buyCover(address beneficiary, uint coverage) external;
 
     function getRewards(uint certificateId) external view returns (uint);
 

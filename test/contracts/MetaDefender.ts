@@ -1,29 +1,18 @@
-import { BigNumber, Signer } from 'ethers';
+import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
 import {
-    HOUR_SEC,
+    MOCK_MINING_ADDRESS,
     MOCK_PROXY_ADDRESS,
-    MONTH_SEC,
     toBN,
-    toBytes32,
-    TradeType,
-    UNIT,
-    WEEK_SEC,
     ZERO_ADDRESS,
 } from '../../scripts/util/web3utils';
-import {
-    currentTime,
-    fastForward,
-    restoreSnapshot,
-    takeSnapshot,
-} from '../utils';
+import { fastForward, restoreSnapshot, takeSnapshot } from '../utils';
 import {
     deployTestSystem,
     TestSystemContractsType,
 } from '../utils/deployTestSystem';
 import { expect } from 'chai';
 import { seedTestSystem } from '../utils/seedTestSystem';
-import { rpcTransactionRequest } from 'hardhat/internal/core/jsonrpc/types/input/transactionRequest';
 
 describe('MetaDefender - uint tests', async () => {
     let deployer: Signer;
@@ -134,7 +123,7 @@ describe('MetaDefender - uint tests', async () => {
 
     describe('provide liquidity', async () => {
         it('will successfully provide liquidity', async () => {
-            await seedTestSystem(deployer, contracts, [
+            await seedTestSystem(deployer, contracts, 100000, [
                 provider1,
                 provider2,
                 coverBuyer1,
@@ -179,7 +168,10 @@ describe('MetaDefender - uint tests', async () => {
     describe('buyCover', async () => {
         it('will fail to buy a cover due to insufficient usable capital', async () => {
             await expect(
-                contracts.metaDefender.buyCover(toBN('100')),
+                contracts.metaDefender.buyCover(
+                    await coverBuyer1.getAddress(),
+                    toBN('100'),
+                ),
             ).to.be.revertedWithCustomError(
                 contracts.metaDefender,
                 'InsufficientUsableCapital',
@@ -188,12 +180,15 @@ describe('MetaDefender - uint tests', async () => {
 
         it('will fail to buy a cover due to exceeding maximum coverage percentage', async () => {
             // first we deposit some capital into the pool
-            await seedTestSystem(deployer, contracts, [provider1]);
+            await seedTestSystem(deployer, contracts, 100000, [provider1]);
             await contracts.metaDefender
                 .connect(provider1)
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
             await expect(
-                contracts.metaDefender.buyCover(toBN('2001')),
+                contracts.metaDefender.buyCover(
+                    await coverBuyer1.getAddress(),
+                    toBN('2001'),
+                ),
             ).to.be.revertedWithCustomError(
                 contracts.metaDefender,
                 'CoverageTooLarge',
@@ -202,13 +197,16 @@ describe('MetaDefender - uint tests', async () => {
 
         it('will successfully buy a cover', async () => {
             // first we deposit some capital into the pool
-            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
             await contracts.metaDefender
                 .connect(provider1)
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             expect(
                 await contracts.test.quoteToken.balanceOf(
                     await provider1.getAddress(),
@@ -252,7 +250,7 @@ describe('MetaDefender - uint tests', async () => {
         });
 
         it('should revert if the certificate not belongs to the msg.sender', async () => {
-            await seedTestSystem(deployer, contracts, [
+            await seedTestSystem(deployer, contracts, 100000, [
                 provider1,
                 provider2,
                 coverBuyer1,
@@ -270,7 +268,7 @@ describe('MetaDefender - uint tests', async () => {
         });
 
         it('should get the liquidity back except the locked value', async () => {
-            await seedTestSystem(deployer, contracts, [
+            await seedTestSystem(deployer, contracts, 100000, [
                 provider1,
                 provider2,
                 coverBuyer1,
@@ -286,7 +284,7 @@ describe('MetaDefender - uint tests', async () => {
 
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
 
             await contracts.metaDefender
                 .connect(provider1)
@@ -312,7 +310,10 @@ describe('MetaDefender - uint tests', async () => {
         });
 
         it('will revert if not the provider owner', async () => {
-            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
             await contracts.metaDefender
                 .connect(provider1)
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
@@ -325,7 +326,10 @@ describe('MetaDefender - uint tests', async () => {
         });
 
         it('will successfully claim rewards', async () => {
-            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
             // provider asset
             await contracts.metaDefender
                 .connect(provider1)
@@ -333,7 +337,7 @@ describe('MetaDefender - uint tests', async () => {
             // buy cover
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             // in this case provider's reward = 38
             await contracts.metaDefender.connect(provider1).claimRewards('0');
             // provider's balance = 100000 - 1000 + 38 = 98038
@@ -356,13 +360,16 @@ describe('MetaDefender - uint tests', async () => {
         });
         it('will calculate the correct shadow and withdraw', async () => {
             // in this scenario, certificateInfo.enteredAt > globalInfo.currentFreedTs
-            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
             await contracts.metaDefender
                 .connect(provider1)
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             const withdrawalAndShadow =
                 await contracts.metaDefender.getWithdrawalAndShadowByCertificate(
                     '0',
@@ -374,14 +381,17 @@ describe('MetaDefender - uint tests', async () => {
         });
         it('will calculate the correct shadow and withdraw when some of the shadow is already freed', async () => {
             // 1: provideLiquidity
-            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
             await contracts.metaDefender
                 .connect(provider1)
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
             // 2: buyCover
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             // 3: expires
             await fastForward(90 * 86400 + 43200);
             // 4: cancel the policy
@@ -407,13 +417,16 @@ describe('MetaDefender - uint tests', async () => {
             );
         });
         it('should claim reward correctly', async () => {
-            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
             await contracts.metaDefender
                 .connect(provider1)
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             await contracts.metaDefender.connect(deployer).teamClaim();
             // team's balance = 2000 * 0.02 * 0.05 = 2.
             expect(
@@ -426,7 +439,7 @@ describe('MetaDefender - uint tests', async () => {
 
     describe('get the protocol capital', async () => {
         it('should return the correct capital', async () => {
-            await seedTestSystem(deployer, contracts, [
+            await seedTestSystem(deployer, contracts, 100000, [
                 provider1,
                 provider2,
                 coverBuyer1,
@@ -439,7 +452,7 @@ describe('MetaDefender - uint tests', async () => {
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             const capitalBefore = await contracts.metaDefender.capital();
             expect(capitalBefore[0]).to.be.equal(toBN('20000'));
             await contracts.metaDefender
@@ -452,13 +465,16 @@ describe('MetaDefender - uint tests', async () => {
 
     describe('policy claim apply', async () => {
         it('should revert if the policy is expired', async () => {
-            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
             await contracts.metaDefender
                 .connect(provider1)
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             // in this case, the policy is expired
             await fastForward(91 * 86400);
             await expect(
@@ -471,13 +487,16 @@ describe('MetaDefender - uint tests', async () => {
             );
         });
         it('should revert if the policy has been under claim applying', async () => {
-            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
             await contracts.metaDefender
                 .connect(provider1)
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             // in this case, the policy is expired
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -492,13 +511,16 @@ describe('MetaDefender - uint tests', async () => {
             );
         });
         it('should revert if the msg.sender is not the beneficiary', async () => {
-            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
             await contracts.metaDefender
                 .connect(provider1)
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             await expect(
                 contracts.metaDefender.connect(provider1).policyClaimApply('0'),
             ).to.be.revertedWithCustomError(
@@ -507,14 +529,17 @@ describe('MetaDefender - uint tests', async () => {
             );
         });
         it('should revert if the policy has been claimed', async () => {
-            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
             await contracts.mockRiskReserve.mockMint(toBN('10000'));
             await contracts.metaDefender
                 .connect(provider1)
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
                 .policyClaimApply('0');
@@ -543,13 +568,16 @@ describe('MetaDefender - uint tests', async () => {
             ).to.be.revertedWith('policy does not exist');
         });
         it('should revert if the policy is not applying for claim', async () => {
-            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
             await contracts.metaDefender
                 .connect(provider1)
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             await expect(
                 contracts.metaDefender.connect(deployer).refuseApply('0'),
             ).to.be.revertedWithCustomError(
@@ -558,13 +586,16 @@ describe('MetaDefender - uint tests', async () => {
             );
         });
         it('should successfully refuse the claim apply', async () => {
-            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
             await contracts.metaDefender
                 .connect(provider1)
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
                 .policyClaimApply('0');
@@ -597,13 +628,16 @@ describe('MetaDefender - uint tests', async () => {
             ).to.be.revertedWith('policy does not exist');
         });
         it('should revert if the policy is not applying for claim', async () => {
-            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
             await contracts.metaDefender
                 .connect(provider1)
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             await expect(
                 contracts.metaDefender.connect(deployer).approveApply('0'),
             ).to.be.revertedWithCustomError(
@@ -612,14 +646,17 @@ describe('MetaDefender - uint tests', async () => {
             );
         });
         it('should pay exact the coverage when there are enough funds in risk reserve contract', async () => {
-            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
             await contracts.mockRiskReserve.mockMint(toBN('10000'));
             await contracts.metaDefender
                 .connect(provider1)
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
                 .policyClaimApply('0');
@@ -638,11 +675,53 @@ describe('MetaDefender - uint tests', async () => {
                 ),
             ).to.be.equal(toBN('8000'));
         });
+        it('should pay the exceed and update the latest yita if there are not enough funds in risk reserve contract', async () => {
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                provider2,
+                coverBuyer1,
+            ]);
+            await contracts.mockRiskReserve.mockMint(toBN('1000'));
+            await contracts.metaDefender
+                .connect(provider1)
+                .providerEntrance(await provider1.getAddress(), toBN('10000'));
+            await contracts.metaDefender
+                .connect(provider2)
+                .providerEntrance(await provider2.getAddress(), toBN('10000'));
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .policyClaimApply('0');
+            await contracts.metaDefender.connect(deployer).approveApply('0');
+
+            // coverBuyer1 should get 2000 tokens:
+            // the first 1000 tokens are paid by risk reserve contract
+            // the rest 1000 tokens are paid by the pool
+            expect(
+                await contracts.test.quoteToken.balanceOf(
+                    await coverBuyer1.getAddress(),
+                ),
+            ).to.be.equal(toBN('101958'));
+            expect(
+                await contracts.test.quoteToken.balanceOf(
+                    contracts.mockRiskReserve.address,
+                ),
+            ).to.be.equal(toBN('0'));
+            // we pay for another 1000 in the pool so, the yita will change.
+            expect(
+                (await contracts.metaDefender.globalInfo()).exchangeRate,
+            ).to.be.equal(toBN('0.95'));
+        });
     });
 
     describe('get fee and usable capital', async () => {
         it('will revert when insufficient usable funds', async () => {
-            await seedTestSystem(deployer, contracts, [provider1, coverBuyer1]);
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
             await expect(
                 contracts.metaDefender
                     .connect(provider1)
@@ -663,7 +742,7 @@ describe('MetaDefender - uint tests', async () => {
             ).to.be.revertedWith('ERC721: invalid token ID');
         });
         it('will revert if the medalId is not belong to the msg.sender', async () => {
-            await seedTestSystem(deployer, contracts, [
+            await seedTestSystem(deployer, contracts, 100000, [
                 provider1,
                 provider2,
                 coverBuyer1,
@@ -676,7 +755,7 @@ describe('MetaDefender - uint tests', async () => {
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderExit('0');
@@ -690,7 +769,7 @@ describe('MetaDefender - uint tests', async () => {
             );
         });
         it('will get the shadow and withdrawal successfully when medalInfo.enteredAt > globalInfo.currentFreedTs', async () => {
-            await seedTestSystem(deployer, contracts, [
+            await seedTestSystem(deployer, contracts, 100000, [
                 provider1,
                 provider2,
                 coverBuyer1,
@@ -703,7 +782,7 @@ describe('MetaDefender - uint tests', async () => {
                 .providerEntrance(await provider1.getAddress(), toBN('10000'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderExit('0');
@@ -719,7 +798,7 @@ describe('MetaDefender - uint tests', async () => {
         });
         it('will get the shadow and withdrawal successfully when medalInfo.enteredAt < globalInfo.currentFreedTs', async () => {
             // 1: provider entrance
-            await seedTestSystem(deployer, contracts, [
+            await seedTestSystem(deployer, contracts, 100000, [
                 provider1,
                 provider2,
                 coverBuyer1,
@@ -733,7 +812,7 @@ describe('MetaDefender - uint tests', async () => {
             // 2: buy cover
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
             // 3: provider exit
             await contracts.metaDefender
                 .connect(provider1)
@@ -765,7 +844,7 @@ describe('MetaDefender - uint tests', async () => {
         });
         describe('cancel policy', async () => {
             it('will revert when policy is not expired', async () => {
-                await seedTestSystem(deployer, contracts, [
+                await seedTestSystem(deployer, contracts, 100000, [
                     provider1,
                     coverBuyer1,
                 ]);
@@ -777,14 +856,14 @@ describe('MetaDefender - uint tests', async () => {
                     );
                 await contracts.metaDefender
                     .connect(coverBuyer1)
-                    .buyCover(toBN('2000'));
+                    .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
                 await fastForward(45 * 86400);
                 await expect(
                     contracts.metaDefender.cancelPolicy('0'),
                 ).to.be.revertedWith('policy is not expired');
             });
             it('will revert if the other one cancel the policy in one day', async () => {
-                await seedTestSystem(deployer, contracts, [
+                await seedTestSystem(deployer, contracts, 100000, [
                     provider1,
                     coverBuyer1,
                 ]);
@@ -796,7 +875,7 @@ describe('MetaDefender - uint tests', async () => {
                     );
                 await contracts.metaDefender
                     .connect(coverBuyer1)
-                    .buyCover(toBN('2000'));
+                    .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
                 // after 90 day and a half
                 await fastForward(90 * 86400 + 43200);
                 await expect(
@@ -807,7 +886,7 @@ describe('MetaDefender - uint tests', async () => {
                 );
             });
             it('will successfully cancel the policy in one day', async () => {
-                await seedTestSystem(deployer, contracts, [
+                await seedTestSystem(deployer, contracts, 100000, [
                     provider1,
                     coverBuyer1,
                 ]);
@@ -819,7 +898,7 @@ describe('MetaDefender - uint tests', async () => {
                     );
                 await contracts.metaDefender
                     .connect(coverBuyer1)
-                    .buyCover(toBN('2000'));
+                    .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
                 // after 90 day and a half
                 await fastForward(90 * 86400 + 43200);
                 await contracts.metaDefender
@@ -827,7 +906,7 @@ describe('MetaDefender - uint tests', async () => {
                     .cancelPolicy('0');
             });
             it('will successfully cancel the policy after one day by another', async () => {
-                await seedTestSystem(deployer, contracts, [
+                await seedTestSystem(deployer, contracts, 100000, [
                     provider1,
                     coverBuyer1,
                 ]);
@@ -839,7 +918,7 @@ describe('MetaDefender - uint tests', async () => {
                     );
                 await contracts.metaDefender
                     .connect(coverBuyer1)
-                    .buyCover(toBN('2000'));
+                    .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
                 // after 91 days and a half
                 await fastForward(91 * 86400);
                 await contracts.metaDefender
@@ -847,7 +926,7 @@ describe('MetaDefender - uint tests', async () => {
                     .cancelPolicy('0');
             });
             it('will revert if the policy is already cancelled', async () => {
-                await seedTestSystem(deployer, contracts, [
+                await seedTestSystem(deployer, contracts, 100000, [
                     provider1,
                     coverBuyer1,
                 ]);
@@ -859,7 +938,7 @@ describe('MetaDefender - uint tests', async () => {
                     );
                 await contracts.metaDefender
                     .connect(coverBuyer1)
-                    .buyCover(toBN('2000'));
+                    .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
                 // after 91 days and a half
                 await fastForward(91 * 86400);
                 await contracts.metaDefender
@@ -876,7 +955,7 @@ describe('MetaDefender - uint tests', async () => {
 
     describe('mine', async () => {
         it('will revert if msg.sender is not the owner', async () => {
-            await seedTestSystem(deployer, contracts, [provider1]);
+            await seedTestSystem(deployer, contracts, 100000, [provider1]);
             await expect(
                 contracts.metaDefender.connect(provider1).mine(0, ZERO_ADDRESS),
             ).to.be.revertedWithCustomError(
@@ -885,13 +964,41 @@ describe('MetaDefender - uint tests', async () => {
             );
         });
         it('will revert if the address is ZEOR_ADDRESS', async () => {
-            await seedTestSystem(deployer, contracts, [provider1]);
+            await seedTestSystem(deployer, contracts, 100000, [provider1]);
             await expect(
                 contracts.metaDefender.mine(0, ZERO_ADDRESS),
             ).to.be.revertedWithCustomError(
                 contracts.metaDefender,
                 'InvalidAddress',
             );
+        });
+        it('will revert if the mining address is valid', async () => {
+            await seedTestSystem(deployer, contracts, 100000, [provider1]);
+            await expect(
+                contracts.metaDefender.mine(
+                    0,
+                    '0x0000000000000000000000000000000000000001',
+                ),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'InvalidMiningProxy',
+            );
+        });
+        it('will successfully set the mining address', async () => {
+            await seedTestSystem(deployer, contracts, 100000, [provider1]);
+            await contracts.metaDefender.providerEntrance(
+                await provider1.getAddress(),
+                toBN('10000'),
+            );
+            // set the 0x1 as the valid mining address.
+            await contracts.metaDefender.validMiningProxyManage(
+                MOCK_MINING_ADDRESS,
+                true,
+            );
+            await contracts.metaDefender.mine(toBN('1'), MOCK_MINING_ADDRESS);
+            expect(
+                await contracts.test.quoteToken.balanceOf(MOCK_MINING_ADDRESS),
+            ).to.be.equal(toBN('1'));
         });
     });
 
