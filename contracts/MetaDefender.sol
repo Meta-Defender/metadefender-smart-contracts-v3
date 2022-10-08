@@ -181,7 +181,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @dev buy Cover
      * @param coverage is the coverage to be secured
      */
-    function buyCover(uint coverage) external override {
+    function buyCover(address beneficiary, uint coverage) external override {
         (uint fee, uint uc) = getFeeAndUsableCapital();
         if (coverage > uc.multiplyDecimal(MAX_COVERAGE_PERCENTAGE)) {
             revert CoverageTooLarge(coverage, uc.multiplyDecimal(MAX_COVERAGE_PERCENTAGE));
@@ -203,7 +203,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
 
         // mint a new policy NFT
         uint policyId = policy.mint(
-            msg.sender,
+            beneficiary,
             coverage,
             deposit,
             block.timestamp,
