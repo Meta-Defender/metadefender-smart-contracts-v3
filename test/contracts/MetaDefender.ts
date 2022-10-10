@@ -122,6 +122,20 @@ describe('MetaDefender - uint tests', async () => {
     });
 
     describe('provide liquidity', async () => {
+        it('will revert if the liquidity is less than the MIN_LIQUIDITY', async () => {
+            await seedTestSystem(deployer, contracts, 100000, [provider1]);
+            await expect(
+                contracts.metaDefender
+                    .connect(provider1)
+                    .providerEntrance(
+                        await provider1.getAddress(),
+                        toBN('0.01'),
+                    ),
+            ).to.be.revertedWithCustomError(
+                contracts.liquidityCertificate,
+                'InsufficientLiquidity',
+            );
+        });
         it('will successfully provide liquidity', async () => {
             await seedTestSystem(deployer, contracts, 100000, [
                 provider1,
