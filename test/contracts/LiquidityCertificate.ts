@@ -4,7 +4,7 @@ import {
     TestSystemContractsType,
 } from '../utils/deployTestSystem';
 import { ethers } from 'hardhat';
-import { fastForward, restoreSnapshot, takeSnapshot } from '../utils';
+import { restoreSnapshot, takeSnapshot } from '../utils';
 import { expect } from 'chai';
 import {
     MOCK_MINING_ADDRESS,
@@ -90,6 +90,63 @@ describe('MetaDefender - uint tests', async () => {
             expect(
                 await contracts.liquidityCertificate.getLiquidity(0),
             ).to.be.equal(toBN('10000'));
+        });
+    });
+
+    describe('getEnteredAt', async () => {
+        it('should get enteredAt correctly', async () => {
+            await seedTestSystem(deployer, contracts, 10000, [
+                provider1,
+                provider2,
+            ]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .providerEntrance(await provider1.getAddress(), toBN('10000'));
+            expect(
+                await contracts.liquidityCertificate.getEnteredAt(0),
+            ).to.be.greaterThan(0);
+        });
+    });
+
+    describe('mint', async () => {
+        it('will revert if the msg.sender is not the metadefender protocol', async () => {
+            await expect(
+                contracts.liquidityCertificate
+                    .connect(provider1)
+                    .mint(
+                        await provider1.getAddress(),
+                        toBN('10000'),
+                        toBN('10000'),
+                        toBN('10000'),
+                    ),
+            ).to.be.revertedWithCustomError(
+                contracts.liquidityCertificate,
+                'InsufficientPrivilege',
+            );
+        });
+    });
+    describe('burn', async () => {
+        it('will burn if the msg.sender is not the metadefender protocol', async () => {
+            await expect(
+                contracts.liquidityCertificate
+                    .connect(provider1)
+                    .burn(await provider1.getAddress(), '1'),
+            ).to.be.revertedWithCustomError(
+                contracts.liquidityCertificate,
+                'InsufficientPrivilege',
+            );
+        });
+    });
+    describe('addRewardDebt', async () => {
+        it('will revert if the msg.sender is not the metadefender protocol', async () => {
+            await expect(
+                contracts.liquidityCertificate
+                    .connect(provider1)
+                    .addRewardDebt('1', toBN('10000')),
+            ).to.be.revertedWithCustomError(
+                contracts.liquidityCertificate,
+                'InsufficientPrivilege',
+            );
         });
     });
 });
