@@ -36,8 +36,8 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
    * @param _protocol the protocol MD is used for.
    */
     function init(address _metaDefender, address _protocol) external {
-        require(!initialized, "already initialized");
         require(_metaDefender != address(0), "liquidityPool cannot be 0 address");
+        require(!initialized, "already initialized");
         metaDefender = _metaDefender;
         protocol = _protocol;
         initialized = true;
@@ -48,7 +48,7 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
    *
    * @param owner The owner of the certificates
    */
-    function medalProviders(address owner) external view override returns (uint[] memory) {
+    function getMedalProviders(address owner) external view override returns (uint[] memory) {
         uint numCerts = balanceOf(owner);
         uint[] memory ids = new uint[](numCerts);
 
@@ -166,17 +166,6 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
         require(_isApprovedOrOwner(spender, medalId), "attempted to burn nonexistent certificate, or not owner");
         delete _medalInfo[medalId];
         _burn(medalId);
-    }
-
-    /**
-     * @dev Hook that is called before any token transfer. This includes minting and burning.
-   */
-    function _beforeTokenTransfer(
-        address, // from
-        address, // to
-        uint tokenId
-    ) internal view override {
-        // TODO: Any hooks we need for transferring the token?
     }
 
     error InsufficientPrivilege();

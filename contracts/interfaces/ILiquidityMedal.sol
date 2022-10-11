@@ -22,7 +22,7 @@ interface ILiquidityMedal {
 
     function protocol() external view returns (address);
 
-    function medalProviders(address owner) external view returns (uint[] memory);
+    function getMedalProviders(address owner) external view returns (uint[] memory);
 
     function getReserve(uint medalId) external view returns (uint);
 
