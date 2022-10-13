@@ -163,6 +163,7 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
+        // Actually, we have not design the burn process of the medal, so this line cannot be tested.
         require(_isApprovedOrOwner(spender, medalId), "attempted to burn nonexistent certificate, or not owner");
         delete _medalInfo[medalId];
         _burn(medalId);

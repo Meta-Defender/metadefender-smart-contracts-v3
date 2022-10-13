@@ -24,7 +24,7 @@ async function main() {
     const [deployer, user] = await ethers.getSigners();
     const c = await deployTestSystem(deployer);
     await seedTestSystem(deployer, c, 1000000, [user]);
-    await mimic(user, 100, 100, 100, c);
+    await mimic(user, 100, 10, 100, c);
 }
 
 async function getNFTCount() {
@@ -69,6 +69,17 @@ async function mimic(
             mn -= 1;
             if (mn > 0) {
                 // do something in mn
+                // random select mn certificate to exit.
+                const providers =
+                    await c.liquidityCertificate.getLiquidityProviders(
+                        await s.getAddress(),
+                    );
+                const r = Math.floor(Math.random() * providers.length);
+                if (providers.length > 0) {
+                    await c.metaDefender
+                        .connect(s)
+                        .certificateProviderExit(providers[r]);
+                }
             }
         } else {
             pn -= 1;
