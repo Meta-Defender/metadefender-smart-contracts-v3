@@ -2,6 +2,7 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.3",
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "@types/fs-extra": "^9.0.13",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.2.1",
     "hardhat": "^2.11.2",
@@ -12,6 +13,7 @@
     "@openzeppelin/contracts": "^4.7.3",
     "@typescript-eslint/eslint-plugin": "^5.37.0",
     "eslint": "8.22.0",
+    "fs-extra": "^10.1.0",
     "gaussian": "^1.2.0",
     "moment": "^2.29.4",
     "poisson-process": "^1.0.1"
