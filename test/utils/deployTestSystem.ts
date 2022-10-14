@@ -37,17 +37,17 @@ export async function deployTestContracts(
         await ethers.getContractFactory('LiquidityCertificate')
     )
         .connect(deployer)
-        .deploy('protocolLC', 'protocolLC')) as LiquidityCertificate;
+        .deploy('liquidityCertificate', 'LC')) as LiquidityCertificate;
 
     const liquidityMedal = (await (
         await ethers.getContractFactory('LiquidityMedal')
     )
         .connect(deployer)
-        .deploy('protocolLM', 'protocolLM')) as LiquidityMedal;
+        .deploy('liquidityMedal', 'LM')) as LiquidityMedal;
 
     const policy = (await (await ethers.getContractFactory('Policy'))
         .connect(deployer)
-        .deploy('protocolPolicy', 'protocolPolicy')) as Policy;
+        .deploy('policy', 'Policy')) as Policy;
 
     const mockRiskReserve = (await (
         await ethers.getContractFactory('MockRiskReserve')
