@@ -1,9 +1,11 @@
 import * as fs from 'fs-extra';
 import { MockRiskReserve, TestERC20 } from '../typechain-types';
+import { toBN, ZERO_ADDRESS } from './util/web3utils';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hre = require('hardhat');
 
 async function main() {
+    const Signers = await hre.ethers.getSigners();
     // deploy
     fs.writeFileSync('./.env', '\n');
 
@@ -74,6 +76,26 @@ async function main() {
         './.env',
         'TestERC20Address=' + '"' + TestERC20.address + '"' + '\n',
     );
+
+    // begin init the contracts
+    // init the metadefender contract
+    await MetaDefender.init(
+        TestERC20.address,
+        Signers[0].getAddress(),
+        Signers[0].getAddress(),
+        ZERO_ADDRESS,
+        MockRiskReserve.address,
+        LiquidityCertificate.address,
+        LiquidityMedal.address,
+        Policy.address,
+        toBN('0.02'),
+        toBN('0.02'),
+    );
+
+    await LiquidityCertificate.init(MetaDefender.address, ZERO_ADDRESS);
+    await LiquidityMedal.init(MetaDefender.address, ZERO_ADDRESS);
+    await Policy.init(MetaDefender.address, ZERO_ADDRESS);
+    await MockRiskReserve.init(MetaDefender.address, TestERC20.address);
 }
 
 main()
