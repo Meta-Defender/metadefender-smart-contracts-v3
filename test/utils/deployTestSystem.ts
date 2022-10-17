@@ -107,8 +107,8 @@ export async function initTestSystem(
     );
 
     await c.mockRiskReserve.init(
-        c.test.quoteToken.address,
         c.metaDefender.address,
+        c.test.quoteToken.address,
     );
 }
 

@@ -16,7 +16,7 @@ contract MockRiskReserve is IMockRiskReserve {
     ITestERC20 internal aUSD;
     IMetaDefender internal metaDefender;
 
-    function init(ITestERC20 _aUSD, IMetaDefender _metaDefender) external {
+    function init(IMetaDefender _metaDefender, ITestERC20 _aUSD) external {
         require(!initialized, "contract already initialized");
         aUSD = _aUSD;
         metaDefender = _metaDefender;
