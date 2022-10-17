@@ -149,7 +149,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         totalCertificateLiquidity = totalCertificateLiquidity.add(liquidity);
         _mint(owner, certificateId);
 
-        emit newLPMinted(block.timestamp,0,liquidity,rewardDebt,shadowDebt);
+        emit NewLPMinted(certificateId, block.timestamp,0,liquidity,rewardDebt,shadowDebt);
         return certificateId;
     }
 
@@ -173,5 +173,5 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     error InsufficientPrivilege();
     error InsufficientLiquidity();
 
-    event newLPMinted(uint timestamp, uint expiryTime, uint liquidity, uint rewardDebt, uint shadowDebt);
+    event NewLPMinted(uint certificateId, uint timestamp, uint expiryTime, uint liquidity, uint rewardDebt, uint shadowDebt);
 }
