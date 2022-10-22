@@ -12,9 +12,11 @@
   "dependencies": {
     "@openzeppelin/contracts": "^4.7.3",
     "@typescript-eslint/eslint-plugin": "^5.37.0",
+    "dotenv": "^16.0.3",
     "eslint": "8.22.0",
     "fs-extra": "^10.1.0",
     "gaussian": "^1.2.0",
+    "inquirer": "^9.1.4",
     "moment": "^2.29.4",
     "poisson-process": "^1.0.1"
   }
