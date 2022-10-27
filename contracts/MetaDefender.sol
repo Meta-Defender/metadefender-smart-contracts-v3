@@ -287,6 +287,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
 
         medalCount = liquidityMedal.mint(
             beneficiary,
+            certificateId,
             certificateInfo.enteredAt,
             certificateInfo.liquidity,
             reserve,

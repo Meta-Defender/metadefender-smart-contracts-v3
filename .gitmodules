@@ -1,0 +1,3 @@
+[submodule "metadefender-subgraph"]
+	path = metadefender-subgraph
+	url = https://github.com/Meta-Defender/metadefender-subgraph
