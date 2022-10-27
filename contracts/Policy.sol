@@ -116,7 +116,7 @@ contract Policy is IPolicy, ERC721Enumerable {
         _policyInfo[policyId] = PolicyInfo(beneficiary, coverage, deposit, enteredAt, expiredAt, shadowImpact, false, false, false);
         _mint(beneficiary, policyId);
 
-        emit newPolicyMinted(beneficiary, coverage, deposit, enteredAt, expiredAt, shadowImpact);
+        emit NewPolicyMinted(beneficiary, policyId, coverage, deposit, enteredAt, expiredAt, shadowImpact);
         return policyId;
     }
 
@@ -206,5 +206,5 @@ contract Policy is IPolicy, ERC721Enumerable {
     error InsufficientPrivilege();
     error InsufficientCoverage();
 
-    event newPolicyMinted(address beneficiary, uint coverage, uint deposit, uint enteredAt, uint expiredAt, uint shadowImpact);
+    event NewPolicyMinted(address beneficiary, uint policyId, uint coverage, uint deposit, uint enteredAt, uint expiredAt, uint shadowImpact);
 }
