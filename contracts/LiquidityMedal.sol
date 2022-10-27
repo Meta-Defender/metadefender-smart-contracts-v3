@@ -135,6 +135,7 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
    */
     function mint(
         address owner,
+        uint medalId,
         uint enteredAt,
         uint liquidity,
         uint reserve,
@@ -145,11 +146,10 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
             revert InsufficientPrivilege();
         }
 
-        uint medalId = nextId++;
         _medalInfo[medalId] = MedalInfo(enteredAt,block.timestamp,liquidity,reserve,shadowDebt,marketShadow);
         _mint(owner, medalId);
 
-        emit NewMedalMinted(enteredAt,block.timestamp,liquidity,reserve,shadowDebt,marketShadow);
+        emit NewMedalMinted(owner,medalId,enteredAt,block.timestamp,liquidity,reserve,shadowDebt,marketShadow);
         return medalId;
     }
 
@@ -172,5 +172,5 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
     error InsufficientPrivilege();
     error InsufficientLiquidity();
 
-    event NewMedalMinted(uint enteredAT, uint exitedAt, uint liquidity, uint reserve, uint shadowDebt, uint marketShadow);
+    event NewMedalMinted(address owner, uint medalId, uint enteredAT, uint exitedAt, uint liquidity, uint reserve, uint shadowDebt, uint marketShadow);
 }

@@ -38,6 +38,7 @@ interface ILiquidityMedal {
 
     function mint(
         address owner,
+        uint medalId,
         uint enteredAt,
         uint liquidity,
         uint reserve,

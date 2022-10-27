@@ -85,8 +85,9 @@ describe('MetaDefender - uint tests', async () => {
             const Ids = await contracts.liquidityMedal.getMedalProviders(
                 await provider1.getAddress(),
             );
+            // the certificateId and medalId will be the same with the same liquidity.
             expect(Ids[0]).to.be.equal(0);
-            expect(Ids[1]).to.be.equal(1);
+            expect(Ids[1]).to.be.equal(2);
         });
     });
 
@@ -164,6 +165,7 @@ describe('MetaDefender - uint tests', async () => {
                     .connect(provider1)
                     .mint(
                         await provider1.getAddress(),
+                        toBN('10000'),
                         toBN('10000'),
                         toBN('10000'),
                         toBN('10000'),
