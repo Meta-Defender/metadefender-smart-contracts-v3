@@ -12,3 +12,6 @@ artifacts
 #Mac files
 .DS_Store
 
+# idea
+.idea/
+.idea/vcs.xml
