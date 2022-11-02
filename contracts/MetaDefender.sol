@@ -167,14 +167,26 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @dev get the fee rate of the pool
+     * @dev get the usable capital of the pool
      */
-    function getFeeAndUsableCapital() public view returns (uint,uint) {
-        uint UsableCapital = capital.freeCapital>= globalInfo.totalCoverage? capital.freeCapital.sub(globalInfo.totalCoverage): 0;
-        if (UsableCapital == 0) {
+    function getUsableCapital() public view override returns (uint) {
+        uint uc = capital.freeCapital>= globalInfo.totalCoverage? capital.freeCapital.sub(globalInfo.totalCoverage): 0;
+        if ( uc == 0) {
             revert InsufficientUsableCapital();
         }
-        return (globalInfo.kLast.divideDecimal(UsableCapital), UsableCapital);
+        return uc;
+    }
+
+    /**
+     * @dev get the fee rate of the pool
+     * @param coverage is the coverage to be secured
+     */
+    function estimateFee(uint coverage) external view override returns (uint) {
+        uint uc = getUsableCapital();
+        if (coverage > uc.multiplyDecimal(MAX_COVERAGE_PERCENTAGE)) {
+            revert CoverageTooLarge(coverage, uc.multiplyDecimal(MAX_COVERAGE_PERCENTAGE));
+        }
+        return globalInfo.fee.multiplyDecimal(uc).divideDecimal(uc.sub(coverage));
     }
 
     /**
@@ -182,11 +194,12 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @param coverage is the coverage to be secured
      */
     function buyCover(address beneficiary, uint coverage) external override {
-        (uint fee, uint uc) = getFeeAndUsableCapital();
+        uint uc = getUsableCapital();
         if (coverage > uc.multiplyDecimal(MAX_COVERAGE_PERCENTAGE)) {
             revert CoverageTooLarge(coverage, uc.multiplyDecimal(MAX_COVERAGE_PERCENTAGE));
         }
-        uint coverFee = coverage.multiplyDecimal(fee);
+        globalInfo.fee = globalInfo.fee.multiplyDecimal(uc).divideDecimal(uc.sub(coverage));
+        uint coverFee = coverage.multiplyDecimal(globalInfo.fee);
         uint deposit = coverFee.multiplyDecimal(FEE_RATE);
         uint totalPay = coverFee.add(deposit);
 
@@ -229,16 +242,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         liquidity,
         liquidity.multiplyDecimal(globalInfo.rewardPerShare),
         liquidity.multiplyDecimal(globalInfo.shadowPerShare));
-        _updateKLastByProvider();
         emit ProviderEntered(providerCount);
-    }
-
-    /**
-     * @dev updateKLast by provider: when a new provider comes in, the fee will stay same while the k will become larger.
-     */
-    function _updateKLastByProvider() internal {
-        (, uint uc) = getFeeAndUsableCapital();
-        globalInfo.kLast = globalInfo.fee.multiplyDecimal(uc);
     }
 
     /**
@@ -295,7 +299,6 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             certificateInfo.liquidity.multiplyDecimal(globalInfo.shadowPerShare)
         );
         aUSD.transfer(msg.sender, withdrawal.add(rewards));
-        _updateKLastByProvider();
         emit ProviderExit(msg.sender);
     }
 
@@ -385,30 +388,12 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         // use a function to update policy's isCancelled status
         policy.changeStatusIsCancelled(_policyId,true);
         globalInfo.currentFreedTs = policyInfo.enteredAt;
-        _updateKLastByCancel(globalInfo.totalCoverage);
+        uint uc = getUsableCapital();
+        globalInfo.fee = globalInfo.fee.multiplyDecimal(uc.sub(policyInfo.coverage)).divideDecimal(uc);
+        if (globalInfo.fee <= globalInfo.minimumFee) {
+            globalInfo.fee = globalInfo.minimumFee;
+        }
         aUSD.transfer(_caller, policyInfo.deposit);
-    }
-
-    /**
-     * @dev update klast by cancelling the policy
-     *
-     * @param _totalCoverage the total coverage of the policies
-     */
-    function _updateKLastByCancel(uint _totalCoverage) internal {
-        if (capital.freeCapital < _totalCoverage) {
-            revert InsufficientLiquidity(capital.freeCapital);
-        }
-        // minimum klast is minimumFee * (availableLiquidity - totalCoverage);
-        if (
-            globalInfo.kLast <
-            globalInfo.minimumFee.multiplyDecimal(
-                capital.freeCapital.sub(_totalCoverage)
-            )
-        ) {
-            globalInfo.kLast = globalInfo.minimumFee.multiplyDecimal(
-                capital.freeCapital.sub(_totalCoverage)
-            );
-        }
     }
 
     /**

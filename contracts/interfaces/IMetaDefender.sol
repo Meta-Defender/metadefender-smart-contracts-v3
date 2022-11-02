@@ -40,7 +40,9 @@ interface IMetaDefender {
 
     function updateMinimumFee(uint minimumFee) external;
 
-    function getFeeAndUsableCapital() external view returns (uint fee, uint usableCapital);
+    function getUsableCapital() external view returns (uint);
+
+    function estimateFee(uint coverage) external view returns (uint);
 
     function buyCover(address beneficiary, uint coverage) external;
 

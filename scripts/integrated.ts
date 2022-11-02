@@ -8,8 +8,10 @@ import { toBN } from './util/web3utils';
 import {
     GaussianDistributionInBuyCover,
     GaussianDistributionInProvide,
+    PoissonDistribution,
 } from './util/simulation';
 import { seedTestSystem } from '../test/utils/seedTestSystem';
+import { fastForward } from '../test/utils';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const poissonProcess = require('poisson-process');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -20,21 +22,154 @@ async function main() {
     // 1: env
     // 2: 10000 accounts
     const days = 365;
+    let policyId = 0;
 
-    const [deployer, user] = await ethers.getSigners();
+    // cn: capital count
+    // mn: medal count
+    // pn: policy count
+
+    const [
+        deployer,
+        user1,
+        user2,
+        user3,
+        user4,
+        user5,
+        user6,
+        user7,
+        user8,
+        user9,
+        user10,
+        user11,
+        user12,
+        user13,
+        user14,
+        user15,
+        user16,
+        user17,
+        user18,
+        user19,
+    ] = await ethers.getSigners();
     const c = await deployTestSystem(deployer);
-    await seedTestSystem(deployer, c, 1000000, [user]);
-    await mimic(user, 100, 10, 100, c);
+    await seedTestSystem(deployer, c, 1000000000, [
+        user1,
+        user2,
+        user3,
+        user4,
+        user5,
+        user6,
+        user7,
+        user8,
+        user9,
+        user10,
+        user11,
+        user12,
+        user13,
+        user14,
+        user15,
+        user16,
+        user17,
+        user18,
+        user19,
+    ]);
+
+    // initial deposit
+    await c.metaDefender
+        .connect(user1)
+        .providerEntrance(await user1.getAddress(), toBN(String(100000000)));
+    // mimic for one day
+    for (let i = 1; i <= days; i++) {
+        // mpc:mean provider count,mec mean exit count,mbc mean buy cover count
+        const counts = await generatePoissonDistribution();
+        await mimic(
+            [
+                user2,
+                user3,
+                user4,
+                user5,
+                user6,
+                user7,
+                user8,
+                user9,
+                user10,
+                user11,
+                user12,
+                user13,
+                user14,
+                user15,
+                user16,
+                user17,
+                user18,
+                user19,
+            ],
+            counts[0],
+            counts[1],
+            counts[2],
+            c,
+        );
+        console.log(
+            'After' + i + ' days, usableCapital ',
+            await c.metaDefender.getUsableCapital(),
+        );
+        console.log(
+            'After' + i + ' days, fee ',
+            (await c.metaDefender.globalInfo()).fee,
+        );
+        await fastForward(86400);
+        policyId = await getThePolicyId(
+            c,
+            [
+                user2,
+                user3,
+                user4,
+                user5,
+                user6,
+                user7,
+                user8,
+                user9,
+                user10,
+                user11,
+                user12,
+                user13,
+                user14,
+                user15,
+                user16,
+                user17,
+                user18,
+                user19,
+            ],
+            policyId,
+        );
+        console.log('PolicyId is ', policyId);
+    }
 }
 
-async function getNFTCount() {
-    // get certificate count
-    // get medal count
-    // get policy count
-}
-
-async function getKLast(c: TestSystemContractsType) {
-    return (await c.metaDefender.globalInfo()).kLast;
+async function getThePolicyId(
+    c: TestSystemContractsType,
+    s: Signer[],
+    policyId: number,
+) {
+    while (true) {
+        try {
+            const policyInfo = await c.policy.getPolicyInfo(policyId);
+            for (let i = 0; i < s.length; i++) {
+                if ((await s[i].getAddress()) == policyInfo.beneficiary) {
+                    if (!policyInfo.isCancelled) {
+                        try {
+                            await c.metaDefender
+                                .connect(s[i])
+                                .cancelPolicy(policyId);
+                        } catch (e) {
+                            return policyId;
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            return policyId;
+        }
+        policyId += 1;
+    }
 }
 
 // certificateNumber
@@ -43,21 +178,24 @@ async function mimic(
     // cn: capital count
     // mn: medal count
     // pn: policy count
-    s: Signer,
+    signers: Signer[],
     cn: number,
     mn: number,
     pn: number,
     c: TestSystemContractsType,
 ) {
     while (cn + mn + pn > 0) {
+        const s = signers[Math.floor(18 * Math.random())];
         if (Math.random() < cn / (cn + mn + pn)) {
-            cn -= 1;
             if (cn > 0) {
+                cn -= 1;
                 const amountToProvide = gaussian(
                     GaussianDistributionInProvide.mean,
                     GaussianDistributionInProvide.variance,
                 ).random();
-                console.log(amountToProvide[0]);
+                if (amountToProvide < 2) {
+                    continue;
+                }
                 await c.metaDefender
                     .connect(s)
                     .providerEntrance(
@@ -66,15 +204,16 @@ async function mimic(
                     );
             }
         } else if (Math.random() < (cn + mn) / (cn + mn + pn)) {
-            mn -= 1;
             if (mn > 0) {
-                // do something in mn
-                // random select mn certificate to exit.
+                mn -= 1;
                 const providers =
                     await c.liquidityCertificate.getLiquidityProviders(
                         await s.getAddress(),
                     );
                 const r = Math.floor(Math.random() * providers.length);
+                if (Number(providers[r]) == 0) {
+                    continue;
+                }
                 if (providers.length > 0) {
                     await c.metaDefender
                         .connect(s)
@@ -82,13 +221,15 @@ async function mimic(
                 }
             }
         } else {
-            pn -= 1;
             if (pn > 0) {
+                pn -= 1;
                 const amountToBuyCover = gaussian(
                     GaussianDistributionInBuyCover.mean,
                     GaussianDistributionInBuyCover.variance,
                 ).random();
-                console.log(amountToBuyCover[0]);
+                if (amountToBuyCover < 2) {
+                    continue;
+                }
                 await c.metaDefender
                     .connect(s)
                     .buyCover(
@@ -97,18 +238,21 @@ async function mimic(
                     );
             }
         }
-        console.log(await getKLast(c));
+        // console.log((await c.metaDefender.globalInfo()).fee);
     }
 }
 
-async function generatePoissonDistribution(days: number) {
-    // generate random data
-    // in a day.
-    for (let i = 0; i < days; i++) {
-        const mpc = poissonProcess.sample(poissonProcess.muDailyProvideCount);
-        const mec = poissonProcess.sample(poissonProcess.muDailyExitCount);
-        const mbc = poissonProcess.sample(poissonProcess.muDailyBuyCoverCount);
-    }
+async function generatePoissonDistribution(): Promise<number[]> {
+    const mpc = Math.floor(
+        poissonProcess.sample(PoissonDistribution.muDailyProvideCount),
+    );
+    const mec = Math.floor(
+        poissonProcess.sample(PoissonDistribution.muDailyExitCount),
+    );
+    const mbc = Math.floor(
+        poissonProcess.sample(PoissonDistribution.muDailyBuyCoverCount),
+    );
+    return [mpc, mec, mbc];
 }
 
 main()
