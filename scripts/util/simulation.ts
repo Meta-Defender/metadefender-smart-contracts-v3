@@ -1,18 +1,18 @@
 export const GaussianDistributionInProvide = {
     name: 'GaussianDistributionInProvide',
     mean: 1000,
-    variance: 100,
+    variance: 10000000,
 };
 
 export const GaussianDistributionInBuyCover = {
     name: 'GaussianDistributionInBuyCover',
-    mean: 100,
-    variance: 100,
+    mean: 7000,
+    variance: 10000000,
 };
 
 export const PoissonDistribution = {
     name: 'PoissonDistribution',
-    muDailyProvideCount: 0.0,
-    muDailyExitCount: 0.0,
-    muDailyBuyCoverCount: 0.0,
+    muDailyProvideCount: 100,
+    muDailyExitCount: 80,
+    muDailyBuyCoverCount: 50,
 };
