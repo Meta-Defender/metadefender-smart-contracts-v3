@@ -5,17 +5,26 @@ interface ILiquidityMedal {
 
     struct MedalInfo {
         // the time one entered the liquidity pool
-        uint enteredAt;
+        uint enteredEpoch;
         // the time one exit from the liquidity pool
-        uint exitedAt;
+        uint exitedEpoch;
         // the liquidity one entered the pool with
         uint liquidity;
-        // the reserve when the medal was minted
-        uint reserve;
         // the amount of shadowDebt when the medal was minted
-        uint shadowDebt;
-        // the shadow when this medal was minted
-        uint marketShadow;
+        uint debtSPS;
+    }
+
+    struct MedalInfoCurrent {
+        // amount = liquidity * η
+        uint amount;
+        // frozen
+        uint frozen;
+        // the amount of money one can withdraw when he/she wants to exit from the pool and it will become 0 when shadow > amount
+        uint withdrawal;
+        // the amount of money one protect for other, which may be greater than that he/she deposits.
+        uint shadow;
+        // the share of pool when someone exits.
+        uint liquidity;
     }
 
     function metaDefender() external view returns (address);
@@ -24,26 +33,23 @@ interface ILiquidityMedal {
 
     function getMedalProviders(address owner) external view returns (uint[] memory);
 
-    function getReserve(uint medalId) external view returns (uint);
+    function getEnteredEpoch(uint medalId) external view returns (uint);
 
-    function getEnteredAt(uint medalId) external view returns (uint);
-
-    function getExitedAt(uint medalId) external view returns (uint);
+    function getExitedEpoch(uint medalId) external view returns (uint);
 
     function getMedalInfo(uint medalId) external view returns (MedalInfo memory);
 
-    function updateReserve(uint medalId, uint reserve) external;
+    function updateMedalDebtSPS(uint medalId, uint debtSPS) external;
 
     function belongsTo(uint medalId) external view returns (address);
 
     function mint(
         address owner,
         uint medalId,
-        uint enteredAt,
+        uint enteredEpoch,
+        uint exitedEpoch,
         uint liquidity,
-        uint reserve,
-        uint shadowDebt,
-        uint marketShadow
+        uint debtSPS
     ) external returns (uint);
 
     function burn(address spender, uint medalId) external;

@@ -4,11 +4,23 @@ pragma solidity 0.8.9;
 interface ILiquidityCertificate {
 
     struct CertificateInfo {
-        // the time one entered the liquidity pool
-        uint enteredAt;
+        uint epoch;
         uint liquidity;
-        uint rewardDebt;
-        uint shadowDebt;
+        uint debtRPS;
+        uint debtSPS;
+    }
+
+    struct CertificateInfoCurrent {
+        // amount = liquidity * η
+        uint amount;
+        // frozen
+        uint frozen;
+        // the amount of money one can withdraw when he/she wants to exit from the pool and it will become 0 when shadow > amount
+        uint withdrawal;
+        // the amount of money one protect for other, which may be greater than that he/she deposits.
+        uint shadow;
+        // the share of pool when someone exits.
+        uint liquidity;
     }
 
     // get the protocol address
@@ -18,7 +30,11 @@ interface ILiquidityCertificate {
     function metaDefender() external view returns (address);
 
     // get the totalCertificateLiquidity.
-    function totalCertificateLiquidity() external view returns (uint);
+    function totalValidCertificateLiquidity() external view returns (uint);
+
+    function totalPendingEntranceCertificateLiquidity() external view returns (uint);
+
+    function totalPendingExitCertificateLiquidity() external view returns (uint);
 
     function MIN_LIQUIDITY() external view returns (uint);
 
@@ -26,17 +42,20 @@ interface ILiquidityCertificate {
 
     function getLiquidity(uint certificateId) external view returns (uint);
 
-    function getEnteredAt(uint certificateId) external view returns (uint);
+    function getEpoch(uint certificateId) external view returns (uint);
 
     function getCertificateInfo(uint certificateId) external view returns (CertificateInfo memory);
 
-    function addRewardDebt(uint certificateId, uint rewards) external;
+    function updateCertificateDebtRPS(uint certificateId, uint RPS) external;
+
+    function newEpochCreated() external;
 
     function mint(
         address owner,
         uint amount,
         uint rewardDebt,
-        uint shadowDebt
+        uint shadowDebt,
+        uint enteredAt
     ) external returns (uint);
 
     function burn(address spender, uint certificateId) external;
