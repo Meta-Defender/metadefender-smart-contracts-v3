@@ -60,21 +60,12 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
     }
 
     /**
-     * @notice Returns certificate's `liquidity`.
-   *
-   * @param medalId The id of the medal.
-   */
-    function getReserve(uint medalId) external view override returns (uint) {
-        return _medalInfo[medalId].reserve;
-    }
-
-    /**
      * @notice Returns medal's `enteredAt`.
    *
    * @param medalId The id of the medal.
    */
-    function getEnteredAt(uint medalId) external view override returns (uint) {
-        return _medalInfo[medalId].enteredAt;
+    function getEnteredEpoch(uint medalId) external view override returns (uint) {
+        return _medalInfo[medalId].enteredEpoch;
     }
 
     /**
@@ -82,8 +73,8 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
    *
    * @param medalId The id of the medal.
    */
-    function getExitedAt(uint medalId) external view override returns (uint) {
-        return _medalInfo[medalId].exitedAt;
+    function getExitedEpoch(uint medalId) external view override returns (uint) {
+        return _medalInfo[medalId].exitedEpoch;
     }
 
     /**
@@ -97,7 +88,7 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
     override
     returns (ILiquidityMedal.MedalInfo memory)
     {
-        require(_medalInfo[medalId].enteredAt != 0, "medal does not exist");
+        require(_medalInfo[medalId].enteredEpoch != 0, "medal does not exist");
         return _medalInfo[medalId];
     }
 
@@ -105,13 +96,13 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
      * @dev updates the reward debt when a provider claims his/her rewards.
     *
     * @param medalId The id of the medal.
-    * @param reserve The reserve of the medal.
+    * @param debtSPS The reserve of the medal.
     */
-    function updateReserve(uint medalId, uint reserve) external override {
+    function updateMedalDebtSPS(uint medalId, uint debtSPS) external override {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
-        _medalInfo[medalId].reserve = reserve;
+        _medalInfo[medalId].debtSPS = debtSPS;
     }
 
     /**
@@ -123,33 +114,32 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
         return ownerOf(medalId);
     }
 
-
     /**
      * @dev Mints a new certificate and transfers it to `owner`.
    *
    * @param owner The account that will own the medal.
-   * @param enteredAt The timestamp origin provider enters into the pool.
+   * @param medalId medalId derives from the certificateId.
+   * @param enteredEpoch The timestamp(epoch) origin provider enters into the pool.
+   * @param exitedEpoch The timestamp(epoch) the provider exits from the pool.
    * @param liquidity The liquidity when the provider exits from the pool.
-   * @param shadowDebt The past shadow of the provider when the provider exits the system.
-   * @param marketShadow The market shadow when the provider exits the system.
+   * @param debtSPS The shadow per share debt when the provider exits.
    */
     function mint(
         address owner,
         uint medalId,
-        uint enteredAt,
+        uint enteredEpoch,
+        uint exitedEpoch,
         uint liquidity,
-        uint reserve,
-        uint shadowDebt,
-        uint marketShadow
+        uint debtSPS
     ) external override returns (uint) {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
 
-        _medalInfo[medalId] = MedalInfo(enteredAt,block.timestamp,liquidity,reserve,shadowDebt,marketShadow);
+        _medalInfo[medalId] = MedalInfo(enteredEpoch,exitedEpoch,liquidity, debtSPS);
         _mint(owner, medalId);
 
-        emit NewMedalMinted(owner,medalId,enteredAt,block.timestamp,liquidity,reserve,shadowDebt,marketShadow);
+        emit NewMedalMinted(owner,medalId,enteredEpoch,exitedEpoch,liquidity,debtSPS);
         return medalId;
     }
 
@@ -172,5 +162,5 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
     error InsufficientPrivilege();
     error InsufficientLiquidity();
 
-    event NewMedalMinted(address owner, uint medalId, uint enteredAT, uint exitedAt, uint liquidity, uint reserve, uint shadowDebt, uint marketShadow);
+    event NewMedalMinted(address owner, uint medalId, uint enteredEpoch, uint exitedEpoch, uint liquidity, uint debtSPS);
 }

@@ -166,16 +166,9 @@ describe('MetaDefender - uint tests', async () => {
             expect(certificateInfo.rewardDebt).to.be.equal(0);
             expect(certificateInfo.shadowDebt).to.be.equal(0);
             expect(certificateInfo.liquidity).to.be.equal(toBN('10000'));
-            // check the change of k
-            expect(
-                (await contracts.metaDefender.globalInfo()).kLast,
-            ).to.be.equal(toBN('200'));
             await contracts.metaDefender
                 .connect(provider2)
                 .providerEntrance(await provider2.getAddress(), toBN('10000'));
-            expect(
-                (await contracts.metaDefender.globalInfo()).kLast,
-            ).to.be.equal(toBN('400'));
         });
     });
 
@@ -217,23 +210,27 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .providerEntrance(await provider1.getAddress(), toBN('10000'));
+                .providerEntrance(await provider1.getAddress(), toBN('10200'));
             await contracts.metaDefender
                 .connect(coverBuyer1)
-                .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
+                .buyCover(await coverBuyer1.getAddress(), toBN('200'));
             expect(
                 await contracts.test.quoteToken.balanceOf(
                     await provider1.getAddress(),
                 ),
-            ).to.be.equal(toBN('90000'));
+            ).to.be.equal(toBN('89800'));
+            // 2 * 10200 / 10000 = 2.04
+            // 2.04 % * 200 = 4.08
+            // 4.08 * (1+0.05) = 4.284
+            // 10000 - 4.284 = 9995.716
             expect(
                 await contracts.test.quoteToken.balanceOf(
                     await coverBuyer1.getAddress(),
                 ),
-            ).to.be.equal(toBN('99958'));
+            ).to.be.equal(toBN('99995.716'));
             expect(
                 (await contracts.metaDefender.globalInfo()).totalCoverage,
-            ).to.be.equal(toBN('2000'));
+            ).to.be.equal(toBN('200'));
             const capital = await contracts.metaDefender.capital();
             expect(capital[0]).to.be.equal(toBN('10000'));
             expect(capital[1]).to.be.equal(toBN('0'));

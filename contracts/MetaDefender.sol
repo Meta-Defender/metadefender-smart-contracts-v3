@@ -16,6 +16,8 @@ import "./interfaces/IMockRiskReserve.sol";
 import "./interfaces/ILiquidityCertificate.sol";
 import "./interfaces/ILiquidityMedal.sol";
 import "./interfaces/IPolicy.sol";
+import "./interfaces/IEpochManage.sol";
+import "./interfaces/IMetaDefenderGlobals.sol";
 
 import "./Lib/SafeDecimalMath.sol";
 
@@ -36,6 +38,8 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     ILiquidityMedal internal liquidityMedal;
     IPolicy internal policy;
     IMockRiskReserve internal mockRiskReserve;
+    IEpochManage internal epochManage;
+    IMetaDefenderGlobals internal metaDefenderGlobals;
 
     bool public initialized = false;
     address public judger;
@@ -43,7 +47,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     address public protocol;
     uint public TEAM_RESERVE_RATE = 5e16;
     uint public FEE_RATE = 5e16;
-    uint public MAX_COVERAGE_PERCENTAGE = 2e17;
+    uint public MAX_COVERAGE_PERCENTAGE = 2e16;
     uint public COVER_TIME = 90 days;
     // index the providers
     uint public providerCount;
@@ -66,16 +70,14 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @param _aUSD the IERC20 instance of AcalaUSD
      * @param _judger the address of judger
      * @param _official the address of official
-     * @param _protocol the address of protocol
      * @param _mockRiskReserve the address of risk reserve pool
+     * @param _epochManage the address of epoch manage contract
      */
     function init(
         // basic information
         IERC20 _aUSD,
         address _judger,
         address _official,
-        // the contractAddress wanna to be insured.
-        address _protocol,
 
         // riskReserve
         IMockRiskReserve _mockRiskReserve,
@@ -84,6 +86,10 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         ILiquidityCertificate _liquidityCertificate,
         ILiquidityMedal _liquidityMedal,
         IPolicy _policy,
+
+        // functional contracts.
+        IEpochManage _epochManage,
+        IMetaDefenderGlobals _metaDefenderGlobals,
 
         // initialFee and minimum Fee
         uint initialFee,
@@ -96,13 +102,14 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         judger = _judger;
         official = _official;
 
-        protocol = _protocol;
         globalInfo.exchangeRate = SafeDecimalMath.UNIT;
 
         mockRiskReserve = _mockRiskReserve;
         liquidityCertificate = _liquidityCertificate;
         liquidityMedal = _liquidityMedal;
         policy = _policy;
+        epochManage = _epochManage;
+        metaDefenderGlobals = _metaDefenderGlobals;
 
         globalInfo.fee = initialFee;
         globalInfo.minimumFee = minimumFee;
@@ -183,9 +190,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      */
     function estimateFee(uint coverage) external view override returns (uint) {
         uint uc = getUsableCapital();
-        if (coverage > uc.multiplyDecimal(MAX_COVERAGE_PERCENTAGE)) {
-            revert CoverageTooLarge(coverage, uc.multiplyDecimal(MAX_COVERAGE_PERCENTAGE));
-        }
+        // we don't revert if the coverage is too large, so we need to remind the user of that in the frontend.
         return globalInfo.fee.multiplyDecimal(uc).divideDecimal(uc.sub(coverage));
     }
 
@@ -193,26 +198,22 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @dev buy Cover
      * @param coverage is the coverage to be secured
      */
-    function buyCover(address beneficiary, uint coverage) external override {
-        uint uc = getUsableCapital();
-        if (coverage > uc.multiplyDecimal(MAX_COVERAGE_PERCENTAGE)) {
-            revert CoverageTooLarge(coverage, uc.multiplyDecimal(MAX_COVERAGE_PERCENTAGE));
+    function buyCover(address beneficiary, uint coverage, uint duration) external override {
+        IMetaDefenderGlobals.GlobalInfo memory globalInfo = metaDefenderGlobals.getMetaDefenderGlobals();
+        if (coverage > globalInfo.lastEpochUsableCapital.multiplyDecimal(MAX_COVERAGE_PERCENTAGE)) {
+            revert CoverageTooLarge(coverage, globalInfo.lastEpochUsableCapital.multiplyDecimal(MAX_COVERAGE_PERCENTAGE));
         }
-        globalInfo.fee = globalInfo.fee.multiplyDecimal(uc).divideDecimal(uc.sub(coverage));
-        uint coverFee = coverage.multiplyDecimal(globalInfo.fee);
+        uint fee = metaDefenderGlobals.calculateFee(coverage);
+        uint coverFee = coverage.multiplyDecimal(fee);
         uint deposit = coverFee.multiplyDecimal(FEE_RATE);
         uint totalPay = coverFee.add(deposit);
-
         aUSD.transferFrom(msg.sender, address(this), totalPay);
-        globalInfo.totalCoverage = globalInfo.totalCoverage.add(coverage);
-        uint shadowImpact = coverage.divideDecimal(liquidityCertificate.totalCertificateLiquidity());
-        globalInfo.shadowPerShare = globalInfo.shadowPerShare.add(shadowImpact);
 
-        uint rewardForTeam = coverFee.multiplyDecimal(TEAM_RESERVE_RATE);
-        globalInfo.claimableTeamReward = globalInfo.claimableTeamReward.add(rewardForTeam);
-        uint rewardForProviders = coverFee.sub(rewardForTeam);
-        uint rewardImpact = rewardForProviders.divideDecimal(liquidityCertificate.totalCertificateLiquidity());
-        globalInfo.rewardPerShare = globalInfo.rewardPerShare.add(rewardImpact);
+        uint256 reward4Team = coverFee.multiplyDecimal(TEAM_RESERVE_RATE);
+        uint256 deltaRPS = (coverFee.sub(reward4Team)).divideDecimal(liquidityCertificate.totalValidCertificateLiquidity());
+        uint256 deltaSPS = coverage.divideDecimal(liquidityCertificate.totalValidCertificateLiquidity());
+
+        metaDefenderGlobals.updateGlobalsBuyCover(coverage, deltaRPS, deltaSPS, reward4Team);
 
         // mint a new policy NFT
         uint policyId = policy.mint(
@@ -221,7 +222,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             deposit,
             block.timestamp,
             block.timestamp.add(COVER_TIME),
-            shadowImpact
+            deltaSPS
         );
 
         emit NewPolicyMinted(policyId);
@@ -231,30 +232,95 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @dev provider enters and provide the capitals
      * @param amount the amount of ausd to be provided
      */
-    function providerEntrance(address beneficiary, uint amount) external override {
-        // An address will only to be act as a provider only once
+    function certificateProviderEntrance(address beneficiary, uint amount) external override {
+        IMetaDefenderGlobals.GlobalInfo memory globalInfo = metaDefenderGlobals.getMetaDefenderGlobals();
         aUSD.transferFrom(msg.sender, address(this), amount);
+        metaDefenderGlobals.updateGlobalsCertificateProviderEntrance(amount);
         uint liquidity = amount.divideDecimal(globalInfo.exchangeRate);
-        // we have to add total capital in this pool.
-        capital.freeCapital = capital.freeCapital.add(amount);
         providerCount = liquidityCertificate.mint(
-        beneficiary,
-        liquidity,
-        liquidity.multiplyDecimal(globalInfo.rewardPerShare),
-        liquidity.multiplyDecimal(globalInfo.shadowPerShare));
+            beneficiary,
+            liquidity,
+            liquidity.multiplyDecimal(globalInfo.lastEpochAccRPS),
+            liquidity.multiplyDecimal(globalInfo.lastEpochAccSPS),
+            epochManage.getCurrentEpoch()
+        );
         emit ProviderEntered(providerCount);
     }
 
+
     /**
-     * @dev getRewards calculates the rewards for the provider
+     * @dev providerExit retrieve the rewards for the providers in the pool
      * @param certificateId the certificateId
      */
-    function getRewards(uint certificateId) public view override returns (uint) {
+    function certificateProviderExit(uint certificateId) external override reentrancyGuard {
         ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
-        return
-            certificateInfo.liquidity.multiplyDecimal(globalInfo.rewardPerShare) > (certificateInfo.rewardDebt)
-                ? certificateInfo.liquidity.multiplyDecimal(globalInfo.rewardPerShare).sub(certificateInfo.rewardDebt)
-                : 0;
+        ILiquidityCertificate.CertificateInfoCurrent memory certificateInfoCurrent = getCertificateCurrentInfo(certificateId);
+        IMetaDefenderGlobals.GlobalInfo memory globalInfo = metaDefenderGlobals.getMetaDefenderGlobals();
+
+        (uint deltaRPS, uint rewards) = getDeltaRPS(certificateId);
+        metaDefenderGlobals.updateGlobalsCertificateProviderExit(certificateInfoCurrent.amount, certificateInfoCurrent.frozen);
+
+        // now we will burn the liquidity certificate and mint a new medal for the provider
+        address beneficiary = liquidityCertificate.belongsTo(certificateId);
+        liquidityCertificate.burn(msg.sender, certificateId);
+
+        medalCount = liquidityMedal.mint(
+            beneficiary,
+            certificateId,
+            certificateInfo.epoch,
+            epochManage.getCurrentEpoch(),
+            certificateInfoCurrent.liquidity,
+            certificateInfo.debtSPS
+        );
+
+        // transfer
+        aUSD.transfer(msg.sender, certificateInfoCurrent.withdrawal.add(rewards));
+        emit ProviderExit(msg.sender);
+    }
+
+    function getCertificateCurrentInfo(uint certificateId) internal view returns (ILiquidityCertificate.CertificateInfoCurrent memory) {
+        ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
+        IMetaDefenderGlobals.GlobalInfo memory globalInfo = metaDefenderGlobals.getMetaDefenderGlobals();
+        IEpochManage.EpochInfo memory epochInfo = epochManage.getEpochInfo();
+
+        uint amount = certificateInfo.liquidity.multiplyDecimal(globalInfo.exchangeRate);
+        uint shadow = certificateInfo.liquidity.multiplyDecimal(globalInfo.lastEpochAccSPS.add(epochInfo.SPSInSettling));
+        uint withdrawal = amount > shadow ? amount.sub(shadow) : 0;
+        uint frozen = amount.sub(withdrawal);
+        uint liquidity = frozen.divideDecimal(globalInfo.exchangeRate);
+        return ILiquidityCertificate.CertificateInfoCurrent({
+            amount: amount,
+            frozen: frozen,
+            withdrawal: withdrawal,
+            shadow: shadow,
+            liquidity: liquidity
+        });
+    }
+
+
+    /**
+     * @dev getDeltaRPS calculates the rewards for the provider
+     * @param certificateId the certificateId
+     */
+    function getDeltaRPS(uint certificateId) public view override returns (uint, uint) {
+        ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
+        IMetaDefenderGlobals.GlobalInfo memory globalInfo = metaDefenderGlobals.getMetaDefenderGlobals();
+        uint deltaRPS = globalInfo.lastEpochAccRPS > certificateInfo.debtRPS ? globalInfo.lastEpochAccRPS.sub(certificateInfo.debtRPS) : 0;
+        uint rewards = certificateInfo.liquidity.multiplyDecimal(deltaRPS);
+        return(deltaRPS,rewards);
+    }
+
+    /**
+     * @dev getDeltaSPS calculates the rewards for the provider
+     * @param medalId The medalId.
+     */
+    function getDebtSPS(uint medalId) public view override returns (uint, uint) {
+        ILiquidityMedal.MedalInfo memory medalInfo = liquidityMedal.getMedalInfo(medalId);
+        IMetaDefenderGlobals.GlobalInfo memory globalInfo = metaDefenderGlobals.getMetaDefenderGlobals();
+        IEpochManage.EpochInfo memory epochInfo = epochManage.getEpochInfo();
+        uint debtSPS = globalInfo.lastEpochAccSPS.sub(epochInfo.SPSInBuying);
+        uint withdrawal = medalInfo.liquidity.multiplyDecimal(medalInfo.debtSPS.sub(debtSPS));
+        return(debtSPS, withdrawal);
     }
 
     /**
@@ -265,92 +331,22 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         if (msg.sender != (liquidityCertificate.belongsTo(certificateId))) {
             revert InsufficientPrivilege();
         }
-        uint rewards = getRewards(certificateId);
-        liquidityCertificate.addRewardDebt(certificateId, rewards);
+        (uint deltaRPS, uint rewards) = getDeltaRPS(certificateId);
+        liquidityCertificate.updateCertificateDebtRPS(certificateId, deltaRPS);
         aUSD.transfer(msg.sender, rewards);
     }
 
     /**
-     * @dev providerExit retrieve the rewards for the providers in the pool
-     * @param certificateId the certificateId
+     * @dev claimRewards retrieve the rewards for the providers in the pool
+     * @param medalId The medalId.
      */
-    function certificateProviderExit(uint certificateId) external override reentrancyGuard {
-        ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
-        (uint withdrawal, ) = getWithdrawalAndShadowByCertificate(certificateId);
-        uint rewards = getRewards(certificateId);
-        uint reserve = certificateInfo.liquidity.multiplyDecimal(globalInfo.exchangeRate).sub(withdrawal);
-
-        // update the freeCapital;
-        capital.freeCapital = capital.freeCapital.sub(certificateInfo.liquidity.multiplyDecimal(globalInfo.exchangeRate));
-        // update the frozenCapital;
-        capital.frozenCapital = capital.frozenCapital.add(certificateInfo.liquidity.multiplyDecimal(globalInfo.exchangeRate)).sub(withdrawal);
-
-        // now we will burn the liquidity certificate and mint a new medal for the provider
-        address beneficiary = liquidityCertificate.belongsTo(certificateId);
-        liquidityCertificate.burn(msg.sender, certificateId);
-
-        medalCount = liquidityMedal.mint(
-            beneficiary,
-            certificateId,
-            certificateInfo.enteredAt,
-            certificateInfo.liquidity,
-            reserve,
-            certificateInfo.shadowDebt,
-            certificateInfo.liquidity.multiplyDecimal(globalInfo.shadowPerShare)
-        );
-        aUSD.transfer(msg.sender, withdrawal.add(rewards));
-        emit ProviderExit(msg.sender);
-    }
-
-
-    /**
-     * @dev get the unfrozen capital for the provider
-     * @param certificateId the certificateId
-     */
-    function getWithdrawalAndShadowByCertificate(uint certificateId) public view override returns (uint, uint) {
-        ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
-        uint shadow = certificateInfo.enteredAt > globalInfo.currentFreedTs
-        ? certificateInfo.liquidity.multiplyDecimal(globalInfo.shadowPerShare).sub(certificateInfo.shadowDebt)
-        : certificateInfo.liquidity.multiplyDecimal(globalInfo.shadowPerShare.sub(globalInfo.shadowFreedPerShare));
-        uint withdrawal = certificateInfo.liquidity.multiplyDecimal(globalInfo.exchangeRate) > shadow
-            ? certificateInfo.liquidity.multiplyDecimal(globalInfo.exchangeRate).sub(shadow)
-            : 0;
-        return (withdrawal, shadow);
-    }
-
-    /**
-     * @dev medal/historical provider withdraw the unfrozen capital
-     * @param medalId the medalId
-     */
-    function medalProviderWithdraw(uint medalId) external override reentrancyGuard {
+    function withdrawAfterExit(uint medalId) external override reentrancyGuard {
         if (msg.sender != (liquidityMedal.belongsTo(medalId))) {
             revert InsufficientPrivilege();
         }
-        (uint withdrawal, uint shadow) = getWithdrawalAndShadowByMedal(medalId);
-        if (withdrawal > 0) {
-            aUSD.transfer(msg.sender, withdrawal);
-            capital.frozenCapital = capital.frozenCapital.sub(withdrawal);
-        }
-        liquidityMedal.updateReserve(medalId, shadow.divideDecimal(globalInfo.exchangeRate));
-    }
-
-    /**
-     * @dev getWithdrawalAndShadowByMedal calculate the capital can be withdrawn by the medalId.
-     * @param medalId the medalId
-     */
-    function getWithdrawalAndShadowByMedal(uint medalId) public view override returns (uint, uint) {
-        ILiquidityMedal.MedalInfo memory medalInfo = liquidityMedal.getMedalInfo(medalId);
-        // TODO: this function seems to be risky
-        uint shadow = 0;
-        if (medalInfo.enteredAt > globalInfo.currentFreedTs) {
-            shadow = medalInfo.liquidity.multiplyDecimal(globalInfo.shadowPerShare).sub(medalInfo.shadowDebt);
-        } else if (medalInfo.marketShadow >= globalInfo.shadowFreedPerShare) {
-            shadow = medalInfo.liquidity.multiplyDecimal(globalInfo.shadowPerShare.sub(globalInfo.shadowFreedPerShare));
-        } else {
-            shadow = 0;
-        }
-        uint withdrawal = medalInfo.reserve.multiplyDecimal(globalInfo.exchangeRate) > shadow ? medalInfo.reserve.multiplyDecimal(globalInfo.exchangeRate).sub(shadow) : 0;
-        return (withdrawal, shadow);
+        (uint debtSPS, uint withdrawal) = getDebtSPS(medalId);
+        liquidityMedal.updateMedalDebtSPS(medalId, debtSPS);
+        aUSD.transfer(msg.sender, withdrawal);
     }
 
     /**

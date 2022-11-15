@@ -1,6 +1,8 @@
 //SPDX-License-Identifier: ISC
 pragma solidity 0.8.9;
 
+import "./ILiquidityCertificate.sol";
+
 interface IMetaDefender {
 
     struct Capital {
@@ -44,21 +46,13 @@ interface IMetaDefender {
 
     function estimateFee(uint coverage) external view returns (uint);
 
-    function buyCover(address beneficiary, uint coverage) external;
-
-    function getRewards(uint certificateId) external view returns (uint);
+    function buyCover(address beneficiary, uint coverage, uint duration) external;
 
     function claimRewards(uint certificateId) external;
 
-    function providerEntrance(address beneficiary, uint _amount) external;
+    function certificateProviderEntrance(address beneficiary, uint _amount) external;
 
     function certificateProviderExit(uint certificateId) external;
-
-    function getWithdrawalAndShadowByCertificate(uint certificateId) external view returns (uint, uint);
-
-    function getWithdrawalAndShadowByMedal(uint medalId) external view returns (uint, uint);
-
-    function medalProviderWithdraw(uint medalId) external;
 
     function cancelPolicy(uint policyId) external;
 
@@ -69,4 +63,10 @@ interface IMetaDefender {
     function approveApply(uint _id) external;
 
     function mine(uint _amount, address _to) external;
+
+    function getDeltaRPS(uint certificateId) external view returns (uint, uint);
+
+    function withdrawAfterExit(uint medalId) external;
+
+    function getDebtSPS(uint medalId) external view returns (uint, uint);
 }

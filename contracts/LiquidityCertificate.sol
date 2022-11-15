@@ -27,7 +27,9 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     mapping(uint => CertificateInfo) internal _certificateInfo;
     address public override metaDefender;
     address public override protocol;
-    uint public override totalCertificateLiquidity;
+    uint public override totalValidCertificateLiquidity;
+    uint public override totalPendingEntranceCertificateLiquidity;
+    uint public override totalPendingExitCertificateLiquidity;
     bool internal initialized = false;
 
     /**
@@ -79,8 +81,8 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
    *
    * @param certificateId The id of the LiquidityCertificate.
    */
-    function getEnteredAt(uint certificateId) external view override returns (uint) {
-        return _certificateInfo[certificateId].enteredAt;
+    function getEpoch(uint certificateId) external view override returns (uint) {
+        return _certificateInfo[certificateId].epoch;
     }
 
 
@@ -95,7 +97,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     override
     returns (ILiquidityCertificate.CertificateInfo memory)
     {
-        require(_certificateInfo[certificateId].enteredAt != 0, "certificate does not exist");
+        require(_certificateInfo[certificateId].epoch!= 0, "certificate does not exist");
         return _certificateInfo[certificateId];
     }
 
@@ -103,13 +105,13 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
      * @dev updates the reward debt when a provider claims his/her rewards.
     *
     * @param certificateId The id of the LiquidityProvider.
-    * @param rewards The rewards to add to the reward debt.
+    * @param RPS The rewards to add to the reward debt.
     */
-    function addRewardDebt(uint certificateId, uint rewards) external override {
+    function updateCertificateDebtRPS(uint certificateId, uint RPS) external override {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
-        _certificateInfo[certificateId].rewardDebt = _certificateInfo[certificateId].rewardDebt.add(rewards);
+        _certificateInfo[certificateId].debtRPS = _certificateInfo[certificateId].debtRPS.add(RPS);
     }
 
     /**
@@ -133,7 +135,8 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         address owner,
         uint liquidity,
         uint rewardDebt,
-        uint shadowDebt
+        uint shadowDebt,
+        uint enteredAt
     ) external override returns (uint) {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
@@ -144,9 +147,9 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         }
 
         uint certificateId = nextId++;
-        _certificateInfo[certificateId] = CertificateInfo(block.timestamp,liquidity,rewardDebt,shadowDebt);
+        _certificateInfo[certificateId] = CertificateInfo(enteredAt,liquidity,rewardDebt,shadowDebt);
         // add totalLiquidity.
-        totalCertificateLiquidity = totalCertificateLiquidity.add(liquidity);
+        totalPendingEntranceCertificateLiquidity = totalPendingEntranceCertificateLiquidity.add(liquidity);
         _mint(owner, certificateId);
 
         emit NewLPMinted(owner,certificateId,block.timestamp,0,liquidity,rewardDebt,shadowDebt);
@@ -166,10 +169,17 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         require(_isApprovedOrOwner(spender, certificateId), "attempted to burn nonexistent certificate, or not owner");
         delete _certificateInfo[certificateId];
         // remove liquidity from totalCertificateLiquidity.
-        totalCertificateLiquidity = totalCertificateLiquidity.sub(_certificateInfo[certificateId].liquidity);
+        totalPendingExitCertificateLiquidity = totalPendingExitCertificateLiquidity.sub(_certificateInfo[certificateId].liquidity);
         _burn(certificateId);
 
         emit LPBurned(certificateId);
+    }
+
+    function newEpochCreated() external override {
+        // when the new epoch created
+        totalValidCertificateLiquidity = totalValidCertificateLiquidity.add(totalPendingEntranceCertificateLiquidity).sub(totalPendingExitCertificateLiquidity);
+        totalPendingExitCertificateLiquidity = 0;
+        totalPendingExitCertificateLiquidity = 0;
     }
 
     error InsufficientPrivilege();

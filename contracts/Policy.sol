@@ -130,7 +130,7 @@ contract Policy is IPolicy, ERC721Enumerable {
         require(_policyInfo[policyId].expiredAt < block.timestamp, "policy is not expired");
         require(_policyInfo[policyId].isCancelled == false, "policy is already cancelled");
         require(_policyInfo[policyId].isClaimApplying == false, "policy is applying for claim");
-        require(_policyInfo[policyId].isClaimed == false, "policy is already claimed");
+        // require(_policyInfo[policyId].isClaimed == false, "policy is already claimed");
         if (policyId == 0) {
             return true;
         } else {
