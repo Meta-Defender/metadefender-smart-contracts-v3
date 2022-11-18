@@ -7,12 +7,12 @@ interface IPolicy {
         address beneficiary;
         uint coverage;
         uint deposit;
-        uint enteredAt;
-        uint expiredAt;
-        uint shadowImpact;
+        uint enteredEpoch;
+        uint duration;
+        uint SPS;
         bool isClaimed;
         bool isClaimApplying;
-        bool isCancelled;
+        bool isSettled;
     }
 
     // get the protocol address
@@ -31,9 +31,9 @@ interface IPolicy {
         address beneficiary,
         uint coverage,
         uint deposit,
-        uint enteredAt,
-        uint expiredAt,
-        uint shadowImpact
+        uint enteredEpochId,
+        uint duration,
+        uint SPS
     ) external returns (uint);
 
     function burn(address spender, uint certificateId) external;
@@ -46,5 +46,5 @@ interface IPolicy {
 
     function changeStatusIsClaimApplying(uint policyId, bool status) external;
 
-    function changeStatusIsCancelled(uint policyId, bool status) external;
+    function changeStatusIsSettled(uint policyId, bool status) external;
 }

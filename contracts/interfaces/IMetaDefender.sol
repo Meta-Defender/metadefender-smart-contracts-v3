@@ -40,13 +40,7 @@ interface IMetaDefender {
 
     function validMiningProxyManage(address proxy, bool _isValid) external;
 
-    function updateMinimumFee(uint minimumFee) external;
-
-    function getUsableCapital() external view returns (uint);
-
-    function estimateFee(uint coverage) external view returns (uint);
-
-    function buyCover(address beneficiary, uint coverage, uint duration) external;
+    function buyPolicy(address beneficiary, uint coverage, uint duration) external;
 
     function claimRewards(uint certificateId) external;
 
@@ -54,7 +48,7 @@ interface IMetaDefender {
 
     function certificateProviderExit(uint certificateId) external;
 
-    function cancelPolicy(uint policyId) external;
+    function settlePolicy(uint policyId) external;
 
     function policyClaimApply(uint _id) external;
 
