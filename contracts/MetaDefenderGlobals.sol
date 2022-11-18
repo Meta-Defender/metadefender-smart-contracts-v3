@@ -20,7 +20,6 @@ contract MetaDefenderGlobals is IMetaDefenderGlobals {
     GlobalInfoCache internal _globalInfoCache;
     GlobalInfo internal _globalInfo;
 
-
     /**
      * @dev Initialize the contract.
      * @param _official the address of official
@@ -67,7 +66,7 @@ contract MetaDefenderGlobals is IMetaDefenderGlobals {
      * @dev estimateFee get the fee one will pay for the coverage he/she covers.
      * @param coverage The amount of money one wants to cover.
      */
-    function estimateFee(uint256 coverage) external view override returns (uint) {
+    function estimateFee(uint coverage) external view override returns (uint) {
         return _globalInfo.currentFee.multiplyDecimal(_globalInfo.usableCapital).divideDecimal(_globalInfo.usableCapital.sub(coverage));
     }
 
@@ -76,7 +75,7 @@ contract MetaDefenderGlobals is IMetaDefenderGlobals {
      * @param coverage The amount of money one wants to cover.
      * @param isBuy The flag if the user is buying(true)/cancelling(false) the policy.
      */
-    function calculateFee(uint256 coverage, bool isBuy) external override returns (uint) {
+    function calculateFee(uint coverage, bool isBuy) external override returns (uint) {
         if (isBuy == true) {
             _globalInfo.currentFee = _globalInfo.currentFee.multiplyDecimal(_globalInfo.usableCapital).divideDecimal(_globalInfo.usableCapital.sub(coverage));
             _globalInfo.usableCapital = _globalInfo.usableCapital.sub(coverage);
@@ -96,7 +95,7 @@ contract MetaDefenderGlobals is IMetaDefenderGlobals {
      * @dev certificateProviderEntrance add pending free capital to globals when one provide the capital to the pool.
      * @param amount The amount of money one wants to provide for the pool.
      */
-    function certificateProviderEntrance(uint256 amount) external override {
+    function certificateProviderEntrance(uint amount) external override checkNewEpoch() {
         _globalInfoCache.provideCapital = _globalInfoCache.provideCapital.add(amount);
     }
 
@@ -104,7 +103,7 @@ contract MetaDefenderGlobals is IMetaDefenderGlobals {
      * @dev certificateProviderExit add pending retrieved capital to globals and add frozen capital to frozen when someone exit from the pool.
      * @param amount The amount of money one wants to provide for the pool.
      */
-    function certificateProviderExit(uint256 amount, uint256 frozen) external override {
+    function certificateProviderExit(uint amount, uint frozen) external override checkNewEpoch() {
         _globalInfoCache.retrieveCapital = _globalInfoCache.retrieveCapital.add(amount);
         _globalInfoCache.frozenCapital = _globalInfoCache.frozenCapital.add(frozen);
     }
@@ -116,7 +115,7 @@ contract MetaDefenderGlobals is IMetaDefenderGlobals {
      * @param deltaRPS = reward4LPs / totalLiquidity.
      * @param reward4Team reward4Team
      */
-    function buyPolicy(uint256 totalCoverage, uint256 deltaRPS, uint256 deltaSPS, uint256 reward4Team) external override {
+    function buyPolicy(uint totalCoverage, uint deltaRPS, uint deltaSPS, uint reward4Team) external override checkNewEpoch() {
         // usableCapital will change instantly.
         _globalInfo.usableCapital = _globalInfo.usableCapital.sub(totalCoverage);
         // accSPS, accRPS and reward4Team will change in a pending status.
@@ -137,7 +136,7 @@ contract MetaDefenderGlobals is IMetaDefenderGlobals {
      * @param totalCoverage The amount of money one wants to free.
      * @param deltaSPS = The shadow locked in the policy
      */
-    function settlePolicy(uint256 totalCoverage, uint256 deltaSPS, uint256 enteredEpoch) external override {
+    function settlePolicy(uint totalCoverage, uint deltaSPS, uint enteredEpoch) external override checkNewEpoch() {
         // totalCoverage will change instantly.
         _globalInfo.usableCapital = _globalInfo.usableCapital.add(totalCoverage);
         // and the epochAccSPS will change after the current epoch.
@@ -150,7 +149,7 @@ contract MetaDefenderGlobals is IMetaDefenderGlobals {
      * @dev approveClaim. Record how much money are lost during the approve.
      * @param excess. The amount of money which exceeds what the risk reserve.
      */
-    function excessPayment(uint256 excess) external override {
+    function excessPayment(uint excess) external override checkNewEpoch() {
         uint totalCapital = _globalInfo.freeCapital.add(_globalInfo.frozenCapital);
         _globalInfoCache.lossCapitalInFree = _globalInfoCache.lossCapitalInFree.add(excess.multiplyDecimal(_globalInfo.freeCapital).divideDecimal(totalCapital));
         _globalInfoCache.lossCapitalInFrozen = _globalInfoCache.lossCapitalInFrozen.add(excess.multiplyDecimal(_globalInfo.frozenCapital).divideDecimal(totalCapital));

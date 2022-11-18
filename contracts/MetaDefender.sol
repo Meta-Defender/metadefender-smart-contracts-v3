@@ -172,9 +172,9 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         aUSD.transferFrom(msg.sender, address(this), totalPay);
 
         // update globals
-        uint256 reward4Team = coverFee.multiplyDecimal(TEAM_RESERVE_RATE);
-        uint256 deltaRPS = (coverFee.sub(reward4Team)).divideDecimal(liquidityCertificate.totalValidCertificateLiquidity());
-        uint256 deltaSPS = coverage.divideDecimal(liquidityCertificate.totalValidCertificateLiquidity());
+        uint reward4Team = coverFee.multiplyDecimal(TEAM_RESERVE_RATE);
+        uint deltaRPS = (coverFee.sub(reward4Team)).divideDecimal(liquidityCertificate.totalValidCertificateLiquidity());
+        uint deltaSPS = coverage.divideDecimal(liquidityCertificate.totalValidCertificateLiquidity());
         metaDefenderGlobals.buyPolicy(coverage, deltaRPS, deltaSPS, reward4Team);
         // update tick epoch.
         uint currentEpochId = epochManage.getCurrentEpochId();
