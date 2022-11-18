@@ -18,7 +18,7 @@ interface ILiquidityCertificate {
         // the amount of money one can withdraw when he/she wants to exit from the pool and it will become 0 when shadow > amount
         uint withdrawal;
         // the amount of money one protect for other, which may be greater than that he/she deposits.
-        uint shadow;
+        uint SPS;
         // the share of pool when someone exits.
         uint liquidity;
     }

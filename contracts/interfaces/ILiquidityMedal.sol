@@ -10,8 +10,8 @@ interface ILiquidityMedal {
         uint exitedEpoch;
         // the liquidity one entered the pool with
         uint liquidity;
-        // the amount of shadowDebt when the medal was minted
-        uint debtSPS;
+        // SPS
+        uint SPS;
     }
 
     struct MedalInfoCurrent {
@@ -49,7 +49,7 @@ interface ILiquidityMedal {
         uint enteredEpoch,
         uint exitedEpoch,
         uint liquidity,
-        uint debtSPS
+        uint SPS
     ) external returns (uint);
 
     function burn(address spender, uint medalId) external;

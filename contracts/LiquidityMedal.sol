@@ -96,13 +96,13 @@ contract LiquidityMedal is ILiquidityMedal, ERC721Enumerable {
      * @dev updates the reward debt when a provider claims his/her rewards.
     *
     * @param medalId The id of the medal.
-    * @param debtSPS The reserve of the medal.
+    * @param SPS The updated sps locked in the medal.
     */
-    function updateMedalDebtSPS(uint medalId, uint debtSPS) external override {
+    function updateMedalDebtSPS(uint medalId, uint SPS) external override {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
-        _medalInfo[medalId].debtSPS = debtSPS;
+        _medalInfo[medalId].SPS = SPS;
     }
 
     /**

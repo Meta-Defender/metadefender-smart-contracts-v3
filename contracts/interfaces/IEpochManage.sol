@@ -4,27 +4,26 @@ pragma solidity 0.8.9;
 interface IEpochManage {
 
     struct EpochInfo {
-        // SPSInSettling
-        uint SPSInSettling;
-        // SPSInBuying;
-        uint SPSInBuying;
-        // usable capital;
-        uint usableCapital;
-        // rewardDebt;
+        uint epochId;
+        uint crossSPS;
+        // deprecated
         uint accRPS;
     }
+
     function metaDefender() external returns (address);
 
     function currentEpoch() external returns (uint);
 
-    function updateSPSInSettling(uint SPS, uint duration) external;
+    function epochLength() external returns (uint);
 
-    function updateSPSInBuying(uint SPS, uint enteredAt) external;
+    function updateCrossShadow(uint SPS, uint enteredEpoch) external;
 
-    function getEpochInfo() external view returns (EpochInfo memory);
+    function getEpochInfo(uint epochIndex) external view returns (EpochInfo memory);
 
-    function getCurrentEpoch() external view returns (uint);
+    function getCurrentEpochInfo() external view returns (EpochInfo memory);
 
-    function isNewEpoch() external returns (bool);
+    function getCurrentEpochId() external view returns(uint);
+
+    function checkAndCreateNewEpoch() external;
 
 }
