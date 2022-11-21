@@ -4,7 +4,7 @@ pragma solidity 0.8.9;
 interface ILiquidityCertificate {
 
     struct CertificateInfo {
-        uint epoch;
+        uint enteredEpoch;
         uint liquidity;
         uint debtRPS;
         uint debtSPS;
@@ -29,7 +29,6 @@ interface ILiquidityCertificate {
     // get the metaDefender address
     function metaDefender() external view returns (address);
 
-    // get the totalCertificateLiquidity.
     function totalValidCertificateLiquidity() external view returns (uint);
 
     function totalPendingEntranceCertificateLiquidity() external view returns (uint);

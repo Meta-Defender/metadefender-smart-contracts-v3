@@ -79,7 +79,7 @@ contract Policy is IPolicy, ERC721Enumerable {
     override
     returns (IPolicy.PolicyInfo memory)
     {
-        require(_policyInfo[policyId].enteredEpoch!= 0, "policy does not exist");
+        require(_policyInfo[policyId].enteredEpochIndex!= 0, "policy does not exist");
         return _policyInfo[policyId];
     }
 
@@ -97,7 +97,7 @@ contract Policy is IPolicy, ERC721Enumerable {
    * @param beneficiary The address will benefit from the policy.
    * @param coverage The amount of money that the policy covers.
    * @param deposit The amount of money that the policy buyer deposits to prevent forgetting cancel the policy at expiry
-   * @param enteredEpochId The epochId when the policy buyer buys the policy.
+   * @param enteredEpochIndex The epochIndex when the policy buyer buys the policy.
    * @param duration The duration of the policy
    * @param SPS the shadow still captured in the medalNFT.
    */
@@ -105,7 +105,7 @@ contract Policy is IPolicy, ERC721Enumerable {
         address beneficiary,
         uint coverage,
         uint deposit,
-        uint enteredEpochId,
+        uint enteredEpochIndex,
         uint duration,
         uint SPS
     ) external override returns (uint) {
@@ -118,10 +118,10 @@ contract Policy is IPolicy, ERC721Enumerable {
         }
 
         uint policyId = nextId++;
-        _policyInfo[policyId] = PolicyInfo(beneficiary, coverage, deposit, enteredEpochId, duration, SPS, false, false, false);
+        _policyInfo[policyId] = PolicyInfo(beneficiary, coverage, deposit, enteredEpochIndex, duration, SPS, false, false, false);
         _mint(beneficiary, policyId);
 
-        emit NewPolicyMinted(beneficiary, policyId, coverage, deposit, enteredEpochId, duration, SPS);
+        emit NewPolicyMinted(beneficiary, policyId, coverage, deposit, enteredEpochIndex, duration, SPS);
         return policyId;
     }
 
@@ -132,8 +132,9 @@ contract Policy is IPolicy, ERC721Enumerable {
    */
     function isCancelAvailable(uint policyId) external view override returns (bool) {
         IEpochManage.EpochInfo memory currentEpochInfo = epochManage.getCurrentEpochInfo();
-        require(_policyInfo[policyId].enteredEpoch.add(_policyInfo[policyId].duration) < currentEpochInfo.epochId, "policy is not expired");
-        require(_policyInfo[policyId].enteredEpoch!= 0, "policy does not exist");
+        IEpochManage.EpochInfo memory enteredEpochInfo = epochManage.getEpochInfo(_policyInfo[policyId].enteredEpochIndex);
+        require(enteredEpochInfo.epochId.add(_policyInfo[policyId].duration) < currentEpochInfo.epochId, "policy is not expired");
+        require(_policyInfo[policyId].enteredEpochIndex != 0, "policy does not exist");
         require(_policyInfo[policyId].isSettled == false, "policy is already cancelled");
         require(_policyInfo[policyId].isClaimApplying == false, "policy is applying for claim");
         require(_policyInfo[policyId].isClaimed == false, "policy is already claimed");
@@ -178,7 +179,7 @@ contract Policy is IPolicy, ERC721Enumerable {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
-        require(_policyInfo[policyId].enteredEpoch != 0, "policy does not exist");
+        require(_policyInfo[policyId].enteredEpochIndex != 0, "policy does not exist");
         _policyInfo[policyId].isSettled= status;
     }
 
