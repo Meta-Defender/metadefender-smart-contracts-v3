@@ -18,7 +18,7 @@ contract EpochManage is IEpochManage {
     using SafeDecimalMath for uint;
 
     address public override metaDefender;
-    uint256 public override currentEpoch;
+    uint256 public override currentEpochIndex;
     uint256 public override epochLength;
     bool public initialized = false;
 
@@ -65,16 +65,21 @@ contract EpochManage is IEpochManage {
         return _epochInfo[epochLength];
     }
 
-    function getCurrentEpochId() public view override returns (uint) {
+    function getCurrentEpochIndex() external view override returns(uint) {
+        return epochLength;
+    }
+
+    function getCurrentEpoch() public view override returns (uint) {
         return (block.timestamp.sub(block.timestamp % 1 days)).div(1 days);
     }
 
     function checkAndCreateNewEpoch() external override {
-        uint cei = getCurrentEpochId();
+        uint cei = getCurrentEpoch();
         if (cei != _epochInfo[epochLength].epochId) {
             epochLength = epochLength.add(1);
             _epochInfo[epochLength].epochId = cei;
-            metaDefenderGlobals.newEpochCreated();
+            metaDefenderGlobals.newEpochCreated(epochLength);
+            liquidityCertificate.newEpochCreated();
         }
     }
 }

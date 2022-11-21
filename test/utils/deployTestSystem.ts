@@ -7,15 +7,19 @@ import {
     LiquidityMedal,
     Policy,
     MockRiskReserve,
+    MetaDefenderGlobals,
+    EpochManage,
 } from '../../typechain-types';
 import { TestERC20 } from '../../typechain-types';
 
 export type TestSystemContractsType = {
     metaDefender: MetaDefender;
+    metaDefenderGlobals: MetaDefenderGlobals;
     liquidityCertificate: LiquidityCertificate;
     liquidityMedal: LiquidityMedal;
-    mockRiskReserve: MockRiskReserve;
     policy: Policy;
+    epochManage: EpochManage;
+    mockRiskReserve: MockRiskReserve;
     test: {
         quoteToken: TestERC20;
     };
@@ -59,12 +63,24 @@ export async function deployTestContracts(
         .connect(deployer)
         .deploy('TQA', 'TQA')) as TestERC20;
 
+    const epochManage = (await (await ethers.getContractFactory('EpochManage'))
+        .connect(deployer)
+        .deploy()) as EpochManage;
+
+    const metaDefenderGlobals = (await (
+        await ethers.getContractFactory('MetaDefenderGlobals')
+    )
+        .connect(deployer)
+        .deploy()) as MetaDefenderGlobals;
+
     return {
         metaDefender,
+        metaDefenderGlobals,
         liquidityCertificate,
         liquidityMedal,
-        mockRiskReserve,
         policy,
+        mockRiskReserve,
+        epochManage,
         test: {
             quoteToken,
         },
@@ -82,13 +98,12 @@ export async function initTestSystem(
         c.test.quoteToken.address,
         overrides.judger || ZERO_ADDRESS,
         overrides.official || ZERO_ADDRESS,
-        overrides.protocol || ZERO_ADDRESS,
-        overrides.riskReserve || ZERO_ADDRESS,
-        c.liquidityCertificate.address || ZERO_ADDRESS,
-        c.liquidityMedal.address || ZERO_ADDRESS,
-        c.policy.address || ZERO_ADDRESS,
-        overrides.initialFee || toBN('0.02'),
-        overrides.minimumFee || toBN('0.02'),
+        c.mockRiskReserve.address,
+        c.liquidityCertificate.address,
+        c.liquidityMedal.address,
+        c.policy.address,
+        c.epochManage.address,
+        c.metaDefenderGlobals.address,
     );
 
     await c.liquidityCertificate.init(
@@ -104,11 +119,26 @@ export async function initTestSystem(
     await c.policy.init(
         c.metaDefender.address,
         overrides.protocol || ZERO_ADDRESS,
+        c.epochManage.address,
     );
 
     await c.mockRiskReserve.init(
         c.metaDefender.address,
         c.test.quoteToken.address,
+    );
+
+    await c.epochManage.init(
+        c.metaDefender.address,
+        c.liquidityCertificate.address,
+        c.metaDefenderGlobals.address,
+    );
+
+    await c.metaDefenderGlobals.init(
+        overrides.official || ZERO_ADDRESS,
+        overrides.currentFee || toBN('0.02'),
+        overrides.minimumFee || toBN('0.02'),
+        c.epochManage.address,
+        toBN('1'),
     );
 }
 

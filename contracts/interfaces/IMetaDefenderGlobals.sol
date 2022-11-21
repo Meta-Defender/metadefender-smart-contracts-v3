@@ -65,5 +65,5 @@ interface IMetaDefenderGlobals {
 
     function excessPayment(uint256 excess) external;
 
-    function newEpochCreated() external;
+    function newEpochCreated(uint256 epochIndex) external;
 }

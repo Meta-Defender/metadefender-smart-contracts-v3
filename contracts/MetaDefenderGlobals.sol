@@ -2,10 +2,11 @@
 pragma solidity 0.8.9;
 
 
+import "hardhat/console.sol";
+
 import "./Lib/SafeDecimalMath.sol";
 import "./interfaces/IMetaDefenderGlobals.sol";
 import "./interfaces/IEpochManage.sol";
-
 
 contract MetaDefenderGlobals is IMetaDefenderGlobals {
 
@@ -30,7 +31,8 @@ contract MetaDefenderGlobals is IMetaDefenderGlobals {
         address _official,
         uint _currentFee,
         uint _minimumFee,
-        IEpochManage _epochManage
+        IEpochManage _epochManage,
+        uint _initialExchangeRate
     ) external {
         if (initialized) {
             revert ContractAlreadyInitialized();
@@ -39,7 +41,7 @@ contract MetaDefenderGlobals is IMetaDefenderGlobals {
         epochManage = _epochManage;
         _globalInfo.currentFee = _currentFee;
         _globalInfo.minimumFee = _minimumFee;
-
+        _globalInfo.exchangeRate = _initialExchangeRate;
         initialized = true;
     }
 
@@ -118,6 +120,7 @@ contract MetaDefenderGlobals is IMetaDefenderGlobals {
     function buyPolicy(uint totalCoverage, uint deltaRPS, uint deltaSPS, uint reward4Team) external override checkNewEpoch() {
         // usableCapital will change instantly.
         _globalInfo.usableCapital = _globalInfo.usableCapital.sub(totalCoverage);
+        _globalInfo.freeCapital = _globalInfo.freeCapital.sub(totalCoverage);
         // accSPS, accRPS and reward4Team will change in a pending status.
         _globalInfoCache.accRPS = _globalInfoCache.accRPS.add(deltaRPS);
         _globalInfoCache.accSPS = _globalInfoCache.accSPS.add(deltaSPS);
@@ -162,16 +165,24 @@ contract MetaDefenderGlobals is IMetaDefenderGlobals {
 
     /**
      * @dev newEpochCreated. update the latest param to _globalInfo, reset all the cache.
+     * @param epochIndex. the epochIndex.
      */
-    function newEpochCreated() external override {
+    function newEpochCreated(uint256 epochIndex) external override {
         // add and remove pendingFreeCapital and pendingRetrieveCapital;
         _globalInfo.usableCapital = _globalInfo.usableCapital.add(_globalInfoCache.provideCapital).sub(_globalInfoCache.retrieveCapital);
-        // update the exchangeRate: exchangeRate = exchangeRate - (freeLoss + frozenLoss) / (frozenCapital + frozenCapital);
-        _globalInfo.exchangeRate = _globalInfo.exchangeRate.sub((_globalInfoCache.lossCapitalInFree.add(_globalInfoCache.lossCapitalInFrozen)).divideDecimal(_globalInfo.freeCapital.add(_globalInfo.frozenCapital)));
-
         // update the free capital and frozen capital
         _globalInfo.freeCapital = _globalInfo.freeCapital.add(_globalInfoCache.provideCapital).sub(_globalInfoCache.retrieveCapital).sub(_globalInfoCache.lossCapitalInFree);
+
         _globalInfo.frozenCapital = _globalInfo.frozenCapital.add(_globalInfoCache.frozenCapital).sub(_globalInfoCache.lossCapitalInFrozen);
+
+        // update the exchangeRate: exchangeRate = exchangeRate - (freeLoss + frozenLoss) / (frozenCapital + frozenCapital);
+        // exclude the first epoch
+        if (epochIndex != 1) {
+            _globalInfo.exchangeRate = _globalInfo.exchangeRate.sub((_globalInfoCache.lossCapitalInFree.add(_globalInfoCache.lossCapitalInFrozen)).divideDecimal(_globalInfo.freeCapital.add(_globalInfo.frozenCapital)));
+        } else {
+            _globalInfo.exchangeRate = SafeDecimalMath.UNIT;
+        }
+
 
         _globalInfoCache.provideCapital = 0;
         _globalInfoCache.retrieveCapital = 0;

@@ -82,7 +82,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
    * @param certificateId The id of the LiquidityCertificate.
    */
     function getEpoch(uint certificateId) external view override returns (uint) {
-        return _certificateInfo[certificateId].epoch;
+        return _certificateInfo[certificateId].enteredEpoch;
     }
 
 
@@ -97,7 +97,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     override
     returns (ILiquidityCertificate.CertificateInfo memory)
     {
-        require(_certificateInfo[certificateId].epoch!= 0, "certificate does not exist");
+        require(_certificateInfo[certificateId].enteredEpoch!= 0, "certificate does not exist");
         return _certificateInfo[certificateId];
     }
 
@@ -136,7 +136,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         uint liquidity,
         uint rewardDebt,
         uint shadowDebt,
-        uint enteredAt
+        uint enteredEpoch
     ) external override returns (uint) {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
@@ -147,7 +147,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         }
 
         uint certificateId = nextId++;
-        _certificateInfo[certificateId] = CertificateInfo(enteredAt,liquidity,rewardDebt,shadowDebt);
+        _certificateInfo[certificateId] = CertificateInfo(enteredEpoch,liquidity,rewardDebt,shadowDebt);
         // add totalLiquidity.
         totalPendingEntranceCertificateLiquidity = totalPendingEntranceCertificateLiquidity.add(liquidity);
         _mint(owner, certificateId);

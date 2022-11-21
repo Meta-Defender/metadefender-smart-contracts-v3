@@ -12,7 +12,7 @@ interface IEpochManage {
 
     function metaDefender() external returns (address);
 
-    function currentEpoch() external returns (uint);
+    function currentEpochIndex() external returns (uint);
 
     function epochLength() external returns (uint);
 
@@ -22,7 +22,9 @@ interface IEpochManage {
 
     function getCurrentEpochInfo() external view returns (EpochInfo memory);
 
-    function getCurrentEpochId() external view returns(uint);
+    function getCurrentEpoch() external view returns(uint);
+
+    function getCurrentEpochIndex() external view returns(uint);
 
     function checkAndCreateNewEpoch() external;
 
