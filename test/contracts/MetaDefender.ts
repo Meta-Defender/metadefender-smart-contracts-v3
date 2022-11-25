@@ -280,7 +280,7 @@ describe('MetaDefender - uint tests', async () => {
                         toBN('100'),
                         '365',
                     );
-
+                await fastForward(86400);
                 await contracts.metaDefender
                     .connect(provider1)
                     .certificateProviderExit('0');
@@ -293,6 +293,8 @@ describe('MetaDefender - uint tests', async () => {
                     toBN('99901.919'),
                     toBN(String(99901.919 * 0.0001)),
                 );
+                await fastForward(86400 * 365);
+                await contracts.epochManage.checkAndCreateNewEpoch();
             });
         });
 
@@ -433,7 +435,10 @@ describe('MetaDefender - uint tests', async () => {
                 await contracts.epochManage.checkAndCreateNewEpoch();
                 const globalInfo2 =
                     await contracts.metaDefenderGlobals.getGlobalInfo();
-                expect(globalInfo2.freeCapital).to.be.equal(toBN('10000'));
+                expect(globalInfo2.freeCapital).to.be.approximately(
+                    toBN('10050'),
+                    toBN(String(10050 * 0.0001)),
+                );
                 expect(globalInfo2.frozenCapital).to.be.approximately(
                     toBN('50'),
                     toBN(String(50 * 0.0001)),
@@ -646,162 +651,223 @@ describe('MetaDefender - uint tests', async () => {
                 );
             });
         });
-        //
-        // describe('approve apply', async () => {
-        //     it('should revert if the msg.sender is not the judger', async () => {
-        //         await expect(
-        //             contracts.metaDefender.connect(provider1).approveApply('0'),
-        //         ).to.be.revertedWithCustomError(
-        //             contracts.metaDefender,
-        //             'InsufficientPrivilege',
-        //         );
-        //     });
-        //     it('should revert if the policyId is invalid', async () => {
-        //         await expect(
-        //             contracts.metaDefender.connect(deployer).approveApply('7777'),
-        //         ).to.be.revertedWith('policy does not exist');
-        //     });
-        //     it('should revert if the policy is not applying for claim', async () => {
-        //         await seedTestSystem(deployer, contracts, 100000, [
-        //             provider1,
-        //             coverBuyer1,
-        //         ]);
-        //         await contracts.metaDefender
-        //             .connect(provider1)
-        //             .providerEntrance(await provider1.getAddress(), toBN('10000'));
-        //         await contracts.metaDefender
-        //             .connect(coverBuyer1)
-        //             .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
-        //         await expect(
-        //             contracts.metaDefender.connect(deployer).approveApply('0'),
-        //         ).to.be.revertedWithCustomError(
-        //             contracts.metaDefender,
-        //             'ClaimNotUnderProcessing',
-        //         );
-        //     });
-        //     it('should pay exact the coverage when there are enough funds in risk reserve contract', async () => {
-        //         await seedTestSystem(deployer, contracts, 100000, [
-        //             provider1,
-        //             coverBuyer1,
-        //         ]);
-        //         await contracts.mockRiskReserve.mockMint(toBN('10000'));
-        //         await contracts.metaDefender
-        //             .connect(provider1)
-        //             .providerEntrance(await provider1.getAddress(), toBN('10000'));
-        //         await contracts.metaDefender
-        //             .connect(coverBuyer1)
-        //             .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
-        //         await contracts.metaDefender
-        //             .connect(coverBuyer1)
-        //             .policyClaimApply('0');
-        //         await contracts.metaDefender.connect(deployer).approveApply('0');
-        //
-        //         // coverBuyer1 should get 2000 tokens: 100000 - 2000 * 0.02 - 2000 *0.02 *0.05 + 2000 = 101958
-        //         expect(
-        //             await contracts.test.quoteToken.balanceOf(
-        //                 await coverBuyer1.getAddress(),
-        //             ),
-        //         ).to.be.equal(toBN('101958'));
-        //
-        //         expect(
-        //             await contracts.test.quoteToken.balanceOf(
-        //                 contracts.mockRiskReserve.address,
-        //             ),
-        //         ).to.be.equal(toBN('8000'));
-        //     });
-        //     it('should pay the exceed and update the latest yita if there are not enough funds in risk reserve contract', async () => {
-        //         await seedTestSystem(deployer, contracts, 100000, [
-        //             provider1,
-        //             provider2,
-        //             coverBuyer1,
-        //         ]);
-        //         await contracts.mockRiskReserve.mockMint(toBN('1000'));
-        //         await contracts.metaDefender
-        //             .connect(provider1)
-        //             .providerEntrance(await provider1.getAddress(), toBN('10000'));
-        //         await contracts.metaDefender
-        //             .connect(provider2)
-        //             .providerEntrance(await provider2.getAddress(), toBN('10000'));
-        //         await contracts.metaDefender
-        //             .connect(coverBuyer1)
-        //             .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
-        //         await contracts.metaDefender
-        //             .connect(coverBuyer1)
-        //             .policyClaimApply('0');
-        //         await contracts.metaDefender.connect(deployer).approveApply('0');
-        //
-        //         // coverBuyer1 should get 2000 tokens:
-        //         // the first 1000 tokens are paid by risk reserve contract
-        //         // the rest 1000 tokens are paid by the pool
-        //         expect(
-        //             await contracts.test.quoteToken.balanceOf(
-        //                 await coverBuyer1.getAddress(),
-        //             ),
-        //         ).to.be.equal(toBN('101958'));
-        //         expect(
-        //             await contracts.test.quoteToken.balanceOf(
-        //                 contracts.mockRiskReserve.address,
-        //             ),
-        //         ).to.be.equal(toBN('0'));
-        //         // we pay for another 1000 in the pool so, the yita will change.
-        //         expect(
-        //             (await contracts.metaDefender.globalInfo()).exchangeRate,
-        //         ).to.be.equal(toBN('0.95'));
-        //     });
-        // });
-        //
-        // describe('get fee and usable capital', async () => {
-        //     it('will revert when insufficient usable funds', async () => {
-        //         await seedTestSystem(deployer, contracts, 100000, [
-        //             provider1,
-        //             coverBuyer1,
-        //         ]);
-        //         await expect(
-        //             contracts.metaDefender
-        //                 .connect(provider1)
-        //                 .getFeeAndUsableCapital(),
-        //         ).to.be.revertedWithCustomError(
-        //             contracts.metaDefender,
-        //             'InsufficientUsableCapital',
-        //         );
-        //     });
-        // });
-        //
-        // describe('medal provider withdraw', async () => {
-        //     it('will revert if the medalId is not exist', async () => {
-        //         await expect(
-        //             contracts.metaDefender
-        //                 .connect(provider1)
-        //                 .medalProviderWithdraw('7777'),
-        //         ).to.be.revertedWith('ERC721: invalid token ID');
-        //     });
-        //     it('will revert if the medalId is not belong to the msg.sender', async () => {
-        //         await seedTestSystem(deployer, contracts, 100000, [
-        //             provider1,
-        //             provider2,
-        //             coverBuyer1,
-        //         ]);
-        //         await contracts.metaDefender
-        //             .connect(provider1)
-        //             .providerEntrance(await provider1.getAddress(), toBN('10000'));
-        //         await contracts.metaDefender
-        //             .connect(provider2)
-        //             .providerEntrance(await provider1.getAddress(), toBN('10000'));
-        //         await contracts.metaDefender
-        //             .connect(coverBuyer1)
-        //             .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
-        //         await contracts.metaDefender
-        //             .connect(provider1)
-        //             .certificateProviderExit('0');
-        //         await expect(
-        //             contracts.metaDefender
-        //                 .connect(coverBuyer1)
-        //                 .medalProviderWithdraw('0'),
-        //         ).to.be.revertedWithCustomError(
-        //             contracts.metaDefender,
-        //             'InsufficientPrivilege',
-        //         );
-        //     });
+
+        describe('approve apply', async () => {
+            it('should revert if the msg.sender is not the judger', async () => {
+                await expect(
+                    contracts.metaDefender.connect(provider1).approveApply('0'),
+                ).to.be.revertedWithCustomError(
+                    contracts.metaDefender,
+                    'InsufficientPrivilege',
+                );
+            });
+            it('should revert if the policyId is invalid', async () => {
+                await expect(
+                    contracts.metaDefender
+                        .connect(deployer)
+                        .approveApply('7777'),
+                ).to.be.revertedWith('policy does not exist');
+            });
+            it('should revert if the policy is not applying for claim', async () => {
+                await seedTestSystem(deployer, contracts, 100000, [
+                    provider1,
+                    coverBuyer1,
+                ]);
+                await contracts.metaDefender
+                    .connect(provider1)
+                    .certificateProviderEntrance(
+                        await provider1.getAddress(),
+                        toBN('10100'),
+                    );
+                await fastForward(86400);
+                await contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .buyPolicy(
+                        await coverBuyer1.getAddress(),
+                        toBN('100'),
+                        '365',
+                    );
+                await expect(
+                    contracts.metaDefender.connect(deployer).approveApply('0'),
+                ).to.be.revertedWithCustomError(
+                    contracts.metaDefender,
+                    'ClaimNotUnderProcessing',
+                );
+            });
+            it('should pay exact the coverage when there are enough funds in risk reserve contract', async () => {
+                await seedTestSystem(deployer, contracts, 100000, [
+                    provider1,
+                    coverBuyer1,
+                ]);
+                await contracts.mockRiskReserve.mockMint(toBN('10000'));
+                await contracts.metaDefender
+                    .connect(provider1)
+                    .certificateProviderEntrance(
+                        await provider1.getAddress(),
+                        toBN('10100'),
+                    );
+                await fastForward(86400);
+                await contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .buyPolicy(
+                        await coverBuyer1.getAddress(),
+                        toBN('100'),
+                        '365',
+                    );
+                await contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .policyClaimApply('0');
+                await contracts.metaDefender
+                    .connect(deployer)
+                    .approveApply('0');
+
+                // coverBuyer1 should get 100 tokens: 100000 - 100 * 0.0202 - 100 * 0.0202 *0.05 + 100 = 100097.879
+                expect(
+                    await contracts.test.quoteToken.balanceOf(
+                        await coverBuyer1.getAddress(),
+                    ),
+                ).to.be.equal(toBN('100097.879'));
+
+                expect(
+                    await contracts.test.quoteToken.balanceOf(
+                        contracts.mockRiskReserve.address,
+                    ),
+                ).to.be.equal(toBN('9900'));
+            });
+            it('should pay the exceed and update the latest η if there are not enough funds in risk reserve contract', async () => {
+                await seedTestSystem(deployer, contracts, 100000, [
+                    provider1,
+                    provider2,
+                    coverBuyer1,
+                ]);
+                await contracts.mockRiskReserve.mockMint(toBN('50'));
+                await contracts.metaDefender
+                    .connect(provider1)
+                    .certificateProviderEntrance(
+                        await provider1.getAddress(),
+                        toBN('10100'),
+                    );
+                await fastForward(86400);
+                await contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .buyPolicy(
+                        await coverBuyer1.getAddress(),
+                        toBN('100'),
+                        '365',
+                    );
+                await contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .policyClaimApply('0');
+                await contracts.metaDefender
+                    .connect(deployer)
+                    .approveApply('0');
+                // coverBuyer1 should get 100 tokens:
+                // the first 50 tokens are paid by risk reserve contract
+                // the rest 50 tokens are paid by the pool
+                expect(
+                    await contracts.test.quoteToken.balanceOf(
+                        await coverBuyer1.getAddress(),
+                    ),
+                ).to.be.equal(toBN('100097.879'));
+                expect(
+                    await contracts.test.quoteToken.balanceOf(
+                        contracts.mockRiskReserve.address,
+                    ),
+                ).to.be.equal(toBN('0'));
+                await fastForward(86400);
+                await contracts.epochManage.checkAndCreateNewEpoch();
+                // we pay for another 50 in the pool so, the η will change.
+                // freeCapital =
+                const globalInfo =
+                    await contracts.metaDefenderGlobals.getGlobalInfo();
+                expect(globalInfo.exchangeRate).to.be.approximately(
+                    toBN(String(10050 / 10100)),
+                    toBN(String((10050 / 10100) * 0.0001)),
+                );
+            });
+        });
+
+        describe('medal provider withdraw', async () => {
+            it('will revert if the medalId is not exist', async () => {
+                await expect(
+                    contracts.metaDefender
+                        .connect(provider1)
+                        .withdrawAfterExit('7777'),
+                ).to.be.revertedWith('ERC721: invalid token ID');
+            });
+            it('will revert if the medalId is not belong to the msg.sender', async () => {
+                await seedTestSystem(deployer, contracts, 100000, [
+                    provider1,
+                    provider2,
+                    coverBuyer1,
+                ]);
+                await contracts.metaDefender
+                    .connect(provider1)
+                    .certificateProviderEntrance(
+                        await provider1.getAddress(),
+                        toBN('10100'),
+                    );
+                await fastForward(86400);
+                await contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .buyPolicy(
+                        await coverBuyer1.getAddress(),
+                        toBN('100'),
+                        '365',
+                    );
+                await contracts.metaDefender
+                    .connect(provider1)
+                    .certificateProviderExit('0');
+                await expect(
+                    contracts.metaDefender
+                        .connect(coverBuyer1)
+                        .withdrawAfterExit('0'),
+                ).to.be.revertedWithCustomError(
+                    contracts.metaDefender,
+                    'InsufficientPrivilege',
+                );
+            });
+            it('will successfully get withdraw after exit from the pool', async () => {
+                await seedTestSystem(deployer, contracts, 100000, [
+                    provider1,
+                    provider2,
+                    coverBuyer1,
+                ]);
+                await contracts.metaDefender
+                    .connect(provider1)
+                    .certificateProviderEntrance(
+                        await provider1.getAddress(),
+                        toBN('10100'),
+                    );
+                await fastForward(86400);
+                await contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .buyPolicy(
+                        await coverBuyer1.getAddress(),
+                        toBN('100'),
+                        '365',
+                    );
+                await contracts.metaDefender
+                    .connect(provider1)
+                    .certificateProviderExit('0');
+                await fastForward(380 * 86400);
+                const tokenBefore = await contracts.test.quoteToken.balanceOf(
+                    await provider1.getAddress(),
+                );
+                await contracts.metaDefender
+                    .connect(coverBuyer1)
+                    .settlePolicy('0');
+                await contracts.metaDefender
+                    .connect(provider1)
+                    .withdrawAfterExit('0');
+                const tokenAfter = await contracts.test.quoteToken.balanceOf(
+                    await provider1.getAddress(),
+                );
+                console.log(tokenBefore);
+                console.log(tokenAfter);
+            });
+        });
+
         //     it('will get the shadow and withdrawal successfully when medalInfo.enteredAt > globalInfo.currentFreedTs', async () => {
         //         await seedTestSystem(deployer, contracts, 100000, [
         //             provider1,

@@ -6,6 +6,7 @@ import "./Lib/SafeDecimalMath.sol";
 
 // Inherited
 import "./interfaces/IEpochManage.sol";
+import "./interfaces/IMetaDefender.sol";
 import "./interfaces/ILiquidityCertificate.sol";
 import "./LiquidityCertificate.sol";
 import "./MetaDefenderGlobals.sol";
@@ -18,13 +19,12 @@ contract EpochManage is IEpochManage {
     using SafeDecimalMath for uint;
 
     address public override metaDefender;
-    uint256 public override currentEpochIndex;
-    uint256 public override epochLength;
+    uint64 public override currentEpochIndex;
     bool public initialized = false;
 
     LiquidityCertificate internal liquidityCertificate;
     MetaDefenderGlobals internal metaDefenderGlobals;
-    mapping(uint256 => EpochInfo) internal _epochInfo;
+    mapping(uint64 => EpochInfo) internal _epochInfo;
 
     /**
      * @dev Initialize the contract.
@@ -46,13 +46,13 @@ contract EpochManage is IEpochManage {
                     --------------|------policy with SPS--------|(update here)
                     ---------0-------SPS------ SPS-------SPS-------0---------
      * @param SPS shadow per share.
-     * @param enteredEpoch the time when the policy is generated.
+     * @param enteredEpochIndex the time when the policy is generated.
      */
-    function updateCrossShadow(uint SPS, uint enteredEpoch) external override {
-        uint i = 0;
-        while (epochLength.sub(i) > enteredEpoch) {
-            uint previousEpoch = epochLength.sub(i);
-            _epochInfo[previousEpoch].crossSPS= _epochInfo[previousEpoch].crossSPS.add(SPS);
+    function updateCrossShadow(uint SPS, uint64 enteredEpochIndex) external override {
+        uint i = 1;
+        while (currentEpochIndex.sub(i) > enteredEpochIndex) {
+            uint previousEpochIndex = currentEpochIndex.sub(i);
+            _epochInfo[previousEpochIndex].crossSPS= _epochInfo[previousEpochIndex].crossSPS.add(SPS);
             i++;
         }
     }
@@ -62,11 +62,7 @@ contract EpochManage is IEpochManage {
     }
 
     function getCurrentEpochInfo() external view override returns(EpochInfo memory) {
-        return _epochInfo[epochLength];
-    }
-
-    function getCurrentEpochIndex() external view override returns(uint) {
-        return epochLength;
+        return _epochInfo[currentEpochIndex];
     }
 
     function getCurrentEpoch() public view override returns (uint) {
@@ -75,11 +71,12 @@ contract EpochManage is IEpochManage {
 
     function checkAndCreateNewEpoch() external override {
         uint cei = getCurrentEpoch();
-        if (cei != _epochInfo[epochLength].epochId) {
-            epochLength = epochLength.add(1);
-            _epochInfo[epochLength].epochId = cei;
-            metaDefenderGlobals.newEpochCreated(epochLength);
-            liquidityCertificate.newEpochCreated();
+        IMetaDefender.GlobalInfo memory globalInfo = metaDefender.getGlobalInfo();
+        if (cei != _epochInfo[currentEpochIndex].epochId) {
+            currentEpochIndex = currentEpochIndex.add(1);
+            _epochInfo[currentEpochIndex].epochId = cei;
+            _epochInfo[currentEpochIndex].accRPS = globalInfo.accRPS;
+            _epochInfo[currentEpochIndex].accSPS = globalInfo.accSPS;
         }
     }
 }

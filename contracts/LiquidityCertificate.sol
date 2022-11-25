@@ -105,13 +105,24 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
      * @dev updates the reward debt when a provider claims his/her rewards.
     *
     * @param certificateId The id of the LiquidityProvider.
-    * @param RPS The rewards to add to the reward debt.
     */
-    function updateCertificateDebtRPS(uint certificateId, uint RPS) external override {
+    function updateRewardDebtEpochIndex(uint certificateId, uint64 currentEpochIndex) external override {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
-        _certificateInfo[certificateId].debtRPS = _certificateInfo[certificateId].debtRPS.add(RPS);
+        _certificateInfo[certificateId].rewardDebtEpochIndex = currentEpochIndex;
+    }
+
+    /**
+    * @dev updates the reward debt when a provider claims his/her rewards.
+    *
+    * @param certificateId The id of the LiquidityProvider.
+    */
+    function updateSPSLocked(uint certificateId, uint SPSLocked) external override {
+        if (msg.sender != metaDefender) {
+            revert InsufficientPrivilege();
+        }
+        _certificateInfo[certificateId].SPSLocked= SPSLocked;
     }
 
     /**
@@ -133,10 +144,8 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
    */
     function mint(
         address owner,
-        uint liquidity,
-        uint rewardDebt,
-        uint shadowDebt,
-        uint enteredEpoch
+        uint enteredEpochIndex,
+        uint liquidity
     ) external override returns (uint) {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
@@ -147,12 +156,12 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         }
 
         uint certificateId = nextId++;
-        _certificateInfo[certificateId] = CertificateInfo(enteredEpoch,liquidity,rewardDebt,shadowDebt);
+        _certificateInfo[certificateId] = CertificateInfo(enteredEpochIndex, 0, liquidity, true);
         // add totalLiquidity.
         totalPendingEntranceCertificateLiquidity = totalPendingEntranceCertificateLiquidity.add(liquidity);
         _mint(owner, certificateId);
 
-        emit NewLPMinted(owner,certificateId,block.timestamp,0,liquidity,rewardDebt,shadowDebt);
+        emit NewLPMinted(owner,certificateId,enteredEpochIndex,liquidity);
         return certificateId;
     }
 
@@ -162,17 +171,16 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
    * @param spender The account which is performing the burn.
    * @param certificateId The id of the LiquidityCertificate.
    */
-    function burn(address spender, uint certificateId) external override {
+    function expire(address spender, uint certificateId) external override {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
         require(_isApprovedOrOwner(spender, certificateId), "attempted to burn nonexistent certificate, or not owner");
-        delete _certificateInfo[certificateId];
         // remove liquidity from totalCertificateLiquidity.
-        totalPendingExitCertificateLiquidity = totalPendingExitCertificateLiquidity.sub(_certificateInfo[certificateId].liquidity);
-        _burn(certificateId);
+        totalPendingExitCertificateLiquidity = totalPendingExitCertificateLiquidity.add(_certificateInfo[certificateId].liquidity);
+        _certificateInfo[certificateId].isValid = false;
 
-        emit LPBurned(certificateId);
+        emit Expired(certificateId);
     }
 
     function newEpochCreated() external override {
@@ -185,6 +193,6 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     error InsufficientPrivilege();
     error InsufficientLiquidity();
 
-    event NewLPMinted(address owner, uint certificateId, uint timestamp, uint expiryTime, uint liquidity, uint rewardDebt, uint shadowDebt);
-    event LPBurned(uint certificateId);
+    event NewLPMinted(address owner, uint certificateId, uint enteredEpochIndex, uint liquidity);
+    event Expired(uint certificateId);
 }

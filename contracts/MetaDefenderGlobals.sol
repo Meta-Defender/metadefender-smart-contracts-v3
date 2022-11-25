@@ -82,7 +82,7 @@ contract MetaDefenderGlobals is IMetaDefenderGlobals {
             _globalInfo.currentFee = _globalInfo.currentFee.multiplyDecimal(_globalInfo.usableCapital).divideDecimal(_globalInfo.usableCapital.sub(coverage));
             _globalInfo.usableCapital = _globalInfo.usableCapital.sub(coverage);
         } else {
-            uint fee = _globalInfo.currentFee.multiplyDecimal(_globalInfo.currentFee.sub(coverage)).divideDecimal(_globalInfo.usableCapital);
+            uint fee = _globalInfo.currentFee.multiplyDecimal(_globalInfo.usableCapital).divideDecimal(_globalInfo.usableCapital.add(coverage));
             _globalInfo.usableCapital = _globalInfo.usableCapital.add(_globalInfo.usableCapital);
             if (fee <= _globalInfo.minimumFee) {
                 _globalInfo.currentFee = _globalInfo.minimumFee;
@@ -103,27 +103,23 @@ contract MetaDefenderGlobals is IMetaDefenderGlobals {
 
     /**
      * @dev certificateProviderExit add pending retrieved capital to globals and add frozen capital to frozen when someone exit from the pool.
-     * @param amount The amount of money one wants to provide for the pool.
+     * @param withdrawal The amount of money one wants to withdraw from the pool.
+     * @param frozen The amount of money one still locked in the pool.
      */
-    function certificateProviderExit(uint amount, uint frozen) external override checkNewEpoch() {
-        _globalInfoCache.retrieveCapital = _globalInfoCache.retrieveCapital.add(amount);
+    function certificateProviderExit(uint withdrawal, uint frozen) external override checkNewEpoch() {
+        _globalInfoCache.retrieveCapital = _globalInfoCache.retrieveCapital.add(withdrawal);
         _globalInfoCache.frozenCapital = _globalInfoCache.frozenCapital.add(frozen);
     }
 
     /**
      * @dev buyPolicy. totalCoverage will change instantly, while pending accSPS, accRPS and reward4Team will change in the next epoch.
-     * @param totalCoverage The amount of money one wants to cover.
      * @param deltaSPS = deltaTotalCoverage / totalLiquidity.
      * @param deltaRPS = reward4LPs / totalLiquidity.
      * @param reward4Team reward4Team
      */
-    function buyPolicy(uint totalCoverage, uint deltaRPS, uint deltaSPS, uint reward4Team) external override checkNewEpoch() {
-        // usableCapital will change instantly.
-        _globalInfo.usableCapital = _globalInfo.usableCapital.sub(totalCoverage);
-        _globalInfo.freeCapital = _globalInfo.freeCapital.sub(totalCoverage);
-        // accSPS, accRPS and reward4Team will change in a pending status.
-        _globalInfoCache.accRPS = _globalInfoCache.accRPS.add(deltaRPS);
-        _globalInfoCache.accSPS = _globalInfoCache.accSPS.add(deltaSPS);
+    function buyPolicy(uint deltaRPS, uint deltaSPS, uint reward4Team) external override checkNewEpoch() {
+        _globalInfo.accRPS = _globalInfo.accRPS.add(deltaRPS);
+        _globalInfo.accSPS = _globalInfo.accSPS.add(deltaSPS);
         _globalInfo.reward4Team = _globalInfo.reward4Team.add(reward4Team);
     }
 
@@ -139,17 +135,22 @@ contract MetaDefenderGlobals is IMetaDefenderGlobals {
      * @param totalCoverage The amount of money one wants to free.
      * @param deltaSPS = The shadow locked in the policy
      */
-    function settlePolicy(uint totalCoverage, uint deltaSPS, uint enteredEpoch) external override checkNewEpoch() {
-        // totalCoverage will change instantly.
-        _globalInfo.usableCapital = _globalInfo.usableCapital.add(totalCoverage);
-        // and the epochAccSPS will change after the current epoch.
-        _globalInfoCache.accSPS = _globalInfoCache.accSPS.sub(deltaSPS);
-        // updateCrossShadow();
-        epochManage.updateCrossShadow(deltaSPS, enteredEpoch);
+    function settlePolicy(uint deltaSPS, uint enteredEpochIndex) external override checkNewEpoch() {
+        _globalInfo.accSPS = _globalInfo.accSPS.sub(deltaSPS);
+        epochManage.updateCrossShadow(deltaSPS, enteredEpochIndex);
     }
 
     /**
-     * @dev approveClaim. Record how much money are lost during the approve.
+     * @dev approveApply. change the usableCapital and FreeCapital
+     * @param totalCoverage. The amount of coverage which user buys for.
+     */
+    function approveApply(uint deltaSPS) external override checkNewEpoch() {
+        _globalInfo.accSPS = _globalInfo.accSPS.sub(deltaSPS);
+    }
+
+
+    /**
+     * @dev excessPayment. Record how much money are lost during the approve.
      * @param excess. The amount of money which exceeds what the risk reserve.
      */
     function excessPayment(uint excess) external override checkNewEpoch() {
@@ -169,20 +170,26 @@ contract MetaDefenderGlobals is IMetaDefenderGlobals {
      */
     function newEpochCreated(uint256 epochIndex) external override {
         // add and remove pendingFreeCapital and pendingRetrieveCapital;
-        _globalInfo.usableCapital = _globalInfo.usableCapital.add(_globalInfoCache.provideCapital).sub(_globalInfoCache.retrieveCapital);
-        // update the free capital and frozen capital
-        _globalInfo.freeCapital = _globalInfo.freeCapital.add(_globalInfoCache.provideCapital).sub(_globalInfoCache.retrieveCapital).sub(_globalInfoCache.lossCapitalInFree);
-
-        _globalInfo.frozenCapital = _globalInfo.frozenCapital.add(_globalInfoCache.frozenCapital).sub(_globalInfoCache.lossCapitalInFrozen);
-
-        // update the exchangeRate: exchangeRate = exchangeRate - (freeLoss + frozenLoss) / (frozenCapital + frozenCapital);
+        if (_globalInfo.usableCapital.add(_globalInfoCache.provideCapital) > _globalInfoCache.retrieveCapital) {
+            _globalInfo.usableCapital = _globalInfo.usableCapital.add(_globalInfoCache.provideCapital).sub(_globalInfoCache.retrieveCapital);
+        } else {
+            _globalInfo.usableCapital = 0;
+        }
+        // update the exchangeRate: exchangeRate = exchangeRate * ((frozenCapital + freeCapital) - (freeLoss + frozenLoss)) / (freeCapital + frozenCapital);
         // exclude the first epoch
-        if (epochIndex != 1) {
+        if (epochIndex > 2) {
             _globalInfo.exchangeRate = _globalInfo.exchangeRate.sub((_globalInfoCache.lossCapitalInFree.add(_globalInfoCache.lossCapitalInFrozen)).divideDecimal(_globalInfo.freeCapital.add(_globalInfo.frozenCapital)));
         } else {
             _globalInfo.exchangeRate = SafeDecimalMath.UNIT;
         }
 
+        // update the free capital and frozen capital
+        if (_globalInfo.freeCapital.add(_globalInfoCache.provideCapital) > _globalInfoCache.retrieveCapital.add(_globalInfoCache.lossCapitalInFree)) {
+            _globalInfo.freeCapital = _globalInfo.freeCapital.add(_globalInfoCache.provideCapital).sub(_globalInfoCache.retrieveCapital).sub(_globalInfoCache.lossCapitalInFree);
+        } else {
+            _globalInfo.freeCapital = 0;
+        }
+        _globalInfo.frozenCapital = _globalInfo.frozenCapital.add(_globalInfoCache.frozenCapital).sub(_globalInfoCache.lossCapitalInFrozen);
 
         _globalInfoCache.provideCapital = 0;
         _globalInfoCache.retrieveCapital = 0;

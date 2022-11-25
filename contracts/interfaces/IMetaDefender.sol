@@ -5,32 +5,13 @@ import "./ILiquidityCertificate.sol";
 
 interface IMetaDefender {
 
-    struct Capital {
-        uint freeCapital;
-        uint frozenCapital;
-    }
-
     struct GlobalInfo {
-        uint rewardPerShare;
-        uint shadowPerShare;
-        uint shadowFreedPerShare;
-        uint totalCoverage;
-        // keep kLast stable when the policy is expired
-        uint kLast;
-        uint claimableTeamReward;
-        // the timestamp in the latest freed policy
-        uint currentFreedTs;
-        // η
-        uint exchangeRate;
-
-        // fees
-        uint fee;
-        uint minimumFee;
-
-        // liquidity
-        uint totalCertificateLiquidity;
-        uint totalMedalLiquidity;
+        uint accSPS;
+        uint accRPS;
+        uint risk;
     }
+
+    function getGlobalInfo() external view returns (GlobalInfo memory);
 
     function transferJudger(address judger) external;
 
