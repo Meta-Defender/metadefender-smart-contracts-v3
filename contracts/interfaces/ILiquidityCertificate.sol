@@ -4,10 +4,12 @@ pragma solidity 0.8.9;
 interface ILiquidityCertificate {
 
     struct CertificateInfo {
-        uint enteredEpoch;
-        uint liquidity;
-        uint debtRPS;
-        uint debtSPS;
+        uint64 enteredEpochIndex;
+        uint64 exitedEpochIndex;
+        uint64 rewardDebtEpochIndex;
+        uint256 liquidity;
+        uint256 SPSLocked;
+        bool isValid;
     }
 
     struct CertificateInfoCurrent {
@@ -45,19 +47,19 @@ interface ILiquidityCertificate {
 
     function getCertificateInfo(uint certificateId) external view returns (CertificateInfo memory);
 
-    function updateCertificateDebtRPS(uint certificateId, uint RPS) external;
+    function updateRewardDebtEpochIndex(uint certificateId, uint64 currentEpochIndex) external;
+
+    function updateSPSLocked(uint certificateId, uint SPSLocked) external;
 
     function newEpochCreated() external;
 
     function mint(
         address owner,
-        uint amount,
-        uint rewardDebt,
-        uint shadowDebt,
-        uint enteredAt
+        uint enteredEpochIndex,
+        uint liquidity
     ) external returns (uint);
 
-    function burn(address spender, uint certificateId) external;
+    function expire(address spender, uint certificateId) external;
 
     function belongsTo(uint certificateId) external view returns (address);
 }

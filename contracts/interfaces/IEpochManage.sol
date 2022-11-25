@@ -6,8 +6,8 @@ interface IEpochManage {
     struct EpochInfo {
         uint epochId;
         uint crossSPS;
-        // deprecated
         uint accRPS;
+        uint accSPS;
     }
 
     function metaDefender() external returns (address);
@@ -16,7 +16,7 @@ interface IEpochManage {
 
     function epochLength() external returns (uint);
 
-    function updateCrossShadow(uint SPS, uint enteredEpoch) external;
+    function updateCrossShadow(uint SPS, uint enteredEpochIndex) external;
 
     function getEpochInfo(uint epochIndex) external view returns (EpochInfo memory);
 

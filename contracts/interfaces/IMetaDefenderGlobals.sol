@@ -19,8 +19,6 @@ interface IMetaDefenderGlobals {
         // updates when a policy is claimed and the reserve is not enough.
         uint lossCapitalInFree;
         uint lossCapitalInFrozen;
-
-        uint exchangeRate;
     }
 
     struct GlobalInfo {
@@ -57,7 +55,9 @@ interface IMetaDefenderGlobals {
 
     function buyPolicy(uint256 totalCoverage, uint256 deltaRPS, uint256 deltaSPS, uint256 reward4Team) external;
 
-    function settlePolicy(uint256 totalCoverage, uint256 deltaSPS, uint256 enteredEpoch) external;
+    function settlePolicy(uint256 totalCoverage, uint256 deltaSPS, uint256 enteredEpochIndex) external;
+
+    function approveApply(uint256 totalCoverage) external;
 
     function teamClaim() external;
 
