@@ -127,10 +127,9 @@ contract Policy is IPolicy, ERC721Enumerable {
 
     /**
      * @notice isCancelAvailable the to check if the policy can be cancelled now.
-   *
    * @param policyId The id of the policy.
    */
-    function isCancelAvailable(uint policyId) external view override returns (bool) {
+    function isSettleAvailable(uint policyId) external view override returns (bool) {
         IEpochManage.EpochInfo memory currentEpochInfo = epochManage.getCurrentEpochInfo();
         IEpochManage.EpochInfo memory enteredEpochInfo = epochManage.getEpochInfo(_policyInfo[policyId].enteredEpochIndex);
         require(enteredEpochInfo.epochId.add(_policyInfo[policyId].duration) < currentEpochInfo.epochId, "policy is not expired");
@@ -141,6 +140,17 @@ contract Policy is IPolicy, ERC721Enumerable {
         return true;
     }
 
+    /**
+    * @notice isCancelAvailable the to check if the policy can be cancelled now.
+   * @param policyId The id of the policy.
+   */
+    function isClaimAvailable(uint policyId) external view override returns (bool) {
+        require(_policyInfo[policyId].enteredEpochIndex != 0, "policy does not exist");
+        require(_policyInfo[policyId].isSettled == false, "policy is already cancelled");
+        require(_policyInfo[policyId].isClaimApplying == true, "policy is not applying for claim");
+        require(_policyInfo[policyId].isClaimed == false, "policy is already claimed");
+        return true;
+    }
 
 
     /**
