@@ -296,9 +296,12 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      */
     function settlePolicy(uint policyId) external override checkNewEpoch(){
         IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
-        if (policy.isCancelAvailable(policyId)) {
+        if (policy.isSettleAvailable(policyId)) {
             policy.changeStatusIsSettled(policyId,true);
             epochManage.updateCrossShadow(policyInfo.SPS, policyInfo.enteredEpochIndex);
+            // change the SPS.
+            globalInfo.accSPS = globalInfo.accSPS.sub(policyInfo.SPS);
+            // reduce the risk.
             globalInfo.risk = globalInfo.risk.sub(policyInfo.coverage.divideDecimal(STANDARD_RISK));
             IEpochManage.EpochInfo memory epochInfo = epochManage.getEpochInfo(policyInfo.enteredEpochIndex);
             if (epochManage.getCurrentEpochInfo().epochId.sub(epochInfo.epochId) <= 5) {
@@ -308,6 +311,27 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             }
         }
         emit PolicyCancelled(policyId);
+    }
+
+
+    /**
+     * @dev claim the policy by a policy id
+     * @param policyId the Id of policy.
+     * @param isReserve whether the reserve is enough to pay the claim.
+     */
+    function claimPolicy(uint policyId, bool isReserve) internal checkNewEpoch(){
+        IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
+        if (policy.isClaimAvailable(policyId)) {
+            policy.changeStatusIsSettled(policyId,true);
+            epochManage.updateCrossShadow(policyInfo.SPS, policyInfo.enteredEpochIndex);
+            // in claiming, we will not reduce the risk exposure.
+            if (isReserve) {
+                // we will change the SPS.
+                globalInfo.accSPS = globalInfo.accSPS.sub(policyInfo.SPS);
+            }
+            aUSD.transfer(policyInfo.beneficiary, policyInfo.deposit);
+        }
+        emit PolicyClaimed(policyId);
     }
 
     /**
@@ -367,23 +391,13 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         policy.changeStatusIsClaimed(policyId, true);
 
         if (aUSD.balanceOf(address(mockRiskReserve)) >= policyInfo.coverage) {
+            claimPolicy(policyId, true);
             mockRiskReserve.payTo(policyInfo.beneficiary, policyInfo.coverage);
         } else {
             // we will pay as more as we can.
-            uint remains = aUSD.balanceOf(address(mockRiskReserve));
-            mockRiskReserve.payTo(policyInfo.beneficiary,remains);
-            _exceededPay(policyInfo.beneficiary, policyInfo.coverage.sub(remains));
+            claimPolicy(policyId, false);
+            aUSD.transfer(policyInfo.beneficiary, policyInfo.coverage);
         }
-    }
-
-    /**
-     * @dev the process if the risk reserve is not enough to pay the policy holder. In this case we will use capital pool.
-     *
-     * @param to the policy beneficiary address
-     * @param excess the exceeded amount of aUSD
-     */
-    function _exceededPay(address to, uint excess) internal {
-        aUSD.transfer(to, excess);
     }
 
     /**
@@ -440,6 +454,11 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @dev Emitted when the user bought the cover.
      */
     event PolicyCancelled(uint id);
+
+    /**
+     * @dev Claimed when the user bought the cover.
+     */
+    event PolicyClaimed(uint id);
 
     /**
      * @notice errors
