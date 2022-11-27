@@ -9,6 +9,7 @@ interface IMetaDefender {
         uint accSPS;
         uint accRPS;
         uint risk;
+        uint reward4Team;
     }
 
     function getGlobalInfo() external view returns (GlobalInfo memory);
@@ -35,13 +36,14 @@ interface IMetaDefender {
 
     function refuseApply(uint _id) external;
 
+    function getWithdrawal(uint certificateId) external view returns (uint, uint);
+
+    function getRewards(uint certificateId) external view returns (uint);
+
     function approveApply(uint _id) external;
 
     function mine(uint _amount, address _to) external;
 
-    function getDeltaRPS(uint certificateId) external view returns (uint, uint);
-
     function withdrawAfterExit(uint medalId) external;
 
-    function getDebtSPS(uint medalId) external view returns (uint, uint);
 }

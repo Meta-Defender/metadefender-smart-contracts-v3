@@ -55,7 +55,7 @@ interface ILiquidityCertificate {
 
     function mint(
         address owner,
-        uint enteredEpochIndex,
+        uint64 enteredEpochIndex,
         uint liquidity
     ) external returns (uint);
 

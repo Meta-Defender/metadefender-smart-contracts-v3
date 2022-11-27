@@ -7,7 +7,7 @@ interface IPolicy {
         address beneficiary;
         uint coverage;
         uint deposit;
-        uint enteredEpochIndex;
+        uint64 enteredEpochIndex;
         uint duration;
         uint SPS;
         bool isClaimed;
@@ -31,7 +31,7 @@ interface IPolicy {
         address beneficiary,
         uint coverage,
         uint deposit,
-        uint enteredEpochIndex,
+        uint64 enteredEpochIndex,
         uint duration,
         uint SPS
     ) external returns (uint);

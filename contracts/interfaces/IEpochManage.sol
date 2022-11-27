@@ -10,21 +10,15 @@ interface IEpochManage {
         uint accSPS;
     }
 
-    function metaDefender() external returns (address);
+    function currentEpochIndex() external returns (uint64);
 
-    function currentEpochIndex() external returns (uint);
+    function updateCrossShadow(uint SPS, uint64 enteredEpochIndex) external;
 
-    function epochLength() external returns (uint);
-
-    function updateCrossShadow(uint SPS, uint enteredEpochIndex) external;
-
-    function getEpochInfo(uint epochIndex) external view returns (EpochInfo memory);
+    function getEpochInfo(uint64 epochIndex) external view returns (EpochInfo memory);
 
     function getCurrentEpochInfo() external view returns (EpochInfo memory);
 
     function getCurrentEpoch() external view returns(uint);
-
-    function getCurrentEpochIndex() external view returns(uint);
 
     function checkAndCreateNewEpoch() external;
 

@@ -82,7 +82,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
    * @param certificateId The id of the LiquidityCertificate.
    */
     function getEpoch(uint certificateId) external view override returns (uint) {
-        return _certificateInfo[certificateId].enteredEpoch;
+        return _certificateInfo[certificateId].enteredEpochIndex;
     }
 
 
@@ -97,7 +97,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     override
     returns (ILiquidityCertificate.CertificateInfo memory)
     {
-        require(_certificateInfo[certificateId].enteredEpoch!= 0, "certificate does not exist");
+        require(_certificateInfo[certificateId].enteredEpochIndex != 0, "certificate does not exist");
         return _certificateInfo[certificateId];
     }
 
@@ -138,13 +138,12 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
      * @dev Mints a new certificate and transfers it to `owner`.
    *
    * @param owner The account that will own the LiquidityCertificate.
-   * @param liquidity The amount of liquidity that has been deposited.
-   * @param rewardDebt The past reward of the provider when enter the system.
-   * @param shadowDebt The past shadow of the provider when enter the system.
+   * @param enteredEpochIndex The epoch index in which the certificate is entered.
+   * @param liquidity The liquidity certificate provides.
    */
     function mint(
         address owner,
-        uint enteredEpochIndex,
+        uint64 enteredEpochIndex,
         uint liquidity
     ) external override returns (uint) {
         if (msg.sender != metaDefender) {
@@ -156,7 +155,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         }
 
         uint certificateId = nextId++;
-        _certificateInfo[certificateId] = CertificateInfo(enteredEpochIndex, 0, liquidity, true);
+        _certificateInfo[certificateId] = CertificateInfo(enteredEpochIndex, 0, enteredEpochIndex, liquidity, 0, true);
         // add totalLiquidity.
         totalPendingEntranceCertificateLiquidity = totalPendingEntranceCertificateLiquidity.add(liquidity);
         _mint(owner, certificateId);
