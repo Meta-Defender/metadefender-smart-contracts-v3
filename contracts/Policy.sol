@@ -105,7 +105,7 @@ contract Policy is IPolicy, ERC721Enumerable {
         address beneficiary,
         uint coverage,
         uint deposit,
-        uint enteredEpochIndex,
+        uint64 enteredEpochIndex,
         uint duration,
         uint SPS
     ) external override returns (uint) {
