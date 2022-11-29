@@ -6,7 +6,7 @@ interface IPolicy {
     struct PolicyInfo {
         address beneficiary;
         uint coverage;
-        uint deposit;
+        uint fee;
         uint64 enteredEpochIndex;
         uint duration;
         uint SPS;
@@ -30,7 +30,7 @@ interface IPolicy {
     function mint(
         address beneficiary,
         uint coverage,
-        uint deposit,
+        uint fee,
         uint64 enteredEpochIndex,
         uint duration,
         uint SPS

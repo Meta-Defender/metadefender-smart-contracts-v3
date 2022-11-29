@@ -20,7 +20,7 @@ import "./interfaces/IEpochManage.sol";
 import "./Lib/SafeDecimalMath.sol";
 import "./interfaces/IEpochManage.sol";
 import "./interfaces/IEpochManage.sol";
-import "./interfaces/ICalculatePremium.sol";
+import "./interfaces/IAmericanBinaryOptions.sol";
 
 contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     using SafeMath for uint;
@@ -37,7 +37,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     IPolicy internal policy;
     IMockRiskReserve internal mockRiskReserve;
     IEpochManage internal epochManage;
-    ICalculatePremium internal calculatePremium;
+    IAmericanBinaryOptions internal americanBinaryOptions;
 
     bool public initialized = false;
     address public judger;
@@ -87,7 +87,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         IPolicy _policy,
 
         // calculation
-        ICalculatePremium _calculatePremium,
+        IAmericanBinaryOptions _americanBinaryOptions,
 
         // functional contracts.
         IEpochManage _epochManage
@@ -103,7 +103,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         liquidityCertificate = _liquidityCertificate;
         policy = _policy;
         epochManage = _epochManage;
-        calculatePremium =_calculatePremium;
+        americanBinaryOptions = _americanBinaryOptions;
 
         initialized = true;
     }
@@ -169,12 +169,16 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             revert CoverageTooLarge(coverage);
         }
         globalInfo.risk = globalInfo.risk.add(coverage.divideDecimal(STANDARD_RISK));
-        uint premium = calculatePremium.calculate(coverage, duration, globalInfo.risk);
+        uint premium = americanBinaryOptions.mockCalculation(coverage, duration, globalInfo.risk);
+        // mocked in 2e18
+        console.log(premium);
         // team reward.
         uint reward4Team = premium.multiplyDecimal(TEAM_RESERVE_RATE);
         globalInfo.reward4Team = globalInfo.reward4Team.add(reward4Team);
         // fee can be retrieved when settle.
         uint fee = premium.multiplyDecimal(FEE_RATE);
+        // fee = 2e18 * 5e16 = 1e17
+        console.log(fee);
         aUSD.transferFrom(msg.sender, address(this), premium.add(fee).add(reward4Team));
 
         // update globals
@@ -305,9 +309,9 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             globalInfo.risk = globalInfo.risk.sub(policyInfo.coverage.divideDecimal(STANDARD_RISK));
             IEpochManage.EpochInfo memory epochInfo = epochManage.getEpochInfo(policyInfo.enteredEpochIndex);
             if (epochManage.getCurrentEpochInfo().epochId.sub(epochInfo.epochId) <= 5) {
-                aUSD.transfer(policyInfo.beneficiary, policyInfo.deposit);
+                aUSD.transfer(policyInfo.beneficiary, policyInfo.fee);
             } else {
-                aUSD.transfer(msg.sender, policyInfo.deposit);
+                aUSD.transfer(msg.sender, policyInfo.fee);
             }
         }
         emit PolicyCancelled(policyId);
@@ -329,7 +333,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
                 // we will change the SPS.
                 globalInfo.accSPS = globalInfo.accSPS.sub(policyInfo.SPS);
             }
-            aUSD.transfer(policyInfo.beneficiary, policyInfo.deposit);
+            aUSD.transfer(policyInfo.beneficiary, policyInfo.fee);
         }
         emit PolicyClaimed(policyId);
     }
