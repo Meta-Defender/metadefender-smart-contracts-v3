@@ -48,7 +48,6 @@ describe('MetaDefender - uint tests', async () => {
                     ZERO_ADDRESS,
                     ZERO_ADDRESS,
                     ZERO_ADDRESS,
-                    ZERO_ADDRESS,
                 ),
             ).to.be.revertedWithCustomError(
                 contracts.metaDefender,
@@ -143,10 +142,12 @@ describe('MetaDefender - uint tests', async () => {
             ).to.be.equal('1');
             const certificateInfo =
                 await contracts.liquidityCertificate.getCertificateInfo('0');
+            expect(certificateInfo.enteredEpochIndex).to.be.equal('1');
+            expect(certificateInfo.exitedEpochIndex).to.be.equal('0');
+            expect(certificateInfo.rewardDebtEpochIndex).to.be.equal('1');
             expect(certificateInfo.liquidity).to.be.equal(toBN('10000'));
-            expect(certificateInfo.debtRPS).to.be.eq('0');
-            expect(certificateInfo.debtSPS).to.be.eq('0');
-            expect(certificateInfo.enteredEpoch).to.be.equal('1');
+            expect(certificateInfo.SPSLocked).to.be.eq('0');
+            expect(certificateInfo.isValid).to.be.eq(true);
         });
     });
 
@@ -220,7 +221,7 @@ describe('MetaDefender - uint tests', async () => {
                 await coverBuyer1.getAddress(),
             );
             expect(policy.coverage).to.be.equal(toBN('100'));
-            expect(policy.deposit).to.be.equal(toBN('0.101'));
+            expect(policy.fee).to.be.equal(toBN('0.100'));
             expect(policy.enteredEpochIndex).to.be.equal('2');
             expect(policy.duration).to.be.equal('365');
             expect(policy.SPS).to.approximately(

@@ -96,7 +96,7 @@ contract Policy is IPolicy, ERC721Enumerable {
      * @dev Mints a new policy NFT and transfers it to `beneficiary`.
    * @param beneficiary The address will benefit from the policy.
    * @param coverage The amount of money that the policy covers.
-   * @param deposit The amount of money that the policy buyer deposits to prevent forgetting cancel the policy at expiry
+   * @param fee The amount of money that the policy buyer deposits to prevent forgetting cancel the policy at expiry
    * @param enteredEpochIndex The epochIndex when the policy buyer buys the policy.
    * @param duration The duration of the policy
    * @param SPS the shadow still captured in the medalNFT.
@@ -104,7 +104,7 @@ contract Policy is IPolicy, ERC721Enumerable {
     function mint(
         address beneficiary,
         uint coverage,
-        uint deposit,
+        uint fee,
         uint64 enteredEpochIndex,
         uint duration,
         uint SPS
@@ -118,10 +118,10 @@ contract Policy is IPolicy, ERC721Enumerable {
         }
 
         uint policyId = nextId++;
-        _policyInfo[policyId] = PolicyInfo(beneficiary, coverage, deposit, enteredEpochIndex, duration, SPS, false, false, false);
+        _policyInfo[policyId] = PolicyInfo(beneficiary, coverage, fee, enteredEpochIndex, duration, SPS, false, false, false);
         _mint(beneficiary, policyId);
 
-        emit NewPolicyMinted(beneficiary, policyId, coverage, deposit, enteredEpochIndex, duration, SPS);
+        emit NewPolicyMinted(beneficiary, policyId, coverage, fee, enteredEpochIndex, duration, SPS);
         return policyId;
     }
 
@@ -219,5 +219,5 @@ contract Policy is IPolicy, ERC721Enumerable {
     error InsufficientPrivilege();
     error InsufficientCoverage();
 
-    event NewPolicyMinted(address beneficiary, uint policyId, uint coverage, uint deposit, uint enteredAt, uint expiredAt, uint shadowImpact);
+    event NewPolicyMinted(address beneficiary, uint policyId, uint coverage, uint fee, uint enteredAt, uint expiredAt, uint shadowImpact);
 }

@@ -74,6 +74,7 @@ contract EpochManage is IEpochManage {
             _epochInfo[currentEpochIndex].epochId = cei;
             _epochInfo[currentEpochIndex].accRPS = globalInfo.accRPS;
             _epochInfo[currentEpochIndex].accSPS = globalInfo.accSPS;
+            liquidityCertificate.newEpochCreated();
         }
     }
 }
