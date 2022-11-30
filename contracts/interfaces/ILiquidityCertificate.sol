@@ -7,6 +7,7 @@ interface ILiquidityCertificate {
         uint64 enteredEpochIndex;
         uint64 exitedEpochIndex;
         uint64 rewardDebtEpochIndex;
+        uint64 signalWithdrawalEpochIndex;
         uint256 liquidity;
         uint256 SPSLocked;
         bool isValid;
@@ -48,6 +49,8 @@ interface ILiquidityCertificate {
     function getCertificateInfo(uint certificateId) external view returns (CertificateInfo memory);
 
     function updateRewardDebtEpochIndex(uint certificateId, uint64 currentEpochIndex) external;
+
+    function updateSignalWithdrawEpochIndex(uint certificateId, uint64 currentEpochIndex) external;
 
     function updateSPSLocked(uint certificateId, uint SPSLocked) external;
 
