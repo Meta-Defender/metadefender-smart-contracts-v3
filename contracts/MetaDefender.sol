@@ -170,15 +170,14 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         }
         globalInfo.risk = globalInfo.risk.add(coverage.divideDecimal(STANDARD_RISK));
         uint premium = americanBinaryOptions.mockCalculation(coverage, duration, globalInfo.risk);
-        // mocked in 2e18
-        console.log(premium);
-        // team reward.
+        // mocked in 1e18
+        // team reward. mocked in 5e16.
         uint reward4Team = premium.multiplyDecimal(TEAM_RESERVE_RATE);
         globalInfo.reward4Team = globalInfo.reward4Team.add(reward4Team);
         // fee can be retrieved when settle.
         uint fee = premium.multiplyDecimal(FEE_RATE);
-        // fee = 2e18 * 5e16 = 1e17
-        console.log(fee);
+        // fee = 1e18 * 5e16 = 5e16
+        // the user will pay 1e18 + 5e16 + 5e16 = 1.1e18
         aUSD.transferFrom(msg.sender, address(this), premium.add(fee).add(reward4Team));
 
         // update globals
@@ -215,6 +214,16 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         emit ProviderEntered(providerCount);
     }
 
+    /**
+     * @dev providerExit retrieve the rewards for the providers in the pool
+     * @param certificateId the certificateId
+     */
+    function signalCertificateProviderExit(uint certificateId) external override reentrancyGuard checkNewEpoch(){
+        uint64 currentEpochIndex = epochManage.currentEpochIndex();
+        liquidityCertificate.updateSignalWithdrawEpochIndex(certificateId, currentEpochIndex);
+        // TODO: if we signalWithdraw, can we claim ?
+    }
+
 
     /**
      * @dev providerExit retrieve the rewards for the providers in the pool
@@ -222,12 +231,21 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      */
     function certificateProviderExit(uint certificateId) external override reentrancyGuard checkNewEpoch(){
         ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
+        uint64 currentEpochIndex = epochManage.currentEpochIndex();
+        if (certificateInfo.signalWithdrawalEpochIndex == 0) {
+            revert CertificateNotSignalWithdraw();
+        }
+        if (certificateInfo.signalWithdrawalEpochIndex == currentEpochIndex) {
+            revert SignalWithdrawEpochEqualsCurrentEpoch();
+        }
         // how much SPS still be captured in the certificateId.
-        uint SPSCaptured = getSPSLockedByCertificateId(certificateId);
+        uint SPSCaptured = getSPSLockedByCertificateId(certificateId, true);
+        liquidityCertificate.updateSPSLocked(certificateId, SPSCaptured);
+
         uint rewards = getRewards(certificateId);
         address beneficiary = liquidityCertificate.belongsTo(certificateId);
         liquidityCertificate.expire(msg.sender, certificateId);
-        uint withdrawal = certificateInfo.liquidity.sub(SPSCaptured);
+        uint withdrawal = certificateInfo.liquidity.multiplyDecimal(SafeDecimalMath.UNIT.sub(SPSCaptured));
         // transfer
         if (withdrawal.add(rewards) > 0) {
             aUSD.transfer(beneficiary, withdrawal.add(rewards));
@@ -235,12 +253,13 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         emit ProviderExit(msg.sender);
     }
 
-    function getSPSLockedByCertificateId(uint certificateId) internal view returns(uint) {
+    function getSPSLockedByCertificateId(uint certificateId, bool isWithdraw) internal view returns(uint) {
         // lockedSPS = accSPSLeft - accSPSProvide + provideEpoch.crossSPS - withdrawEpoch.crossSPS
         ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
         IEpochManage.EpochInfo memory epochInfoEntered = epochManage.getEpochInfo(certificateInfo.enteredEpochIndex);
         IEpochManage.EpochInfo memory epochInfoExit = epochManage.getEpochInfo(certificateInfo.exitedEpochIndex);
-        return epochInfoExit.accSPS.sub(epochInfoEntered.accSPS).add(epochInfoEntered.crossSPS).sub(epochInfoExit.crossSPS);
+        IEpochManage.EpochInfo memory epochInfoCurrent = epochManage.getCurrentEpochInfo();
+        return isWithdraw ? epochInfoCurrent.accSPS.sub(epochInfoEntered.accSPS).add(epochInfoEntered.crossSPS).sub(epochInfoCurrent.crossSPS) : epochInfoExit.accSPS.sub(epochInfoEntered.accSPS).add(epochInfoEntered.crossSPS).sub(epochInfoExit.crossSPS);
     }
 
 
@@ -262,7 +281,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      */
     function getWithdrawal(uint certificateId) public view override returns (uint, uint) {
         ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
-        uint SPSLocked = getSPSLockedByCertificateId(certificateId);
+        uint SPSLocked = getSPSLockedByCertificateId(certificateId,false);
         uint withdrawal = certificateInfo.liquidity.multiplyDecimal(certificateInfo.SPSLocked.sub(SPSLocked));
         return (SPSLocked, withdrawal);
     }
@@ -271,7 +290,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @dev claimRewards retrieve the rewards for the providers in the pool
      * @param certificateId the certificateId
      */
-    function claimRewards(uint certificateId) external override reentrancyGuard {
+    function claimRewards(uint certificateId) external override reentrancyGuard checkNewEpoch() {
         if (msg.sender != (liquidityCertificate.belongsTo(certificateId))) {
             revert InsufficientPrivilege();
         }
@@ -290,6 +309,8 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             revert InsufficientPrivilege();
         }
         (uint SPSLocked, uint withdrawal) = getWithdrawal(certificateId);
+        console.log(SPSLocked);
+        console.log(withdrawal);
         liquidityCertificate.updateSPSLocked(certificateId, SPSLocked);
         aUSD.transfer(msg.sender, withdrawal);
     }
@@ -391,9 +412,6 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         if (policyInfo.isClaimApplying == false) {
             revert ClaimNotUnderProcessing(policyId);
         }
-        policy.changeStatusIsClaimApplying(policyId, false);
-        policy.changeStatusIsClaimed(policyId, true);
-
         if (aUSD.balanceOf(address(mockRiskReserve)) >= policyInfo.coverage) {
             claimPolicy(policyId, true);
             mockRiskReserve.payTo(policyInfo.beneficiary, policyInfo.coverage);
@@ -402,6 +420,8 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             claimPolicy(policyId, false);
             aUSD.transfer(policyInfo.beneficiary, policyInfo.coverage);
         }
+        policy.changeStatusIsClaimApplying(policyId, false);
+        policy.changeStatusIsClaimed(policyId, true);
     }
 
     /**
@@ -489,4 +509,6 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     error InvalidMiningProxy(address proxy);
     error ReentrancyGuardDetected();
     error InvalidAddress(address addr);
+    error CertificateNotSignalWithdraw();
+    error SignalWithdrawEpochEqualsCurrentEpoch();
 }

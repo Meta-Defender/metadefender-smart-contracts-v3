@@ -421,6 +421,6 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
     }
 
     function mockCalculation(uint coverage, uint duration, uint risk) external pure override returns (uint price) {
-        return 2e16;
+        return 1e18;
     }
 }

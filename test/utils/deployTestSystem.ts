@@ -1,6 +1,6 @@
 import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
-import { toBN, ZERO_ADDRESS } from '../../scripts/util/web3utils';
+import { ZERO_ADDRESS } from '../../scripts/util/web3utils';
 import {
     MetaDefender,
     LiquidityCertificate,
@@ -59,11 +59,11 @@ export async function deployTestContracts(
         .connect(deployer)
         .deploy()) as EpochManage;
 
-    const calculatePremium = (await (
-        await ethers.getContractFactory('CalculatePremium')
+    const americanBinaryOptions = (await (
+        await ethers.getContractFactory('AmericanBinaryOptions')
     )
         .connect(deployer)
-        .deploy()) as CalculatePremium;
+        .deploy()) as AmericanBinaryOptions;
 
     return {
         metaDefender,
@@ -71,7 +71,7 @@ export async function deployTestContracts(
         policy,
         epochManage,
         mockRiskReserve,
-        calculatePremium,
+        americanBinaryOptions,
         test: {
             quoteToken,
         },
@@ -92,7 +92,7 @@ export async function initTestSystem(
         c.mockRiskReserve.address,
         c.liquidityCertificate.address,
         c.policy.address,
-        c.calculatePremium.address,
+        c.americanBinaryOptions.address,
         c.epochManage.address,
     );
 

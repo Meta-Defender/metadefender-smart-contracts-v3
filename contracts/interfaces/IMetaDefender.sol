@@ -28,6 +28,8 @@ interface IMetaDefender {
 
     function certificateProviderEntrance(address beneficiary, uint _amount) external;
 
+    function signalCertificateProviderExit(uint certificateId) external;
+
     function certificateProviderExit(uint certificateId) external;
 
     function settlePolicy(uint policyId) external;

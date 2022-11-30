@@ -63,7 +63,6 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         for (uint i = 0; i < numCerts; i++) {
             ids[i] = tokenOfOwnerByIndex(owner, i);
         }
-
         return ids;
     }
 
@@ -114,7 +113,20 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     }
 
     /**
-    * @dev updates the reward debt when a provider claims his/her rewards.
+     * @dev updates the reward debt when a provider claims his/her rewards.
+    *
+    * @param certificateId The id of the LiquidityProvider.
+    */
+    function updateSignalWithdrawEpochIndex(uint certificateId, uint64 currentEpochIndex) external override {
+        if (msg.sender != metaDefender) {
+            revert InsufficientPrivilege();
+        }
+        _certificateInfo[certificateId].signalWithdrawalEpochIndex = currentEpochIndex;
+    }
+
+
+    /**
+     * @dev updates the reward debt when a provider claims his/her rewards.
     *
     * @param certificateId The id of the LiquidityProvider.
     */
@@ -155,7 +167,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         }
 
         uint certificateId = nextId++;
-        _certificateInfo[certificateId] = CertificateInfo(enteredEpochIndex, 0, enteredEpochIndex, liquidity, 0, true);
+        _certificateInfo[certificateId] = CertificateInfo(enteredEpochIndex, 0, enteredEpochIndex, 0, liquidity, 0, true);
         // add totalLiquidity.
         totalPendingEntranceCertificateLiquidity = totalPendingEntranceCertificateLiquidity.add(liquidity);
         _mint(owner, certificateId);
