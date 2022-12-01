@@ -329,7 +329,9 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             // reduce the risk.
             globalInfo.risk = globalInfo.risk.sub(policyInfo.coverage.divideDecimal(STANDARD_RISK));
             IEpochManage.EpochInfo memory epochInfo = epochManage.getEpochInfo(policyInfo.enteredEpochIndex);
-            if (epochManage.getCurrentEpochInfo().epochId.sub(epochInfo.epochId) <= 5) {
+            if (epochManage.getCurrentEpochInfo().epochId.sub(epochInfo.epochId) <= BUFFER) {
+                // to make sure the policyHolder himself settle.
+                require(msg.sender == policyInfo.beneficiary, "Only policy holder can settle the policy in 3 days");
                 aUSD.transfer(policyInfo.beneficiary, policyInfo.fee);
             } else {
                 aUSD.transfer(msg.sender, policyInfo.fee);
