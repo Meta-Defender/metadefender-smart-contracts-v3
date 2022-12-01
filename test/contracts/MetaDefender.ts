@@ -13,7 +13,7 @@ import {
 } from '../utils/deployTestSystem';
 import { expect } from 'chai';
 import { seedTestSystem } from '../utils/seedTestSystem';
-import { exp } from 'mathjs';
+import { e, exp } from 'mathjs';
 
 describe('MetaDefender - uint tests', async () => {
     let deployer: Signer;
@@ -818,6 +818,131 @@ describe('MetaDefender - uint tests', async () => {
         });
     });
 
+    describe('settle policy', async () => {
+        it('should revert if the policyHolder try to settle the policy which is not expired', async () => {
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                provider2,
+                coverBuyer1,
+            ]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .certificateProviderEntrance(
+                    await provider1.getAddress(),
+                    toBN('10100'),
+                );
+            await fastForward(86400);
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyPolicy(await coverBuyer1.getAddress(), toBN('100'), '365');
+            await fastForward(86400 * 364);
+            await expect(
+                contracts.metaDefender.connect(coverBuyer1).settlePolicy('0'),
+            ).to.be.revertedWith('policy is not expired');
+        });
+        it('should revert if one try to settle others policy within 3 days', async () => {
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                provider2,
+                coverBuyer1,
+            ]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .certificateProviderEntrance(
+                    await provider1.getAddress(),
+                    toBN('10100'),
+                );
+            await fastForward(86400);
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyPolicy(await coverBuyer1.getAddress(), toBN('100'), '365');
+            await fastForward(86400 * 366);
+            expect(
+                await contracts.metaDefender
+                    .connect(coverBuyer2)
+                    .settlePolicy('0'),
+            ).to.be.revertedWith(
+                'Only policy holder can settle the policy in 3 days',
+            );
+        });
+        it('will successfully cancel the policy in 3 days', async () => {
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .certificateProviderEntrance(
+                    await provider1.getAddress(),
+                    toBN('10100'),
+                );
+            await fastForward(86400);
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyPolicy(await coverBuyer1.getAddress(), toBN('100'), '365');
+            // after 90 day and a half
+            await fastForward(366 * 86400);
+            await contracts.metaDefender.connect(coverBuyer1).settlePolicy('0');
+            // 100000 - 1 - 0.05 - 0.05 + 0.05 = 99998.95
+            expect(
+                await contracts.test.quoteToken.balanceOf(
+                    await coverBuyer1.getAddress(),
+                ),
+            ).to.be.equal(toBN('99998.95'));
+        });
+        it('will successfully cancel the policy after one day by another', async () => {
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                provider2,
+                coverBuyer1,
+            ]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .certificateProviderEntrance(
+                    await provider1.getAddress(),
+                    toBN('10100'),
+                );
+            await fastForward(86400);
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyPolicy(await coverBuyer1.getAddress(), toBN('100'), '365');
+            await fastForward(86400 * 370);
+            await contracts.metaDefender.connect(coverBuyer2).settlePolicy('0');
+            expect(
+                await contracts.test.quoteToken.balanceOf(
+                    await coverBuyer2.getAddress(),
+                ),
+            ).to.be.equal(toBN('0.05'));
+        });
+        it('will revert if the policy is already cancelled', async () => {
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                provider2,
+                coverBuyer1,
+            ]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .certificateProviderEntrance(
+                    await provider1.getAddress(),
+                    toBN('10100'),
+                );
+            await fastForward(86400);
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyPolicy(await coverBuyer1.getAddress(), toBN('100'), '365');
+            await fastForward(86400 * 370);
+            await contracts.metaDefender.connect(coverBuyer2).settlePolicy('0');
+            expect(
+                await contracts.test.quoteToken.balanceOf(
+                    await coverBuyer2.getAddress(),
+                ),
+            ).to.be.equal(toBN('0.05'));
+            await expect(
+                contracts.metaDefender.connect(coverBuyer2).settlePolicy('0'),
+            ).to.be.revertedWith('policy is already cancelled');
+        });
+    });
+
     //     it('will get the shadow and withdrawal successfully when medalInfo.enteredAt > globalInfo.currentFreedTs', async () => {
     //         await seedTestSystem(deployer, contracts, 100000, [
     //             provider1,
@@ -935,72 +1060,7 @@ describe('MetaDefender - uint tests', async () => {
     //                 'PolicyCanOnlyCancelledByHolder',
     //             );
     //         });
-    //         it('will successfully cancel the policy in one day', async () => {
-    //             await seedTestSystem(deployer, contracts, 100000, [
-    //                 provider1,
-    //                 coverBuyer1,
-    //             ]);
-    //             await contracts.metaDefender
-    //                 .connect(provider1)
-    //                 .providerEntrance(
-    //                     await provider1.getAddress(),
-    //                     toBN('10000'),
-    //                 );
-    //             await contracts.metaDefender
-    //                 .connect(coverBuyer1)
-    //                 .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
-    //             // after 90 day and a half
-    //             await fastForward(90 * 86400 + 43200);
-    //             await contracts.metaDefender
-    //                 .connect(coverBuyer1)
-    //                 .cancelPolicy('0');
-    //         });
-    //         it('will successfully cancel the policy after one day by another', async () => {
-    //             await seedTestSystem(deployer, contracts, 100000, [
-    //                 provider1,
-    //                 coverBuyer1,
-    //             ]);
-    //             await contracts.metaDefender
-    //                 .connect(provider1)
-    //                 .providerEntrance(
-    //                     await provider1.getAddress(),
-    //                     toBN('10000'),
-    //                 );
-    //             await contracts.metaDefender
-    //                 .connect(coverBuyer1)
-    //                 .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
-    //             // after 91 days and a half
-    //             await fastForward(91 * 86400);
-    //             await contracts.metaDefender
-    //                 .connect(coverBuyer1)
-    //                 .cancelPolicy('0');
-    //         });
-    //         it('will revert if the policy is already cancelled', async () => {
-    //             await seedTestSystem(deployer, contracts, 100000, [
-    //                 provider1,
-    //                 coverBuyer1,
-    //             ]);
-    //             await contracts.metaDefender
-    //                 .connect(provider1)
-    //                 .providerEntrance(
-    //                     await provider1.getAddress(),
-    //                     toBN('10000'),
-    //                 );
-    //             await contracts.metaDefender
-    //                 .connect(coverBuyer1)
-    //                 .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
-    //             // after 91 days and a half
-    //             await fastForward(91 * 86400);
-    //             await contracts.metaDefender
-    //                 .connect(coverBuyer1)
-    //                 .cancelPolicy('0');
-    //             await expect(
-    //                 contracts.metaDefender
-    //                     .connect(coverBuyer1)
-    //                     .cancelPolicy('0'),
-    //             ).to.be.revertedWith('policy is already cancelled');
-    //         });
-    //     });
+
     // });
     //
     // describe('mine', async () => {
