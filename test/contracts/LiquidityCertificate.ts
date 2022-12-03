@@ -46,10 +46,7 @@ describe('MetaDefender - uint tests', async () => {
         });
         it('should revert if the metadefender address is ZERO_ADDRESS', async () => {
             await expect(
-                contracts.liquidityCertificate.init(
-                    ZERO_ADDRESS,
-                    contracts.liquidityMedal.address,
-                ),
+                contracts.liquidityCertificate.init(ZERO_ADDRESS, ZERO_ADDRESS),
             ).to.be.revertedWith('liquidityPool cannot be 0 address');
         });
     });
@@ -62,13 +59,13 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .providerEntrance(await provider1.getAddress(), toBN('10000'));
+                .certificateProviderEntrance(toBN('10100'));
             await contracts.metaDefender
                 .connect(provider2)
-                .providerEntrance(await provider2.getAddress(), toBN('10000'));
+                .certificateProviderEntrance(toBN('10100'));
             await contracts.metaDefender
                 .connect(provider1)
-                .providerEntrance(await provider1.getAddress(), toBN('10000'));
+                .certificateProviderEntrance(toBN('10100'));
             const Ids =
                 await contracts.liquidityCertificate.getLiquidityProviders(
                     await provider1.getAddress(),
@@ -86,25 +83,10 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .providerEntrance(await provider1.getAddress(), toBN('10000'));
+                .certificateProviderEntrance(toBN('10100'));
             expect(
                 await contracts.liquidityCertificate.getLiquidity(0),
-            ).to.be.equal(toBN('10000'));
-        });
-    });
-
-    describe('getEnteredAt', async () => {
-        it('should get enteredAt correctly', async () => {
-            await seedTestSystem(deployer, contracts, 10000, [
-                provider1,
-                provider2,
-            ]);
-            await contracts.metaDefender
-                .connect(provider1)
-                .providerEntrance(await provider1.getAddress(), toBN('10000'));
-            expect(
-                await contracts.liquidityCertificate.getEnteredAt(0),
-            ).to.be.greaterThan(0);
+            ).to.be.equal(toBN('10100'));
         });
     });
 
@@ -113,36 +95,7 @@ describe('MetaDefender - uint tests', async () => {
             await expect(
                 contracts.liquidityCertificate
                     .connect(provider1)
-                    .mint(
-                        await provider1.getAddress(),
-                        toBN('10000'),
-                        toBN('10000'),
-                        toBN('10000'),
-                    ),
-            ).to.be.revertedWithCustomError(
-                contracts.liquidityCertificate,
-                'InsufficientPrivilege',
-            );
-        });
-    });
-    describe('burn', async () => {
-        it('will burn if the msg.sender is not the metadefender protocol', async () => {
-            await expect(
-                contracts.liquidityCertificate
-                    .connect(provider1)
-                    .burn(await provider1.getAddress(), '1'),
-            ).to.be.revertedWithCustomError(
-                contracts.liquidityCertificate,
-                'InsufficientPrivilege',
-            );
-        });
-    });
-    describe('addRewardDebt', async () => {
-        it('will revert if the msg.sender is not the metadefender protocol', async () => {
-            await expect(
-                contracts.liquidityCertificate
-                    .connect(provider1)
-                    .addRewardDebt('1', toBN('10000')),
+                    .mint('1', toBN('10100')),
             ).to.be.revertedWithCustomError(
                 contracts.liquidityCertificate,
                 'InsufficientPrivilege',

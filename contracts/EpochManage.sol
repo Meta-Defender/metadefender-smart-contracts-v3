@@ -9,6 +9,9 @@ import "./interfaces/IEpochManage.sol";
 import "./interfaces/IMetaDefender.sol";
 import "./interfaces/ILiquidityCertificate.sol";
 
+// console
+import "hardhat/console.sol";
+
 /// @title Epoch
 /// @notice Contains functions for managing epoch processes and relevant calculations
 contract EpochManage is IEpochManage {
@@ -47,7 +50,7 @@ contract EpochManage is IEpochManage {
      */
     function updateCrossShadow(uint SPS, uint64 enteredEpochIndex) external override {
         uint64 i = 1;
-        while (currentEpochIndex - i > enteredEpochIndex) {
+        while (currentEpochIndex - i >= enteredEpochIndex) {
             uint64 previousEpochIndex = currentEpochIndex - i;
             _epochInfo[previousEpochIndex].crossSPS= _epochInfo[previousEpochIndex].crossSPS.add(SPS);
             i++;
@@ -66,15 +69,24 @@ contract EpochManage is IEpochManage {
         return (block.timestamp.sub(block.timestamp % 1 days)).div(1 days);
     }
 
-    function checkAndCreateNewEpoch() external override {
+    function checkAndCreateNewEpochAndUpdateLiquidity() external override returns (bool){
         uint cei = getCurrentEpoch();
-        IMetaDefender.GlobalInfo memory globalInfo = metaDefender.getGlobalInfo();
         if (cei != _epochInfo[currentEpochIndex].epochId) {
             currentEpochIndex = currentEpochIndex + 1;
+            liquidityCertificate.newEpochCreated();
             _epochInfo[currentEpochIndex].epochId = cei;
+            _epochInfo[currentEpochIndex].accRPS = _epochInfo[currentEpochIndex - 1].accRPS;
+            _epochInfo[currentEpochIndex].accSPS = _epochInfo[currentEpochIndex - 1].accSPS;
+            return true;
+        }
+        return false;
+    }
+
+    function checkAndCreateNewEpochAndUpdateAccRPSAccSPS(bool isNewEpoch) external override{
+        IMetaDefender.GlobalInfo memory globalInfo = metaDefender.getGlobalInfo();
+        if (isNewEpoch) {
             _epochInfo[currentEpochIndex].accRPS = globalInfo.accRPS;
             _epochInfo[currentEpochIndex].accSPS = globalInfo.accSPS;
-            liquidityCertificate.newEpochCreated();
         }
     }
 }

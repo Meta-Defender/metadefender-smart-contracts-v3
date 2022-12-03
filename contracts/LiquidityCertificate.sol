@@ -76,16 +76,6 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     }
 
     /**
-     * @notice Returns certificate's `enteredAt`.
-   *
-   * @param certificateId The id of the LiquidityCertificate.
-   */
-    function getEpoch(uint certificateId) external view override returns (uint) {
-        return _certificateInfo[certificateId].enteredEpochIndex;
-    }
-
-
-    /**
      * @notice Returns a certificate's data.
    *
    * @param certificateId The id of the LiquidityProvider.
@@ -149,12 +139,10 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     /**
      * @dev Mints a new certificate and transfers it to `owner`.
    *
-   * @param owner The account that will own the LiquidityCertificate.
    * @param enteredEpochIndex The epoch index in which the certificate is entered.
    * @param liquidity The liquidity certificate provides.
    */
     function mint(
-        address owner,
         uint64 enteredEpochIndex,
         uint liquidity
     ) external override returns (uint) {
@@ -170,26 +158,27 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         _certificateInfo[certificateId] = CertificateInfo(enteredEpochIndex, 0, enteredEpochIndex, 0, liquidity, 0, true);
         // add totalLiquidity.
         totalPendingEntranceCertificateLiquidity = totalPendingEntranceCertificateLiquidity.add(liquidity);
-        _mint(owner, certificateId);
+        _mint(tx.origin, certificateId);
 
-        emit NewLPMinted(owner,certificateId,enteredEpochIndex,liquidity);
+        emit NewLPMinted(tx.origin,certificateId,enteredEpochIndex,liquidity);
         return certificateId;
     }
 
     /**
      * @notice Burns the LiquidityCertificate.
    *
-   * @param spender The account which is performing the burn.
    * @param certificateId The id of the LiquidityCertificate.
+   * @param currentEpochIndex the currentEpochIndex.
    */
-    function expire(address spender, uint certificateId) external override {
+    function expire(uint certificateId, uint64 currentEpochIndex) external override {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
-        require(_isApprovedOrOwner(spender, certificateId), "attempted to burn nonexistent certificate, or not owner");
+        require(_isApprovedOrOwner(tx.origin, certificateId), "attempted to expire nonexistent certificate, or not owner");
         // remove liquidity from totalCertificateLiquidity.
         totalPendingExitCertificateLiquidity = totalPendingExitCertificateLiquidity.add(_certificateInfo[certificateId].liquidity);
         _certificateInfo[certificateId].isValid = false;
+        _certificateInfo[certificateId].exitedEpochIndex = currentEpochIndex;
 
         emit Expired(certificateId);
     }
@@ -197,7 +186,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     function newEpochCreated() external override {
         // when the new epoch created
         totalValidCertificateLiquidity = totalValidCertificateLiquidity.add(totalPendingEntranceCertificateLiquidity).sub(totalPendingExitCertificateLiquidity);
-        totalPendingExitCertificateLiquidity = 0;
+        totalPendingEntranceCertificateLiquidity = 0;
         totalPendingExitCertificateLiquidity = 0;
     }
 

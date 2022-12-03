@@ -26,7 +26,9 @@ interface IMetaDefender {
 
     function claimRewards(uint certificateId) external;
 
-    function certificateProviderEntrance(address beneficiary, uint _amount) external;
+    function getSPSLockedByCertificateId(uint certificateId) external view returns(uint);
+
+    function certificateProviderEntrance(uint _amount) external;
 
     function signalCertificateProviderExit(uint certificateId) external;
 

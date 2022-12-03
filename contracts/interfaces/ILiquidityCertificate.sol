@@ -44,8 +44,6 @@ interface ILiquidityCertificate {
 
     function getLiquidity(uint certificateId) external view returns (uint);
 
-    function getEpoch(uint certificateId) external view returns (uint);
-
     function getCertificateInfo(uint certificateId) external view returns (CertificateInfo memory);
 
     function updateRewardDebtEpochIndex(uint certificateId, uint64 currentEpochIndex) external;
@@ -57,12 +55,11 @@ interface ILiquidityCertificate {
     function newEpochCreated() external;
 
     function mint(
-        address owner,
         uint64 enteredEpochIndex,
         uint liquidity
     ) external returns (uint);
 
-    function expire(address spender, uint certificateId) external;
+    function expire(uint certificateId, uint64 currentEpochIndex) external;
 
     function belongsTo(uint certificateId) external view returns (address);
 }
