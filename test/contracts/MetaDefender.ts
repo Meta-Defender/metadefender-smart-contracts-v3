@@ -13,7 +13,6 @@ import {
 } from '../utils/deployTestSystem';
 import { expect } from 'chai';
 import { seedTestSystem } from '../utils/seedTestSystem';
-import { e, exp } from 'mathjs';
 
 describe('MetaDefender - uint tests', async () => {
     let deployer: Signer;
@@ -105,10 +104,7 @@ describe('MetaDefender - uint tests', async () => {
             await expect(
                 contracts.metaDefender
                     .connect(provider1)
-                    .certificateProviderEntrance(
-                        await provider1.getAddress(),
-                        toBN('0.01'),
-                    ),
+                    .certificateProviderEntrance(toBN('0.01')),
             ).to.be.revertedWithCustomError(
                 contracts.liquidityCertificate,
                 'InsufficientLiquidity',
@@ -122,10 +118,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10000'),
-                );
+                .certificateProviderEntrance(toBN('10000'));
             expect(
                 await contracts.test.quoteToken.balanceOf(
                     contracts.metaDefender.address,
@@ -173,10 +166,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10000'),
-                );
+                .certificateProviderEntrance(toBN('10000'));
             await expect(
                 contracts.metaDefender
                     .connect(coverBuyer1)
@@ -198,10 +188,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
 
             await fastForward(86400);
 
@@ -239,7 +226,7 @@ describe('MetaDefender - uint tests', async () => {
         it('should revert if the certificate is invalid', async () => {
             await expect(
                 contracts.metaDefender.certificateProviderExit('7777'),
-            ).to.be.revertedWith('certificate does not exist');
+            ).to.be.revertedWith('ERC721: invalid token ID');
         });
         it('should revert if the certificate not belongs to the msg.sender', async () => {
             await seedTestSystem(deployer, contracts, 100000, [
@@ -249,10 +236,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(provider1)
@@ -262,8 +246,9 @@ describe('MetaDefender - uint tests', async () => {
                 contracts.metaDefender
                     .connect(provider2)
                     .certificateProviderExit('0'),
-            ).to.be.revertedWith(
-                'attempted to burn nonexistent certificate, or not owner',
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'InsufficientPrivilege',
             );
         });
         it('should revert if withdrawing the certificate without signalWithdraw', async () => {
@@ -274,10 +259,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await expect(
                 contracts.metaDefender
                     .connect(provider1)
@@ -295,17 +277,14 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(provider1)
                 .signalCertificateProviderExit('0');
             await expect(
                 contracts.metaDefender
-                    .connect(provider2)
+                    .connect(provider1)
                     .certificateProviderExit('0'),
             ).to.be.revertedWithCustomError(
                 contracts.metaDefender,
@@ -321,10 +300,7 @@ describe('MetaDefender - uint tests', async () => {
 
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
 
             await fastForward(86400);
 
@@ -346,7 +322,6 @@ describe('MetaDefender - uint tests', async () => {
                 ),
             ).to.approximately(toBN('99901'), toBN(String(99901 * 0.0001)));
             await fastForward(86400 * 365);
-            await contracts.epochManage.checkAndCreateNewEpoch();
         });
     });
 
@@ -363,10 +338,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10000'),
-                );
+                .certificateProviderEntrance(toBN('10000'));
             await expect(
                 contracts.metaDefender.connect(provider2).claimRewards('0'),
             ).to.be.revertedWithCustomError(
@@ -382,10 +354,7 @@ describe('MetaDefender - uint tests', async () => {
             // provider asset
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             // buy cover
             await contracts.metaDefender
@@ -419,10 +388,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -445,10 +411,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -471,10 +434,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -499,10 +459,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -525,10 +482,7 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.mockRiskReserve.mockMint(toBN('10000'));
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -567,10 +521,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -589,10 +540,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -635,10 +583,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -658,10 +603,7 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.mockRiskReserve.mockMint(toBN('10000'));
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -691,10 +633,7 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.mockRiskReserve.mockMint(toBN('50'));
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -745,10 +684,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -778,10 +714,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -827,10 +760,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -848,10 +778,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -872,10 +799,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -898,10 +822,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -922,10 +843,7 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(
-                    await provider1.getAddress(),
-                    toBN('10100'),
-                );
+                .certificateProviderEntrance(toBN('10100'));
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -943,199 +861,78 @@ describe('MetaDefender - uint tests', async () => {
         });
     });
 
-    //     it('will get the shadow and withdrawal successfully when medalInfo.enteredAt > globalInfo.currentFreedTs', async () => {
-    //         await seedTestSystem(deployer, contracts, 100000, [
-    //             provider1,
-    //             provider2,
-    //             coverBuyer1,
-    //         ]);
-    //         await contracts.metaDefender
-    //             .connect(provider1)
-    //             .providerEntrance(await provider1.getAddress(), toBN('10000'));
-    //         await contracts.metaDefender
-    //             .connect(provider2)
-    //             .providerEntrance(await provider1.getAddress(), toBN('10000'));
-    //         await contracts.metaDefender
-    //             .connect(coverBuyer1)
-    //             .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
-    //         await contracts.metaDefender
-    //             .connect(provider1)
-    //             .certificateProviderExit('0');
-    //         const withdrawalAndAShadowByMedal =
-    //             await contracts.metaDefender.getWithdrawalAndShadowByMedal('0');
-    //         // which means one can withdraw 0 from the medal.
-    //         expect(withdrawalAndAShadowByMedal[0]).to.be.equal(toBN('0'));
-    //         // and he still has 1000 locked in the medal.
-    //         expect(withdrawalAndAShadowByMedal[1]).to.be.equal(toBN('1000'));
-    //         await contracts.metaDefender
-    //             .connect(provider1)
-    //             .medalProviderWithdraw('0');
-    //     });
-    //     it('will get the shadow and withdrawal successfully when medalInfo.enteredAt < globalInfo.currentFreedTs', async () => {
-    //         // 1: provider entrance
-    //         await seedTestSystem(deployer, contracts, 100000, [
-    //             provider1,
-    //             provider2,
-    //             coverBuyer1,
-    //         ]);
-    //         await contracts.metaDefender
-    //             .connect(provider1)
-    //             .providerEntrance(await provider1.getAddress(), toBN('10000'));
-    //         await contracts.metaDefender
-    //             .connect(provider2)
-    //             .providerEntrance(await provider1.getAddress(), toBN('10000'));
-    //         // 2: buy cover
-    //         await contracts.metaDefender
-    //             .connect(coverBuyer1)
-    //             .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
-    //         // 3: provider exit
-    //         await contracts.metaDefender
-    //             .connect(provider1)
-    //             .certificateProviderExit('0');
-    //         // 4: fast-forward 3 months
-    //         fastForward(90 * 86400 + 43200);
-    //         // 5: policy cancel;
-    //         await contracts.metaDefender.connect(coverBuyer1).cancelPolicy('0');
-    //         // 6: get withdrawal and shadow by medal
-    //         const withdrawalAndShadowByMedal =
-    //             await contracts.metaDefender.getWithdrawalAndShadowByMedal('0');
-    //         // expect amount can be withdrawn = 1000; shadow = 0;
-    //         expect(withdrawalAndShadowByMedal[0]).to.be.equal(toBN('1000'));
-    //         expect(withdrawalAndShadowByMedal[1]).to.be.equal(toBN('0'));
-    //         const tokenBeforeWithdrawal =
-    //             await contracts.test.quoteToken.balanceOf(
-    //                 await provider1.getAddress(),
-    //             );
-    //         await contracts.metaDefender
-    //             .connect(provider1)
-    //             .medalProviderWithdraw('0');
-    //         const tokenAfterWithdrawal =
-    //             await contracts.test.quoteToken.balanceOf(
-    //                 await provider1.getAddress(),
-    //             );
-    //         expect(tokenAfterWithdrawal.sub(tokenBeforeWithdrawal)).to.be.equal(
-    //             toBN('1000'),
-    //         );
-    //     });
-    //     describe('cancel policy', async () => {
-    //         it('will revert when policy is not expired', async () => {
-    //             await seedTestSystem(deployer, contracts, 100000, [
-    //                 provider1,
-    //                 coverBuyer1,
-    //             ]);
-    //             await contracts.metaDefender
-    //                 .connect(provider1)
-    //                 .providerEntrance(
-    //                     await provider1.getAddress(),
-    //                     toBN('10000'),
-    //                 );
-    //             await contracts.metaDefender
-    //                 .connect(coverBuyer1)
-    //                 .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
-    //             await fastForward(45 * 86400);
-    //             await expect(
-    //                 contracts.metaDefender.cancelPolicy('0'),
-    //             ).to.be.revertedWith('policy is not expired');
-    //         });
-    //         it('will revert if the other one cancel the policy in one day', async () => {
-    //             await seedTestSystem(deployer, contracts, 100000, [
-    //                 provider1,
-    //                 coverBuyer1,
-    //             ]);
-    //             await contracts.metaDefender
-    //                 .connect(provider1)
-    //                 .providerEntrance(
-    //                     await provider1.getAddress(),
-    //                     toBN('10000'),
-    //                 );
-    //             await contracts.metaDefender
-    //                 .connect(coverBuyer1)
-    //                 .buyCover(await coverBuyer1.getAddress(), toBN('2000'));
-    //             // after 90 day and a half
-    //             await fastForward(90 * 86400 + 43200);
-    //             await expect(
-    //                 contracts.metaDefender.connect(provider1).cancelPolicy('0'),
-    //             ).to.be.revertedWithCustomError(
-    //                 contracts.metaDefender,
-    //                 'PolicyCanOnlyCancelledByHolder',
-    //             );
-    //         });
+    describe('mine', async () => {
+        it('will revert if msg.sender is not the owner', async () => {
+            await seedTestSystem(deployer, contracts, 100000, [provider1]);
+            await expect(
+                contracts.metaDefender.connect(provider1).mine(0, ZERO_ADDRESS),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'InsufficientPrivilege',
+            );
+        });
+        it('will revert if the address is ZEOR_ADDRESS', async () => {
+            await seedTestSystem(deployer, contracts, 100000, [provider1]);
+            await expect(
+                contracts.metaDefender.mine(0, ZERO_ADDRESS),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'InvalidAddress',
+            );
+        });
+        it('will revert if the mining address is valid', async () => {
+            await seedTestSystem(deployer, contracts, 100000, [provider1]);
+            await expect(
+                contracts.metaDefender.mine(
+                    0,
+                    '0x0000000000000000000000000000000000000001',
+                ),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'InvalidMiningProxy',
+            );
+        });
+        it('will successfully set the mining address', async () => {
+            await seedTestSystem(deployer, contracts, 100000, [provider1]);
+            await contracts.metaDefender.certificateProviderEntrance(
+                toBN('10100'),
+            );
+            // set the 0x1 as the valid mining address.
+            await contracts.metaDefender.validMiningProxyManage(
+                MOCK_MINING_ADDRESS,
+                true,
+            );
+            await contracts.metaDefender.mine(toBN('1'), MOCK_MINING_ADDRESS);
+            expect(
+                await contracts.test.quoteToken.balanceOf(MOCK_MINING_ADDRESS),
+            ).to.be.equal(toBN('1'));
+        });
+    });
 
-    // });
-    //
-    // describe('mine', async () => {
-    //     it('will revert if msg.sender is not the owner', async () => {
-    //         await seedTestSystem(deployer, contracts, 100000, [provider1]);
-    //         await expect(
-    //             contracts.metaDefender.connect(provider1).mine(0, ZERO_ADDRESS),
-    //         ).to.be.revertedWithCustomError(
-    //             contracts.metaDefender,
-    //             'InsufficientPrivilege',
-    //         );
-    //     });
-    //     it('will revert if the address is ZEOR_ADDRESS', async () => {
-    //         await seedTestSystem(deployer, contracts, 100000, [provider1]);
-    //         await expect(
-    //             contracts.metaDefender.mine(0, ZERO_ADDRESS),
-    //         ).to.be.revertedWithCustomError(
-    //             contracts.metaDefender,
-    //             'InvalidAddress',
-    //         );
-    //     });
-    //     it('will revert if the mining address is valid', async () => {
-    //         await seedTestSystem(deployer, contracts, 100000, [provider1]);
-    //         await expect(
-    //             contracts.metaDefender.mine(
-    //                 0,
-    //                 '0x0000000000000000000000000000000000000001',
-    //             ),
-    //         ).to.be.revertedWithCustomError(
-    //             contracts.metaDefender,
-    //             'InvalidMiningProxy',
-    //         );
-    //     });
-    //     it('will successfully set the mining address', async () => {
-    //         await seedTestSystem(deployer, contracts, 100000, [provider1]);
-    //         await contracts.metaDefender.providerEntrance(
-    //             await provider1.getAddress(),
-    //             toBN('10000'),
-    //         );
-    //         // set the 0x1 as the valid mining address.
-    //         await contracts.metaDefender.validMiningProxyManage(
-    //             MOCK_MINING_ADDRESS,
-    //             true,
-    //         );
-    //         await contracts.metaDefender.mine(toBN('1'), MOCK_MINING_ADDRESS);
-    //         expect(
-    //             await contracts.test.quoteToken.balanceOf(MOCK_MINING_ADDRESS),
-    //         ).to.be.equal(toBN('1'));
-    //     });
-    // });
-    //
-    // describe('validMiningProxyManage', async () => {
-    //     it('will revert if msg.sender is not the owner', async () => {
-    //         await expect(
-    //             contracts.metaDefender
-    //                 .connect(provider1)
-    //                 .validMiningProxyManage(ZERO_ADDRESS, true),
-    //         ).to.be.revertedWithCustomError(
-    //             contracts.metaDefender,
-    //             'InsufficientPrivilege',
-    //         );
-    //     });
-    //     it('will successfully change the proxy status', async () => {
-    //         expect(
-    //             await contracts.metaDefender.validMiningProxy(ZERO_ADDRESS),
-    //         ).to.be.equal(false);
-    //         await contracts.metaDefender.validMiningProxyManage(
-    //             MOCK_PROXY_ADDRESS,
-    //             true,
-    //         );
-    //         expect(
-    //             await contracts.metaDefender.validMiningProxy(
-    //                 MOCK_PROXY_ADDRESS,
-    //             ),
-    //         ).to.be.equal(true);
-    //     });
-    // });
+    describe('validMiningProxyManage', async () => {
+        it('will revert if msg.sender is not the owner', async () => {
+            await expect(
+                contracts.metaDefender
+                    .connect(provider1)
+                    .validMiningProxyManage(ZERO_ADDRESS, true),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'InsufficientPrivilege',
+            );
+        });
+        it('will successfully change the proxy status', async () => {
+            expect(
+                await contracts.metaDefender.validMiningProxy(ZERO_ADDRESS),
+            ).to.be.equal(false);
+            await contracts.metaDefender.validMiningProxyManage(
+                MOCK_PROXY_ADDRESS,
+                true,
+            );
+            expect(
+                await contracts.metaDefender.validMiningProxy(
+                    MOCK_PROXY_ADDRESS,
+                ),
+            ).to.be.equal(true);
+        });
+    });
 });
