@@ -59,6 +59,8 @@ interface ILiquidityCertificate {
         uint liquidity
     ) external returns (uint);
 
+    function decreaseLiquidity(uint certificateId) external;
+
     function expire(uint certificateId, uint64 currentEpochIndex) external;
 
     function belongsTo(uint certificateId) external view returns (address);

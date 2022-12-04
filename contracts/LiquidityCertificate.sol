@@ -165,7 +165,21 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     }
 
     /**
-     * @notice Burns the LiquidityCertificate.
+     * @notice decreaseLiquidity. LiquidityCertificate.
+   *
+   * @param certificateId The id of the LiquidityCertificate.
+   */
+    function decreaseLiquidity(uint certificateId) external override {
+        if (msg.sender != metaDefender) {
+            revert InsufficientPrivilege();
+        }
+        require(_isApprovedOrOwner(tx.origin, certificateId), "attempted to expire nonexistent certificate, or not owner");
+        totalPendingExitCertificateLiquidity = totalPendingExitCertificateLiquidity.add(_certificateInfo[certificateId].liquidity);
+    }
+
+
+    /**
+ * @notice expire. LiquidityCertificate.
    *
    * @param certificateId The id of the LiquidityCertificate.
    * @param currentEpochIndex the currentEpochIndex.
@@ -175,11 +189,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
             revert InsufficientPrivilege();
         }
         require(_isApprovedOrOwner(tx.origin, certificateId), "attempted to expire nonexistent certificate, or not owner");
-        // remove liquidity from totalCertificateLiquidity.
-        totalPendingExitCertificateLiquidity = totalPendingExitCertificateLiquidity.add(_certificateInfo[certificateId].liquidity);
-        _certificateInfo[certificateId].isValid = false;
         _certificateInfo[certificateId].exitedEpochIndex = currentEpochIndex;
-
         emit Expired(certificateId);
     }
 

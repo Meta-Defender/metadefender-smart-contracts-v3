@@ -26,7 +26,7 @@ interface IMetaDefender {
 
     function claimRewards(uint certificateId) external;
 
-    function getSPSLockedByCertificateId(uint certificateId) external view returns(uint);
+    function getSPSLockedByCertificateId(uint certificateId) external view returns(uint,uint);
 
     function certificateProviderEntrance(uint _amount) external;
 
@@ -39,8 +39,6 @@ interface IMetaDefender {
     function policyClaimApply(uint _id) external;
 
     function refuseApply(uint _id) external;
-
-    function getWithdrawal(uint certificateId) external view returns (uint, uint);
 
     function getRewards(uint certificateId) external view returns (uint);
 

@@ -69,6 +69,11 @@ contract EpochManage is IEpochManage {
         return (block.timestamp.sub(block.timestamp % 1 days)).div(1 days);
     }
 
+    function isExitDay() external view override returns(bool){
+        uint currentEpoch = getCurrentEpoch();
+        return currentEpoch % 7 == 0;
+    }
+
     function checkAndCreateNewEpochAndUpdateLiquidity() external override returns (bool){
         uint cei = getCurrentEpoch();
         if (cei != _epochInfo[currentEpochIndex].epochId) {

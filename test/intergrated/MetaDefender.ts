@@ -6,13 +6,20 @@ import {
     toBN,
     ZERO_ADDRESS,
 } from '../../scripts/util/web3utils';
-import { fastForward, restoreSnapshot, takeSnapshot } from '../utils';
+import {
+    fastForward,
+    fastForwardToNextExitDay,
+    fastForwardToNextNotExitDay,
+    restoreSnapshot,
+    takeSnapshot,
+} from '../utils';
 import {
     deployTestSystem,
     TestSystemContractsType,
 } from '../utils/deployTestSystem';
 import { seedTestSystem } from '../utils/seedTestSystem';
 import { expect } from 'chai';
+import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { exp } from 'mathjs';
 
 describe('MetaDefender - integrated tests', async () => {
@@ -94,13 +101,13 @@ describe('MetaDefender - integrated tests', async () => {
         });
         it('should get the shadow correctly', async () => {
             // In certificate0, there are B1 and B2 locked, SPS = 100/10000 + 100/50000 = 0.0012
-            expect(
-                await contracts.metaDefender.getSPSLockedByCertificateId('0'),
-            ).to.be.equal(toBN('0.012'));
+            const sw0 =
+                await contracts.metaDefender.getSPSLockedByCertificateId('0');
+            expect(sw0[0]).to.be.equal(toBN('0.012'));
             // In certificate1, there are B2 locked, SPS = 100/50000 = 0.0002
-            expect(
-                await contracts.metaDefender.getSPSLockedByCertificateId('1'),
-            ).to.be.equal(toBN('0.002'));
+            const sw1 =
+                await contracts.metaDefender.getSPSLockedByCertificateId('1');
+            expect(sw1[0]).to.be.equal(toBN('0.002'));
         });
     });
 
@@ -112,13 +119,14 @@ describe('MetaDefender - integrated tests', async () => {
             //                                                                                        S(1)=S(2)=100/50000=0.002
             // epoch        1               2                                                      3
             await fastForward(86400 * 380);
+            await fastForwardToNextNotExitDay();
             await contracts.metaDefender.settlePolicy('0');
-            expect(
-                await contracts.metaDefender.getSPSLockedByCertificateId('0'),
-            ).to.be.equal(toBN('0.002'));
-            expect(
-                await contracts.metaDefender.getSPSLockedByCertificateId('1'),
-            ).to.be.equal(toBN('0.002'));
+            const sw0 =
+                await contracts.metaDefender.getSPSLockedByCertificateId('0');
+            expect(sw0[0]).to.be.equal(toBN('0.002'));
+            const sw1 =
+                await contracts.metaDefender.getSPSLockedByCertificateId('1');
+            expect(sw1[0]).to.be.equal(toBN('0.002'));
         });
         it('should calculate the SPS correctly after settle policy2', async () => {
             // we will design an initial state for the system.
@@ -127,13 +135,14 @@ describe('MetaDefender - integrated tests', async () => {
             //                                                                                        S(1)=100/10000=0.01 S(2)=0
             // epoch        1               2                                                      3
             await fastForward(86400 * 380);
+            await fastForwardToNextNotExitDay();
             await contracts.metaDefender.settlePolicy('1');
-            expect(
-                await contracts.metaDefender.getSPSLockedByCertificateId('0'),
-            ).to.be.equal(toBN('0.01'));
-            expect(
-                await contracts.metaDefender.getSPSLockedByCertificateId('1'),
-            ).to.be.equal(toBN('0'));
+            const sw0 =
+                await contracts.metaDefender.getSPSLockedByCertificateId('0');
+            expect(sw0[0]).to.be.equal(toBN('0.01'));
+            const sw1 =
+                await contracts.metaDefender.getSPSLockedByCertificateId('1');
+            expect(sw1[0]).to.be.equal(toBN('0'));
         });
         it('should calculate the SPS correctly after settle policy1 and policy2', async () => {
             // we will design an initial state for the system.
@@ -144,27 +153,26 @@ describe('MetaDefender - integrated tests', async () => {
             //                                                                                        S(1)=100/10000=0.01 S(2)=0
             // epoch        1               2                                                      3
             await fastForward(86400 * 380);
+            await fastForwardToNextNotExitDay();
             await contracts.metaDefender.settlePolicy('1');
-            await fastForward(86400);
+            await fastForwardToNextNotExitDay();
             await contracts.metaDefender.settlePolicy('0');
-            expect(
-                await contracts.metaDefender.getSPSLockedByCertificateId('0'),
-            ).to.be.equal(toBN('0'));
-            expect(
-                await contracts.metaDefender.getSPSLockedByCertificateId('1'),
-            ).to.be.equal(toBN('0'));
+            const sw0 =
+                await contracts.metaDefender.getSPSLockedByCertificateId('0');
+            expect(sw0[0]).to.be.equal(toBN('0'));
+            const sw1 =
+                await contracts.metaDefender.getSPSLockedByCertificateId('1');
+            expect(sw1[0]).to.be.equal(toBN('0'));
         });
-
-        it('should withdraw correctly, scenario1', async () => {
-            // we will design an initial state for the system.
-            //
+        it('should withdraw correctly, scenario1: w1,w2,s1', async () => {
             //                                             (1: change the liquidity, 2: DO S2, 3: change the accRPS and accSPS)
-            //                                                                                         |
-            // -(0:00)------P1-----0:00-----B1-----P2-----0:00-----B2----(.. long time passed)----|----S2----SW1----SW2-----0:00-----W1-----W2----
-            //                                                                                                                       |      |
-            //                                                                                                                       W(1)+R=10000-10000*0.01+1+0.2=9901.2 W(2)=40000+0.8=40000.8
-            // epoch        1               2                                                          3                     4
+            //                                                                                    |
+            // -(0:00)----P1----0:00----B1----P2-----0:00-----B2----(.. long time passed)----|----S2----SW1----SW2-----0:00-----W1-----W2----S1
+            //                                                                                                                  |      |
+            //                                                                                                                  W(1)+R=10000-10000*0.01+1+0.2=9901.2 W(2)=40000+0.8=40000.8
+            // epoch      1             2                                                         3                             4
             await fastForward(86400 * 380);
+            await fastForwardToNextNotExitDay();
             await contracts.metaDefender.settlePolicy('1');
             const tokenBefore1 = await contracts.test.quoteToken.balanceOf(
                 await provider1.getAddress(),
@@ -178,13 +186,15 @@ describe('MetaDefender - integrated tests', async () => {
             await contracts.metaDefender
                 .connect(provider2)
                 .signalCertificateProviderExit('1');
-            await fastForward(86400);
+            await fastForwardToNextExitDay();
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderExit('0');
             await contracts.metaDefender
                 .connect(provider2)
                 .certificateProviderExit('1');
+            await fastForwardToNextNotExitDay();
+            await contracts.metaDefender.settlePolicy('0');
             const tokenAfter1 = await contracts.test.quoteToken.balanceOf(
                 await provider1.getAddress(),
             );
@@ -194,17 +204,13 @@ describe('MetaDefender - integrated tests', async () => {
             expect(tokenAfter1.sub(tokenBefore1)).to.be.equal(toBN('9901.2'));
             expect(tokenAfter2.sub(tokenBefore2)).to.be.equal(toBN('40000.8'));
         });
-
-        it('should withdraw correctly, scenario2', async () => {
-            // we will design an initial state for the system.
-            //
-            //                                             (1: change the liquidity, 2: DO S2, 3: change the accRPS and accSPS)
-            //                                                                                         |
-            // -(0:00)------P1-----0:00-----B1-----P2-----0:00-----B2----(.. long time passed)----|----S2----SW1----SW2-----0:00-----W1----S1----W2----
-            //                                                                                                                       |           |
-            //                                                                                                                       W(1)+R=10000-10000*0.01+1+0.2=9901.2 W(2)=40000+0.8=40000.8
-            // epoch        1               2                                                          3                     4
+        it('should withdraw correctly, scenario3: s1,w1,w2', async () => {
+            // -(0:00)----P1----0:00----B1----P2----0:00----B2----(.. long time passed)----S2----SW1----SW2-----0:00-----S1----0:00-----W1----W2----
+            //                                                                                                                          |      |
+            //                                                                                                                          W(1)+R=10000-10000*0.01+1+0.2=9901.2 W(2)=40000+0.8=40000.8
+            // epoch      1             2                                                  3                             4              5
             await fastForward(86400 * 380);
+            await fastForwardToNextNotExitDay();
             await contracts.metaDefender.settlePolicy('1');
             const tokenBefore1 = await contracts.test.quoteToken.balanceOf(
                 await provider1.getAddress(),
@@ -218,11 +224,12 @@ describe('MetaDefender - integrated tests', async () => {
             await contracts.metaDefender
                 .connect(provider2)
                 .signalCertificateProviderExit('1');
-            await fastForward(86400);
+            await fastForwardToNextNotExitDay();
+            await contracts.metaDefender.settlePolicy('0');
+            await fastForwardToNextExitDay();
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderExit('0');
-            await contracts.metaDefender.connect(provider1).settlePolicy('0');
             await contracts.metaDefender
                 .connect(provider2)
                 .certificateProviderExit('1');
@@ -232,7 +239,55 @@ describe('MetaDefender - integrated tests', async () => {
             const tokenAfter2 = await contracts.test.quoteToken.balanceOf(
                 await provider2.getAddress(),
             );
-            expect(tokenAfter1.sub(tokenBefore1)).to.be.equal(toBN('9901.25'));
+            expect(tokenAfter1.sub(tokenBefore1)).to.be.equal(toBN('10001.2'));
+            expect(tokenAfter2.sub(tokenBefore2)).to.be.equal(toBN('40000.8'));
+        });
+    });
+    describe('withdraw after exit', async () => {
+        it('should withdraw correctly after exit', async () => {
+            //                                             (1: change the liquidity, 2: DO S2, 3: change the accRPS and accSPS)
+            //                                                                                    |
+            // -(0:00)----P1----0:00----B1----P2----0:00----B2----(.. long time passed)----S2----SW1----SW2----0:00----W1----W2----0:00----S1----WA1----WA2----
+            //                                                                                                         |     |
+            //                                                                                                         W(1)+R=10000-10000*0.01+1+0.2=9901.2 W(2)=40000+0.8=40000.8
+            // epoch      1             2                                                  3                           4
+            await fastForward(86400 * 380);
+            await fastForwardToNextNotExitDay();
+            await contracts.metaDefender.settlePolicy('1');
+            const tokenBefore1 = await contracts.test.quoteToken.balanceOf(
+                await provider1.getAddress(),
+            );
+            const tokenBefore2 = await contracts.test.quoteToken.balanceOf(
+                await provider2.getAddress(),
+            );
+            await contracts.metaDefender
+                .connect(provider1)
+                .signalCertificateProviderExit('0');
+            await contracts.metaDefender
+                .connect(provider2)
+                .signalCertificateProviderExit('1');
+            await fastForwardToNextExitDay();
+            await contracts.metaDefender
+                .connect(provider1)
+                .certificateProviderExit('0');
+            await contracts.metaDefender
+                .connect(provider2)
+                .certificateProviderExit('1');
+            await fastForwardToNextNotExitDay();
+            await contracts.metaDefender.settlePolicy('0');
+            await contracts.metaDefender
+                .connect(provider1)
+                .withdrawAfterExit('0');
+            await contracts.metaDefender
+                .connect(provider2)
+                .withdrawAfterExit('1');
+            const tokenAfter1 = await contracts.test.quoteToken.balanceOf(
+                await provider1.getAddress(),
+            );
+            const tokenAfter2 = await contracts.test.quoteToken.balanceOf(
+                await provider2.getAddress(),
+            );
+            expect(tokenAfter1.sub(tokenBefore1)).to.be.equal(toBN('10001.2'));
             expect(tokenAfter2.sub(tokenBefore2)).to.be.equal(toBN('40000.8'));
         });
     });
