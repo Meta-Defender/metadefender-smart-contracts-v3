@@ -6,7 +6,7 @@ import {
     toBN,
     ZERO_ADDRESS,
 } from '../../scripts/util/web3utils';
-import { fastForward, restoreSnapshot, takeSnapshot } from '../utils';
+import { fastForward, fastForwardToNextExitDay, restoreSnapshot, takeSnapshot } from '../utils';
 import {
     deployTestSystem,
     TestSystemContractsType,
@@ -226,7 +226,7 @@ describe('MetaDefender - uint tests', async () => {
         it('should revert if the certificate is invalid', async () => {
             await expect(
                 contracts.metaDefender.certificateProviderExit('7777'),
-            ).to.be.revertedWith('ERC721: invalid token ID');
+            ).to.be.revertedWith('certificate does not exist');
         });
         it('should revert if the certificate not belongs to the msg.sender', async () => {
             await seedTestSystem(deployer, contracts, 100000, [
@@ -241,7 +241,7 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(provider1)
                 .signalCertificateProviderExit('0');
-            await fastForward(86400);
+            await fastForwardToNextExitDay();
             await expect(
                 contracts.metaDefender
                     .connect(provider2)
@@ -260,6 +260,7 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderEntrance(toBN('10100'));
+            await fastForwardToNextExitDay();
             await expect(
                 contracts.metaDefender
                     .connect(provider1)
@@ -278,7 +279,7 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderEntrance(toBN('10100'));
-            await fastForward(86400);
+            await fastForwardToNextExitDay();
             await contracts.metaDefender
                 .connect(provider1)
                 .signalCertificateProviderExit('0');
@@ -301,9 +302,7 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderEntrance(toBN('10100'));
-
             await fastForward(86400);
-
             await contracts.metaDefender
                 .connect(coverBuyer1)
                 .buyPolicy(await coverBuyer1.getAddress(), toBN('100'), '365');
@@ -311,7 +310,7 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(provider1)
                 .signalCertificateProviderExit('0');
-            await fastForward(86400);
+            await fastForwardToNextExitDay();
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderExit('0');
@@ -674,7 +673,7 @@ describe('MetaDefender - uint tests', async () => {
                 contracts.metaDefender
                     .connect(provider1)
                     .withdrawAfterExit('7777'),
-            ).to.be.revertedWith('ERC721: invalid token ID');
+            ).to.be.revertedWith('certificate does not exist');
         });
         it('should revert if the certificateId is not belong to the msg.sender', async () => {
             await seedTestSystem(deployer, contracts, 100000, [
@@ -693,7 +692,7 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(provider1)
                 .signalCertificateProviderExit('0');
-            await fastForward(86400);
+            await fastForwardToNextExitDay();
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderExit('0');
@@ -704,6 +703,28 @@ describe('MetaDefender - uint tests', async () => {
             ).to.be.revertedWithCustomError(
                 contracts.metaDefender,
                 'InsufficientPrivilege',
+            );
+        });
+        it('should revert if the certificateId is not expired', async () => {
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .certificateProviderEntrance(toBN('10100'));
+            await fastForward(86400);
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyPolicy(await coverBuyer1.getAddress(), toBN('100'), '365');
+            await fastForward(86400);
+            await expect(
+                contracts.metaDefender
+                    .connect(provider1)
+                    .withdrawAfterExit('0'),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'CertificateNotExit',
             );
         });
         it('should successfully get withdraw after exit from the pool', async () => {
@@ -723,7 +744,7 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(provider1)
                 .signalCertificateProviderExit('0');
-            await fastForward(86400);
+            await fastForwardToNextExitDay();
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderExit('0');

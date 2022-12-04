@@ -1,6 +1,7 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { fromBN, toBN } from '../../scripts/util/web3utils';
+import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import moment from 'moment';
 
@@ -23,6 +24,20 @@ export async function fastForward(seconds: number) {
     await send(method, params);
 
     await mineBlock();
+}
+
+export async function fastForwardToNextExitDay() {
+    const currentDay = Math.floor((await time.latest()) / 86400);
+    await fastForward(86400 * (7 - (currentDay % 7)));
+}
+
+export async function fastForwardToNextNotExitDay() {
+    const currentDay = Math.floor((await time.latest()) / 86400);
+    if (currentDay % 7 === 6) {
+        await fastForward(86400 * 2);
+    } else {
+        await fastForward(86400);
+    }
 }
 
 export async function getCurrentFriday() {

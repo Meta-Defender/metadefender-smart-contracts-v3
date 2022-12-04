@@ -221,7 +221,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     function signalCertificateProviderExit(uint certificateId) external override reentrancyGuard checkNewEpoch(){
         uint64 currentEpochIndex = epochManage.currentEpochIndex();
         liquidityCertificate.updateSignalWithdrawEpochIndex(certificateId, currentEpochIndex);
-        liquidityCertificate.expire(certificateId, currentEpochIndex);
+        liquidityCertificate.decreaseLiquidity(certificateId);
     }
 
 
@@ -230,11 +230,14 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @param certificateId the certificateId
      */
     function certificateProviderExit(uint certificateId) external override reentrancyGuard checkNewEpoch(){
-        if (liquidityCertificate.belongsTo(certificateId) != msg.sender) {
-            revert InsufficientPrivilege();
-        }
         ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
         uint64 currentEpochIndex = epochManage.currentEpochIndex();
+        if (!epochManage.isExitDay()){
+            revert NotExitDay();
+        }
+        if (msg.sender != liquidityCertificate.belongsTo(certificateId) ) {
+            revert InsufficientPrivilege();
+        }
         if (certificateInfo.signalWithdrawalEpochIndex == 0) {
             revert CertificateNotSignalWithdraw();
         }
@@ -242,11 +245,10 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             revert SignalWithdrawEpochEqualsCurrentEpoch();
         }
         // how much SPS still be locked in the certificateId.
-        uint SPSLocked = getSPSLockedByCertificateId(certificateId);
+        (uint SPSLocked, uint withdrawal) = getSPSLockedByCertificateId(certificateId);
         liquidityCertificate.updateSPSLocked(certificateId, SPSLocked);
-
         uint rewards = getRewards(certificateId);
-        uint withdrawal = certificateInfo.liquidity.multiplyDecimal(SafeDecimalMath.UNIT.sub(SPSLocked));
+        liquidityCertificate.expire(certificateId, currentEpochIndex);
         // transfer
         if (withdrawal.add(rewards) > 0) {
             aUSD.transfer(msg.sender, withdrawal.add(rewards));
@@ -258,13 +260,15 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @dev getSPSLockedByCertificateId calculates the rewards locked in the certificateId
      * @param certificateId the certificateId
      */
-    function getSPSLockedByCertificateId(uint certificateId) public view override returns(uint) {
+    function getSPSLockedByCertificateId(uint certificateId) public view override returns(uint, uint) {
         // lockedSPS = accSPSLeft - accSPSProvide + provideEpoch.crossSPS - withdrawEpoch.crossSPS
         ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
         IEpochManage.EpochInfo memory epochInfoEntered = epochManage.getEpochInfo(certificateInfo.enteredEpochIndex);
         IEpochManage.EpochInfo memory epochInfoExit = epochManage.getEpochInfo(certificateInfo.exitedEpochIndex);
         IEpochManage.EpochInfo memory epochInfoCurrent = epochManage.getCurrentEpochInfo();
-        return epochInfoExit.epochId == 0 ? epochInfoCurrent.accSPS.add(epochInfoEntered.crossSPS).sub(epochInfoCurrent.crossSPS).sub(epochInfoEntered.accSPS) : epochInfoExit.accSPS.add(epochInfoEntered.crossSPS).sub(epochInfoExit.crossSPS).sub(epochInfoEntered.accSPS);
+        uint SPSLocked = certificateInfo.exitedEpochIndex == 0 ? epochInfoCurrent.accSPS.add(epochInfoEntered.crossSPS).sub(epochInfoCurrent.crossSPS).sub(epochInfoEntered.accSPS) : epochInfoExit.accSPS.add(epochInfoEntered.crossSPS).sub(epochInfoExit.crossSPS).sub(epochInfoEntered.accSPS);
+        uint withdrawal = certificateInfo.exitedEpochIndex == 0 ? certificateInfo.liquidity.multiplyDecimal(SafeDecimalMath.UNIT.sub(SPSLocked)) : certificateInfo.liquidity.multiplyDecimal(certificateInfo.SPSLocked.sub(SPSLocked));
+        return (SPSLocked, withdrawal);
     }
 
 
@@ -278,17 +282,6 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         IEpochManage.EpochInfo memory epochInfoEntered = epochManage.getEpochInfo(certificateInfo.enteredEpochIndex);
         uint rewards = certificateInfo.liquidity.multiplyDecimal(epochInfoCurrent.accRPS.sub(epochInfoEntered.accRPS));
         return rewards;
-    }
-
-    /**
-     * @dev getWithdrawal calculates the how much can be withdrawn after exit.
-     * @param certificateId The certificateId.
-     */
-    function getWithdrawal(uint certificateId) public view override returns (uint, uint) {
-        ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
-        uint SPSLocked = getSPSLockedByCertificateId(certificateId);
-        uint withdrawal = certificateInfo.liquidity.multiplyDecimal(certificateInfo.SPSLocked.sub(SPSLocked));
-        return (SPSLocked, withdrawal);
     }
 
     /**
@@ -309,11 +302,15 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @dev withdrawAfterExit retrieve the rewards for the providers in the pool
      * @param certificateId The medalId.
      */
-    function withdrawAfterExit(uint certificateId) external override reentrancyGuard {
+    function withdrawAfterExit(uint certificateId) external override reentrancyGuard checkNewEpoch() {
+        ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
         if (msg.sender != (liquidityCertificate.belongsTo(certificateId))) {
             revert InsufficientPrivilege();
         }
-        (uint SPSLocked, uint withdrawal) = getWithdrawal(certificateId);
+        if (certificateInfo.exitedEpochIndex == 0) {
+            revert CertificateNotExit();
+        }
+        (uint SPSLocked, uint withdrawal) = getSPSLockedByCertificateId(certificateId);
         liquidityCertificate.updateSPSLocked(certificateId, SPSLocked);
         aUSD.transfer(msg.sender, withdrawal);
     }
@@ -323,6 +320,9 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @param policyId the Id of policy.
      */
     function settlePolicy(uint policyId) external override checkNewEpoch(){
+        if (epochManage.isExitDay()) {
+            revert IsExitDay();
+        }
         IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
         if (policy.isSettleAvailable(policyId)) {
             policy.changeStatusIsSettled(policyId,true);
@@ -516,5 +516,8 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     error ReentrancyGuardDetected();
     error InvalidAddress(address addr);
     error CertificateNotSignalWithdraw();
+    error CertificateNotExit();
     error SignalWithdrawEpochEqualsCurrentEpoch();
+    error NotExitDay();
+    error IsExitDay();
 }

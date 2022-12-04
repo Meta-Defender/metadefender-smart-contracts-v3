@@ -20,6 +20,8 @@ interface IEpochManage {
 
     function getCurrentEpoch() external view returns(uint);
 
+    function isExitDay() external view returns(bool);
+
     function checkAndCreateNewEpochAndUpdateLiquidity() external returns (bool);
 
     function checkAndCreateNewEpochAndUpdateAccRPSAccSPS(bool isNewEpoch) external;
