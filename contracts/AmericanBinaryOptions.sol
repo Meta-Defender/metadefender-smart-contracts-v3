@@ -193,7 +193,7 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
         } else {
             call = int(PRECISE_UNIT);
         }
-        return call;
+        return call.preciseDecimalToDecimal();
     }
 
     /*

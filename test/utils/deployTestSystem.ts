@@ -1,6 +1,6 @@
 import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
-import { ZERO_ADDRESS } from '../../scripts/util/web3utils';
+import { toBN, ZERO_ADDRESS } from '../../scripts/util/web3utils';
 import {
     MetaDefender,
     LiquidityCertificate,
@@ -94,6 +94,8 @@ export async function initTestSystem(
         c.policy.address,
         c.americanBinaryOptions.address,
         c.epochManage.address,
+        toBN('0.10'),
+        toBN('0'),
     );
 
     await c.liquidityCertificate.init(

@@ -21,6 +21,7 @@ import "./Lib/SafeDecimalMath.sol";
 import "./interfaces/IEpochManage.sol";
 import "./interfaces/IEpochManage.sol";
 import "./interfaces/IAmericanBinaryOptions.sol";
+import "./interfaces/IMetaDefender.sol";
 
 contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     using SafeMath for uint;
@@ -43,11 +44,15 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     address public judger;
     address public official;
     address public protocol;
-    uint public constant TEAM_RESERVE_RATE = 5e16;
+    uint public teamReserveRate;
     uint public constant FEE_RATE = 5e16;
-    uint public constant MAX_COVERAGE_PERCENTAGE = 2e16;
+    uint public constant FEE = 10e18;
+    uint public constant MAX_COVERAGE_PERCENTAGE = 2e17;
+    uint public constant WITHDRAWAL_FEE_RATE = 3e15;
     uint public constant BUFFER = 3;
-    uint public constant STANDARD_RISK = 2e18;
+    uint public constant STANDARD_RISK = 100e18;
+    int public constant FREE_RATE = 6e16;
+    uint public constant BASE_POINT = 1e16;
 
     // index the providers
     uint public providerCount;
@@ -90,7 +95,11 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         IAmericanBinaryOptions _americanBinaryOptions,
 
         // functional contracts.
-        IEpochManage _epochManage
+        IEpochManage _epochManage,
+
+        // params
+        uint256 _initialRisk,
+        uint256 _teamReserveRate
     ) external {
         if (initialized) {
             revert ContractAlreadyInitialized();
@@ -104,6 +113,8 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         policy = _policy;
         epochManage = _epochManage;
         americanBinaryOptions = _americanBinaryOptions;
+        globalInfo.risk = _initialRisk;
+        teamReserveRate = _teamReserveRate;
 
         initialized = true;
     }
@@ -169,20 +180,20 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             // TODO: how to decide the max coverage;
             revert CoverageTooLarge(coverage);
         }
-        globalInfo.risk = globalInfo.risk.add(coverage.divideDecimal(STANDARD_RISK));
-        uint premium = americanBinaryOptions.mockCalculation(coverage, duration, globalInfo.risk);
-        // mocked in 1e18
+        globalInfo.risk = globalInfo.risk.add(coverage.divideDecimal(STANDARD_RISK).multiplyDecimal(BASE_POINT));
+        int premium = americanBinaryOptions.americanBinaryOptionPrices(duration * 1 days, globalInfo.risk, 1000e18, 1500e18, FREE_RATE);
+        if (premium < 0) {
+            premium = 0;
+        }
         // team reward. mocked in 5e16.
-        uint reward4Team = premium.multiplyDecimal(TEAM_RESERVE_RATE);
+        uint reward4Team = uint(premium).multiplyDecimal(teamReserveRate);
         globalInfo.reward4Team = globalInfo.reward4Team.add(reward4Team);
-        // fee can be retrieved when settle.
-        uint fee = premium.multiplyDecimal(FEE_RATE);
-        // fee = 1e18 * 5e16 = 5e16
-        // the user will pay 1e18 + 5e16 + 5e16 = 1.1e18
-        aUSD.transferFrom(msg.sender, address(this), premium.add(fee).add(reward4Team));
+        // fee = 10e18 which is 10 usdt.
+        // the user will pay premium + reward4Team + fee
+        aUSD.transferFrom(msg.sender, address(this), uint(premium).add(FEE).add(reward4Team));
 
         // update globals
-        uint deltaRPS = premium.divideDecimal(liquidityCertificate.totalValidCertificateLiquidity());
+        uint deltaRPS = uint(premium).divideDecimal(liquidityCertificate.totalValidCertificateLiquidity());
         uint deltaSPS = coverage.divideDecimal(liquidityCertificate.totalValidCertificateLiquidity());
 
         globalInfo.accSPS = globalInfo.accSPS.add(deltaSPS);
@@ -192,7 +203,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         uint policyId = policy.mint(
             beneficiary,
             coverage,
-            fee,
+            FEE,
             epochManage.currentEpochIndex(),
             duration,
             deltaSPS
@@ -250,8 +261,10 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         uint rewards = getRewards(certificateId);
         liquidityCertificate.expire(certificateId, currentEpochIndex);
         // transfer
+        uint fee = withdrawal.multiplyDecimal(WITHDRAWAL_FEE_RATE);
+        globalInfo.reward4Team = globalInfo.reward4Team.add(fee);
         if (withdrawal.add(rewards) > 0) {
-            aUSD.transfer(msg.sender, withdrawal.add(rewards));
+            aUSD.transfer(msg.sender, withdrawal.add(rewards).sub(fee));
         }
         emit ProviderExit(msg.sender);
     }
@@ -312,7 +325,9 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         }
         (uint SPSLocked, uint withdrawal) = getSPSLockedByCertificateId(certificateId);
         liquidityCertificate.updateSPSLocked(certificateId, SPSLocked);
-        aUSD.transfer(msg.sender, withdrawal);
+        uint fee = withdrawal.multiplyDecimal(WITHDRAWAL_FEE_RATE);
+        globalInfo.reward4Team = globalInfo.reward4Team.add(fee);
+        aUSD.transfer(msg.sender, withdrawal.sub(fee));
     }
 
     /**
@@ -330,7 +345,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             // change the SPS.
             globalInfo.accSPS = globalInfo.accSPS.sub(policyInfo.SPS);
             // reduce the risk.
-            globalInfo.risk = globalInfo.risk.sub(policyInfo.coverage.divideDecimal(STANDARD_RISK));
+            globalInfo.risk = globalInfo.risk.sub(policyInfo.coverage.divideDecimal(STANDARD_RISK).multiplyDecimal(BASE_POINT));
             IEpochManage.EpochInfo memory epochInfo = epochManage.getEpochInfo(policyInfo.enteredEpochIndex);
             if (epochManage.getCurrentEpochInfo().epochId.sub(epochInfo.epochId) <= BUFFER) {
                 // to make sure the policyHolder himself settle.
