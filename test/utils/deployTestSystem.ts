@@ -96,6 +96,7 @@ export async function initTestSystem(
         c.epochManage.address,
         toBN('0.10'),
         toBN('0'),
+        toBN('100'),
     );
 
     await c.liquidityCertificate.init(

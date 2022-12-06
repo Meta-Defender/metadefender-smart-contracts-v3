@@ -10,6 +10,7 @@ interface IMetaDefender {
         uint accRPS;
         uint risk;
         uint reward4Team;
+        uint standardRisk;
     }
 
     function getGlobalInfo() external view returns (GlobalInfo memory);
@@ -17,6 +18,8 @@ interface IMetaDefender {
     function transferJudger(address judger) external;
 
     function transferOfficial(address official) external;
+
+    function updateStandardRisk(uint standardRisk) external;
 
     function teamClaim() external;
 

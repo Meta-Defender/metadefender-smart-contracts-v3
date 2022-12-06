@@ -107,7 +107,8 @@ contract Policy is IPolicy, ERC721Enumerable {
         uint fee,
         uint64 enteredEpochIndex,
         uint duration,
-        uint SPS
+        uint SPS,
+        uint standardRisk
     ) external override returns (uint) {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
@@ -118,10 +119,10 @@ contract Policy is IPolicy, ERC721Enumerable {
         }
 
         uint policyId = nextId++;
-        _policyInfo[policyId] = PolicyInfo(beneficiary, coverage, fee, enteredEpochIndex, duration, SPS, false, false, false);
+        _policyInfo[policyId] = PolicyInfo(beneficiary, coverage, fee, duration, standardRisk, enteredEpochIndex, SPS, false, false, false);
         _mint(beneficiary, policyId);
 
-        emit NewPolicyMinted(beneficiary, policyId, coverage, fee, enteredEpochIndex, duration, SPS);
+        emit NewPolicyMinted(beneficiary, policyId, coverage, fee, duration, standardRisk, enteredEpochIndex, SPS);
         return policyId;
     }
 
@@ -219,5 +220,5 @@ contract Policy is IPolicy, ERC721Enumerable {
     error InsufficientPrivilege();
     error InsufficientCoverage();
 
-    event NewPolicyMinted(address beneficiary, uint policyId, uint coverage, uint fee, uint enteredAt, uint expiredAt, uint shadowImpact);
+    event NewPolicyMinted(address beneficiary, uint policyId, uint coverage, uint fee, uint duration, uint standardRisk, uint enteredEpochIndex, uint SPS);
 }

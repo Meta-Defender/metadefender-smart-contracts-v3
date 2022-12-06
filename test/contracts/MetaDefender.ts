@@ -8,7 +8,8 @@ import {
 } from '../../scripts/util/web3utils';
 import {
     fastForward,
-    fastForwardToNextExitDay, fastForwardToNextNotExitDay,
+    fastForwardToNextExitDay,
+    fastForwardToNextNotExitDay,
     restoreSnapshot,
     takeSnapshot,
 } from '../utils';
@@ -62,6 +63,7 @@ describe('MetaDefender - uint tests', async () => {
                     ZERO_ADDRESS,
                     toBN('0.1'),
                     toBN('0.0'),
+                    toBN('100'),
                 ),
             ).to.be.revertedWithCustomError(
                 contracts.metaDefender,
@@ -91,6 +93,25 @@ describe('MetaDefender - uint tests', async () => {
         });
     });
 
+    describe('update standardRisk', async () => {
+        it('should not allow update when the msg.sender is not the official', async () => {
+            await expect(
+                contracts.metaDefender
+                    .connect(provider1)
+                    .updateStandardRisk(toBN('100')),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'InsufficientPrivilege',
+            );
+        });
+        it('should update the standardRisk successfully', async () => {
+            await contracts.metaDefender
+                .connect(deployer)
+                .updateStandardRisk(toBN('110'));
+            const globalInfo = await contracts.metaDefender.getGlobalInfo();
+            expect(globalInfo.standardRisk).to.be.equal(toBN('110'));
+        });
+    });
     describe('transfer official', async () => {
         it('should not allow transfer when the msg.sender is not the official', async () => {
             await expect(

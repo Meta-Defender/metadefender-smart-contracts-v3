@@ -50,7 +50,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     uint public constant MAX_COVERAGE_PERCENTAGE = 2e17;
     uint public constant WITHDRAWAL_FEE_RATE = 3e15;
     uint public constant BUFFER = 3;
-    uint public constant STANDARD_RISK = 100e18;
+    // uint public constant STANDARD_RISK = 100e18;
     int public constant FREE_RATE = 6e16;
     uint public constant BASE_POINT = 1e16;
 
@@ -99,7 +99,8 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
 
         // params
         uint256 _initialRisk,
-        uint256 _teamReserveRate
+        uint256 _teamReserveRate,
+        uint256 _standardRisk
     ) external {
         if (initialized) {
             revert ContractAlreadyInitialized();
@@ -114,6 +115,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         epochManage = _epochManage;
         americanBinaryOptions = _americanBinaryOptions;
         globalInfo.risk = _initialRisk;
+        globalInfo.standardRisk = _standardRisk;
         teamReserveRate = _teamReserveRate;
 
         initialized = true;
@@ -169,6 +171,17 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     }
 
     /**
+     * @dev updateStandardRisk
+     * @param standardRisk the latest standardRisk
+     */
+    function updateStandardRisk(uint standardRisk) external override {
+        if (msg.sender != official) {
+            revert InsufficientPrivilege();
+        }
+        globalInfo.standardRisk = standardRisk;
+    }
+
+    /**
      * @dev buy Cover
      * @param beneficiary is the address to can claim the coverage.
      * @param coverage is the coverage to be secured.
@@ -180,7 +193,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             // TODO: how to decide the max coverage;
             revert CoverageTooLarge(coverage);
         }
-        globalInfo.risk = globalInfo.risk.add(coverage.divideDecimal(STANDARD_RISK).multiplyDecimal(BASE_POINT));
+        globalInfo.risk = globalInfo.risk.add(coverage.divideDecimal(globalInfo.standardRisk).multiplyDecimal(BASE_POINT));
         int premium = americanBinaryOptions.americanBinaryOptionPrices(duration * 1 days, globalInfo.risk, 1000e18, 1500e18, FREE_RATE);
         if (premium < 0) {
             premium = 0;
@@ -206,7 +219,8 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             FEE,
             epochManage.currentEpochIndex(),
             duration,
-            deltaSPS
+            deltaSPS,
+            globalInfo.standardRisk
         );
 
         emit NewPolicyMinted(policyId);
@@ -345,7 +359,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             // change the SPS.
             globalInfo.accSPS = globalInfo.accSPS.sub(policyInfo.SPS);
             // reduce the risk.
-            globalInfo.risk = globalInfo.risk.sub(policyInfo.coverage.divideDecimal(STANDARD_RISK).multiplyDecimal(BASE_POINT));
+            globalInfo.risk = globalInfo.risk.sub(policyInfo.coverage.divideDecimal(policyInfo.standardRisk).multiplyDecimal(BASE_POINT));
             IEpochManage.EpochInfo memory epochInfo = epochManage.getEpochInfo(policyInfo.enteredEpochIndex);
             if (epochManage.getCurrentEpochInfo().epochId.sub(epochInfo.epochId) <= BUFFER) {
                 // to make sure the policyHolder himself settle.
