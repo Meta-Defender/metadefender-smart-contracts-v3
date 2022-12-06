@@ -7,8 +7,9 @@ interface IPolicy {
         address beneficiary;
         uint coverage;
         uint fee;
-        uint64 enteredEpochIndex;
         uint duration;
+        uint standardRisk;
+        uint64 enteredEpochIndex;
         uint SPS;
         bool isClaimed;
         bool isClaimApplying;
@@ -33,7 +34,8 @@ interface IPolicy {
         uint fee,
         uint64 enteredEpochIndex,
         uint duration,
-        uint SPS
+        uint SPS,
+        uint standardRisk
     ) external returns (uint);
 
     function burn(address spender, uint certificateId) external;
