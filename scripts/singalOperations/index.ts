@@ -57,10 +57,7 @@ async function main() {
                     .approve(metaDefender.address, toBN(String(provideAmount)));
                 await metaDefender
                     .connect(signer)
-                    .providerEntrance(
-                        signerAddress,
-                        toBN(String(provideAmount)),
-                    );
+                    .certificateProviderEntrance(toBN(String(provideAmount)));
             } else {
                 throw new Error('invalid number');
             }
@@ -81,6 +78,9 @@ async function main() {
             const buyCoverAmount = await operation(
                 'how much coverage(in USDT) do u want to buy:(suppose you are a DeFi whale:))',
             );
+            const duration = await operation(
+                'how long do you want to buy the coverage:(in days)',
+            );
             if (!isNaN(Number(buyCoverAmount))) {
                 await quoteToken
                     .connect(signer)
@@ -96,7 +96,11 @@ async function main() {
                     );
                 await metaDefender
                     .connect(signer)
-                    .buyCover(signerAddress, toBN(String(buyCoverAmount)));
+                    .buyPolicy(
+                        signerAddress,
+                        toBN(String(buyCoverAmount)),
+                        String(duration),
+                    );
             }
             break;
         default:
