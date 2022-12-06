@@ -109,7 +109,7 @@ contract Policy is IPolicy, ERC721Enumerable {
         uint duration,
         uint SPS,
         uint standardRisk
-    ) external override returns (uint) {
+    ) external override onlyMetaDefender() returns (uint) {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
@@ -160,7 +160,7 @@ contract Policy is IPolicy, ERC721Enumerable {
    * @param spender The account which is performing the burn.
    * @param policyId The id of the policy.
    */
-    function burn(address spender, uint policyId) external override {
+    function burn(address spender, uint policyId) external override onlyMetaDefender() {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
@@ -174,7 +174,7 @@ contract Policy is IPolicy, ERC721Enumerable {
     * @param policyId The id of the policy.
     * @param status The status of whether the policy has been claimed.
     */
-    function changeStatusIsClaimed(uint policyId, bool status) external override {
+    function changeStatusIsClaimed(uint policyId, bool status) external override onlyMetaDefender() {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
@@ -186,7 +186,7 @@ contract Policy is IPolicy, ERC721Enumerable {
     * @param policyId The id of the policy.
     * @param status The status of whether the policy has been cancelled.
     */
-    function changeStatusIsSettled(uint policyId, bool status) external override {
+    function changeStatusIsSettled(uint policyId, bool status) external override onlyMetaDefender() {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
@@ -199,7 +199,7 @@ contract Policy is IPolicy, ERC721Enumerable {
     * @param policyId The id of the policy.
     * @param status The status of whether the policy is under claim applying.
     */
-    function changeStatusIsClaimApplying(uint policyId, bool status) external override {
+    function changeStatusIsClaimApplying(uint policyId, bool status) external override onlyMetaDefender() {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
@@ -215,6 +215,11 @@ contract Policy is IPolicy, ERC721Enumerable {
         uint tokenId
     ) internal view override {
         // TODO: YES, actually, you can transfer you policy NFT freely, but you will never change the beneficiary in the token. which means, even you lose your NFT, you can still apply for claim when the risk happens.
+    }
+
+    modifier onlyMetaDefender virtual {
+        require(msg.sender == address(metaDefender), "Only MetaDefender");
+        _;
     }
 
     error InsufficientPrivilege();

@@ -95,7 +95,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     *
     * @param certificateId The id of the LiquidityProvider.
     */
-    function updateRewardDebtEpochIndex(uint certificateId, uint64 currentEpochIndex) external override {
+    function updateRewardDebtEpochIndex(uint certificateId, uint64 currentEpochIndex) external override onlyMetaDefender() {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
@@ -107,7 +107,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     *
     * @param certificateId The id of the LiquidityProvider.
     */
-    function updateSignalWithdrawEpochIndex(uint certificateId, uint64 currentEpochIndex) external override {
+    function updateSignalWithdrawEpochIndex(uint certificateId, uint64 currentEpochIndex) external override onlyMetaDefender() {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
@@ -145,7 +145,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     function mint(
         uint64 enteredEpochIndex,
         uint liquidity
-    ) external override returns (uint) {
+    ) external override onlyMetaDefender() returns (uint) {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
@@ -169,7 +169,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
    *
    * @param certificateId The id of the LiquidityCertificate.
    */
-    function decreaseLiquidity(uint certificateId) external override {
+    function decreaseLiquidity(uint certificateId) external override onlyMetaDefender() {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
@@ -179,12 +179,12 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
 
 
     /**
- * @notice expire. LiquidityCertificate.
+     * @notice expire. LiquidityCertificate.
    *
    * @param certificateId The id of the LiquidityCertificate.
    * @param currentEpochIndex the currentEpochIndex.
    */
-    function expire(uint certificateId, uint64 currentEpochIndex) external override {
+    function expire(uint certificateId, uint64 currentEpochIndex) external override onlyMetaDefender() {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
@@ -198,6 +198,11 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         totalValidCertificateLiquidity = totalValidCertificateLiquidity.add(totalPendingEntranceCertificateLiquidity).sub(totalPendingExitCertificateLiquidity);
         totalPendingEntranceCertificateLiquidity = 0;
         totalPendingExitCertificateLiquidity = 0;
+    }
+
+    modifier onlyMetaDefender virtual {
+        require(msg.sender == address(metaDefender), "Only MetaDefender");
+        _;
     }
 
     error InsufficientPrivilege();

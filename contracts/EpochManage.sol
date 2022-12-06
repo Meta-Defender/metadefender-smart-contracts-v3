@@ -48,7 +48,7 @@ contract EpochManage is IEpochManage {
      * @param SPS shadow per share.
      * @param enteredEpochIndex the time when the policy is generated.
      */
-    function updateCrossShadow(uint SPS, uint64 enteredEpochIndex) external override {
+    function updateCrossShadow(uint SPS, uint64 enteredEpochIndex) external override onlyMetaDefender() {
         uint64 i = 1;
         while (currentEpochIndex - i >= enteredEpochIndex) {
             uint64 previousEpochIndex = currentEpochIndex - i;
@@ -69,12 +69,12 @@ contract EpochManage is IEpochManage {
         return (block.timestamp.sub(block.timestamp % 1 days)).div(1 days);
     }
 
-    function isExitDay() external view override returns(bool){
+    function isExitDay() external view override returns(bool) {
         uint currentEpoch = getCurrentEpoch();
         return currentEpoch % 7 == 0;
     }
 
-    function checkAndCreateNewEpochAndUpdateLiquidity() external override returns (bool){
+    function checkAndCreateNewEpochAndUpdateLiquidity() external override onlyMetaDefender() returns (bool) {
         uint cei = getCurrentEpoch();
         if (cei != _epochInfo[currentEpochIndex].epochId) {
             currentEpochIndex = currentEpochIndex + 1;
@@ -87,11 +87,16 @@ contract EpochManage is IEpochManage {
         return false;
     }
 
-    function checkAndCreateNewEpochAndUpdateAccRPSAccSPS(bool isNewEpoch) external override{
+    function checkAndCreateNewEpochAndUpdateAccRPSAccSPS(bool isNewEpoch) external override onlyMetaDefender() {
         IMetaDefender.GlobalInfo memory globalInfo = metaDefender.getGlobalInfo();
         if (isNewEpoch) {
             _epochInfo[currentEpochIndex].accRPS = globalInfo.accRPS;
             _epochInfo[currentEpochIndex].accSPS = globalInfo.accSPS;
         }
+    }
+
+    modifier onlyMetaDefender virtual {
+        require(msg.sender == address(metaDefender), "Only MetaDefender");
+        _;
     }
 }
