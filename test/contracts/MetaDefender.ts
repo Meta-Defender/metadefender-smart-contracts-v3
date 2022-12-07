@@ -180,20 +180,8 @@ describe('MetaDefender - uint tests', async () => {
         });
     });
 
-    describe('buyCover', async () => {
-        it('will fail to buy a cover due to coverage too large', async () => {
-            await expect(
-                contracts.metaDefender.buyPolicy(
-                    await coverBuyer1.getAddress(),
-                    toBN('1000'),
-                    '365',
-                ),
-            ).to.be.revertedWithCustomError(
-                contracts.metaDefender,
-                'CoverageTooLarge',
-            );
-        });
-        it('will revert due to the liquidity will not get into the pool immediately', async () => {
+    describe('buyPolicy', async () => {
+        it('will fail to buy a policy due to coverage too large', async () => {
             // first we deposit some capital into the pool
             await seedTestSystem(deployer, contracts, 20000, [
                 provider1,
@@ -201,13 +189,16 @@ describe('MetaDefender - uint tests', async () => {
             ]);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderEntrance(toBN('10000'));
+                .certificateProviderEntrance(toBN('11000'));
+
+            await fastForward(86400);
+
             await expect(
                 contracts.metaDefender
                     .connect(coverBuyer1)
                     .buyPolicy(
                         await coverBuyer1.getAddress(),
-                        toBN('1000'),
+                        toBN('1000000'),
                         '365',
                     ),
             ).to.be.revertedWithCustomError(
@@ -267,9 +258,10 @@ describe('MetaDefender - uint tests', async () => {
 
     describe('certificateProvider exit', async () => {
         it('should revert if the certificate is invalid', async () => {
+            await fastForwardToNextExitDay();
             await expect(
                 contracts.metaDefender.certificateProviderExit('7777'),
-            ).to.be.revertedWith('certificate does not exist');
+            ).to.be.revertedWith('ERC721: invalid token ID');
         });
         it('should revert if the certificate not belongs to the msg.sender', async () => {
             await seedTestSystem(deployer, contracts, 20000, [
@@ -280,10 +272,6 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderEntrance(toBN('11000'));
-            await fastForward(86400);
-            await contracts.metaDefender
-                .connect(provider1)
-                .signalCertificateProviderExit('0');
             await fastForwardToNextExitDay();
             await expect(
                 contracts.metaDefender
@@ -294,47 +282,7 @@ describe('MetaDefender - uint tests', async () => {
                 'InsufficientPrivilege',
             );
         });
-        it('should revert if withdrawing the certificate without signalWithdraw', async () => {
-            await seedTestSystem(deployer, contracts, 20000, [
-                provider1,
-                provider2,
-                coverBuyer1,
-            ]);
-            await contracts.metaDefender
-                .connect(provider1)
-                .certificateProviderEntrance(toBN('11000'));
-            await fastForwardToNextExitDay();
-            await expect(
-                contracts.metaDefender
-                    .connect(provider1)
-                    .certificateProviderExit('0'),
-            ).to.be.revertedWithCustomError(
-                contracts.metaDefender,
-                'CertificateNotSignalWithdraw',
-            );
-        });
-        it('should revert if the withdraw epoch is the same as the signalWithdraw epoch', async () => {
-            await seedTestSystem(deployer, contracts, 20000, [
-                provider1,
-                provider2,
-                coverBuyer1,
-            ]);
-            await contracts.metaDefender
-                .connect(provider1)
-                .certificateProviderEntrance(toBN('11000'));
-            await fastForwardToNextExitDay();
-            await contracts.metaDefender
-                .connect(provider1)
-                .signalCertificateProviderExit('0');
-            await expect(
-                contracts.metaDefender
-                    .connect(provider1)
-                    .certificateProviderExit('0'),
-            ).to.be.revertedWithCustomError(
-                contracts.metaDefender,
-                'SignalWithdrawEpochEqualsCurrentEpoch',
-            );
-        });
+
         it('should get the liquidity back except the locked value', async () => {
             await seedTestSystem(deployer, contracts, 20000, [
                 provider1,
@@ -348,10 +296,6 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(coverBuyer1)
                 .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
-            await fastForward(86400);
-            await contracts.metaDefender
-                .connect(provider1)
-                .signalCertificateProviderExit('0');
             await fastForwardToNextExitDay();
             await contracts.metaDefender
                 .connect(provider1)
@@ -774,10 +718,6 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(coverBuyer1)
                 .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
-            await fastForward(86400);
-            await contracts.metaDefender
-                .connect(provider1)
-                .signalCertificateProviderExit('0');
             await fastForwardToNextExitDay();
             await contracts.metaDefender
                 .connect(provider1)
@@ -826,10 +766,6 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(coverBuyer1)
                 .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
-            await fastForward(86400);
-            await contracts.metaDefender
-                .connect(provider1)
-                .signalCertificateProviderExit('0');
             await fastForwardToNextExitDay();
             await contracts.metaDefender
                 .connect(provider1)
@@ -879,7 +815,8 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(coverBuyer1)
                 .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
-            await fastForward(86400 * 364);
+            await fastForward(86400 * 350);
+            await fastForwardToNextNotExitDay();
             await expect(
                 contracts.metaDefender.connect(coverBuyer1).settlePolicy('0'),
             ).to.be.revertedWith('policy is not expired');

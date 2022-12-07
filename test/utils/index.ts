@@ -41,11 +41,7 @@ export async function fastForwardToNextNotExitDay() {
 }
 
 export async function getCurrentFriday() {
-    return await moment()
-        .startOf('week')
-        .add(5, 'days')
-        .add(16, 'hours')
-        .unix();
+    return moment().startOf('week').add(5, 'days').add(16, 'hours').unix();
 }
 
 export async function sleep(sleepTime: number) {

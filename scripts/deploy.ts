@@ -1,4 +1,5 @@
 import * as fs from 'fs-extra';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { MockRiskReserve, TestERC20 } from '../typechain-types';
 import { toBN, ZERO_ADDRESS } from './util/web3utils';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -37,20 +38,8 @@ async function main() {
             '\n',
     );
 
-    const _LiquidityMedal = await hre.ethers.getContractFactory(
-        'LiquidityMedal',
-    );
-    const LiquidityMedal = await _LiquidityMedal.deploy('liquidityMedal', 'LM');
-    console.log(
-        'successfully deployed LiquidityMedal: ' + LiquidityMedal.address,
-    );
-    fs.appendFileSync(
-        './.env',
-        'LiquidityMedalAddress=' + '"' + LiquidityMedal.address + '"' + '\n',
-    );
-
     const _Policy = await hre.ethers.getContractFactory('Policy');
-    const Policy = await _Policy.deploy('Polciy', 'Policy');
+    const Policy = await _Policy.deploy('Policy', 'Policy');
     console.log('successfully deployed Policy: ' + Policy.address);
     fs.appendFileSync(
         './.env',
@@ -69,6 +58,31 @@ async function main() {
         'MockRiskReserveAddress=' + '"' + MockRiskReserve.address + '"' + '\n',
     );
 
+    const _EpochManage = await hre.ethers.getContractFactory('EpochManage');
+    const EpochManage = await _EpochManage.deploy();
+    console.log('successfully deployed EpochManage: ' + EpochManage.address);
+    fs.appendFileSync(
+        './.env',
+        'EpochManageAddress=' + '"' + EpochManage.address + '"' + '\n',
+    );
+
+    const _AmericanBinaryOptions = await hre.ethers.getContractFactory(
+        'AmericanBinaryOptions',
+    );
+    const AmericanBinaryOptions = await _AmericanBinaryOptions.deploy();
+    console.log(
+        'successfully deployed AmericanBinaryOption: ' +
+            AmericanBinaryOptions.address,
+    );
+    fs.appendFileSync(
+        './.env',
+        'AmericanBinaryOptionAddress=' +
+            '"' +
+            AmericanBinaryOptions.address +
+            '"' +
+            '\n',
+    );
+
     const _TestERC20 = await hre.ethers.getContractFactory('TestERC20');
     const TestERC20 = await _TestERC20.deploy('TQA', 'TQA');
     console.log('successfully deployed TestERC20: ' + TestERC20.address);
@@ -83,19 +97,20 @@ async function main() {
         TestERC20.address,
         Signers[0].getAddress(),
         Signers[0].getAddress(),
-        ZERO_ADDRESS,
         MockRiskReserve.address,
         LiquidityCertificate.address,
-        LiquidityMedal.address,
         Policy.address,
-        toBN('0.02'),
-        toBN('0.02'),
+        AmericanBinaryOptions.address,
+        EpochManage.address,
+        toBN('0.10'),
+        toBN('0.00'),
+        toBN('100'),
     );
 
     await LiquidityCertificate.init(MetaDefender.address, ZERO_ADDRESS);
-    await LiquidityMedal.init(MetaDefender.address, ZERO_ADDRESS);
-    await Policy.init(MetaDefender.address, ZERO_ADDRESS);
+    await Policy.init(MetaDefender.address, ZERO_ADDRESS, EpochManage.address);
     await MockRiskReserve.init(MetaDefender.address, TestERC20.address);
+    await EpochManage.init(MetaDefender.address, LiquidityCertificate.address);
 }
 
 main()
