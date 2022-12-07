@@ -190,6 +190,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         }
         require(_isApprovedOrOwner(tx.origin, certificateId), "attempted to expire nonexistent certificate, or not owner");
         _certificateInfo[certificateId].exitedEpochIndex = currentEpochIndex;
+        _certificateInfo[certificateId].isValid = false;
         emit Expired(certificateId);
     }
 

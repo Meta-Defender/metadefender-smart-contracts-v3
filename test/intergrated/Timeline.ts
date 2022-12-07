@@ -196,10 +196,10 @@ describe('MetaDefender - integrated tests', async () => {
         it('should withdraw correctly, scenario1: w1,w2,s1', async () => {
             //                                             (1: change the liquidity, 2: DO S2, 3: change the accRPS and accSPS)
             //                                                                                    |
-            // -(0:00)----P1----0:00----B1----P2-----0:00-----B2----(.. long time passed)----|----S2----SW1----SW2-----0:00-----W1-----W2----S1
-            //                                                                                                                  |      |
-            //                                                                                                                  W(1)+R = (10000-1000) * 0.997 + premium1 + 0.2* premium2 = 9901.2 W(2) = 40000 * 0.997 + 0.80 * premium2 = 39880 + 0.8 * premium2
-            // epoch      1             2                                                         3                             4
+            // -(0:00)----P1----0:00----B1----P2-----0:00-----B2----(.. long time passed)----|----S2----0:00----W1-----W2----S1
+            //                                                                                                         |      |
+            //                                                                                                         W(1)+R = (10000-1000) * 0.997 + premium1 + 0.2* premium2 = 9901.2 W(2) = 40000 * 0.997 + 0.80 * premium2 = 39880 + 0.8 * premium2
+            // epoch      1             2                     3                                                 4
             await fastForward(86400 * 380);
             await fastForwardToNextNotExitDay();
             await contracts.metaDefender.settlePolicy('1');
@@ -209,12 +209,6 @@ describe('MetaDefender - integrated tests', async () => {
             const tokenBefore2 = await contracts.test.quoteToken.balanceOf(
                 await provider2.getAddress(),
             );
-            await contracts.metaDefender
-                .connect(provider1)
-                .signalCertificateProviderExit('0');
-            await contracts.metaDefender
-                .connect(provider2)
-                .signalCertificateProviderExit('1');
             await fastForwardToNextExitDay();
             await contracts.metaDefender
                 .connect(provider1)
@@ -263,10 +257,10 @@ describe('MetaDefender - integrated tests', async () => {
             );
         });
         it('should withdraw correctly, scenario3: s1,w1,w2', async () => {
-            // -(0:00)----P1----0:00----B1----P2----0:00----B2----(.. long time passed)----S2----SW1----SW2-----0:00-----S1----0:00-----W1----W2----
-            //                                                                                                                          |      |
-            //                                                                                                                          W(1)+R=10000*0.997+premium1+0.2*premium2 W(2)=40000+0.8*premium
-            // epoch      1             2                                                  3                             4              5
+            // -(0:00)----P1----0:00----B1----P2----0:00----B2----(.. long time passed)----S2----0:00-----S1----0:00-----W1----W2----
+            //                                                                                                           |      |
+            //                                                                                                           W(1)+R=10000*0.997+premium1+0.2*premium2 W(2)=40000+0.8*premium
+            // epoch      1             2                   3                                             4              5
             await fastForward(86400 * 380);
             await fastForwardToNextNotExitDay();
             await contracts.metaDefender.settlePolicy('1');
@@ -276,12 +270,6 @@ describe('MetaDefender - integrated tests', async () => {
             const tokenBefore2 = await contracts.test.quoteToken.balanceOf(
                 await provider2.getAddress(),
             );
-            await contracts.metaDefender
-                .connect(provider1)
-                .signalCertificateProviderExit('0');
-            await contracts.metaDefender
-                .connect(provider2)
-                .signalCertificateProviderExit('1');
             await fastForwardToNextNotExitDay();
             await contracts.metaDefender.settlePolicy('0');
             await fastForwardToNextExitDay();
@@ -327,12 +315,12 @@ describe('MetaDefender - integrated tests', async () => {
     });
     describe('withdraw after exit', async () => {
         it('should withdraw correctly after exit', async () => {
-            //                                             (1: change the liquidity, 2: DO S2, 3: change the accRPS and accSPS)                W(1) = 1000 * 0.997 W(2) = 0
-            //                                                                                    |                                              |      |
-            // -(0:00)----P1----0:00----B1----P2----0:00----B2----(.. long time passed)----S2----SW1----SW2----0:00----W1----W2----0:00----S1----WA1----WA2----
-            //                                                                                                         |     |
-            //                                                                                                         W(1)+R = (10000-1000) * 0.997 + premium1 + 0.2* premium2 = 9901.2 W(2) = 40000 * 0.997 + 0.80 * premium2 = 39880 + 0.8 * premium2
-            // epoch      1             2                                                  3                           4
+            //                                             (1: change the liquidity, 2: DO S2, 3: change the accRPS and accSPS)     W(1) = 1000 * 0.997 W(2) = 0
+            //                                                                             |                                        |      |
+            // -(0:00)----P1----0:00----B1----P2----0:00----B2----(.. long time passed)----S2----0:00----W1----W2----0:00----S1----WA1----WA2----
+            //                                                                                           |     |
+            //                                                                                           W(1)+R = (10000-1000) * 0.997 + premium1 + 0.2* premium2 = 9901.2 W(2) = 40000 * 0.997 + 0.80 * premium2 = 39880 + 0.8 * premium2
+            // epoch      1             2                   3                                    4                   5
             await fastForward(86400 * 380);
             await fastForwardToNextNotExitDay();
             await contracts.metaDefender.settlePolicy('1');
@@ -342,12 +330,6 @@ describe('MetaDefender - integrated tests', async () => {
             const tokenBefore2 = await contracts.test.quoteToken.balanceOf(
                 await provider2.getAddress(),
             );
-            await contracts.metaDefender
-                .connect(provider1)
-                .signalCertificateProviderExit('0');
-            await contracts.metaDefender
-                .connect(provider2)
-                .signalCertificateProviderExit('1');
             await fastForwardToNextExitDay();
             await contracts.metaDefender
                 .connect(provider1)

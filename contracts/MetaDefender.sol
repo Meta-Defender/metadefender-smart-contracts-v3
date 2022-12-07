@@ -188,9 +188,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @param duration is the time (in epoch) the policy lasts.
      */
     function buyPolicy(address beneficiary, uint coverage, uint duration) external override nonReentrant checkNewEpoch() {
-        // Buy first Check last.
-        if (coverage > liquidityCertificate.totalValidCertificateLiquidity().sub(globalInfo.accSPS).multiplyDecimal(MAX_COVERAGE_PERCENTAGE)) {
-            // TODO: how to decide the max coverage;
+        if  (coverage > 100 * globalInfo.standardRisk) {
             revert CoverageTooLarge(coverage);
         }
         globalInfo.risk = globalInfo.risk.add(coverage.divideDecimal(globalInfo.standardRisk).multiplyDecimal(BASE_POINT));
@@ -243,19 +241,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @dev providerExit retrieve the rewards for the providers in the pool
      * @param certificateId the certificateId
      */
-    function signalCertificateProviderExit(uint certificateId) external override reentrancyGuard checkNewEpoch(){
-        uint64 currentEpochIndex = epochManage.currentEpochIndex();
-        liquidityCertificate.updateSignalWithdrawEpochIndex(certificateId, currentEpochIndex);
-        liquidityCertificate.decreaseLiquidity(certificateId);
-    }
-
-
-    /**
-     * @dev providerExit retrieve the rewards for the providers in the pool
-     * @param certificateId the certificateId
-     */
     function certificateProviderExit(uint certificateId) external override reentrancyGuard checkNewEpoch(){
-        ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
         uint64 currentEpochIndex = epochManage.currentEpochIndex();
         if (!epochManage.isExitDay()){
             revert NotExitDay();
@@ -263,13 +249,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         if (msg.sender != liquidityCertificate.belongsTo(certificateId) ) {
             revert InsufficientPrivilege();
         }
-        if (certificateInfo.signalWithdrawalEpochIndex == 0) {
-            revert CertificateNotSignalWithdraw();
-        }
-        if (certificateInfo.signalWithdrawalEpochIndex == currentEpochIndex) {
-            revert SignalWithdrawEpochEqualsCurrentEpoch();
-        }
-        // how much SPS still be locked in the certificateId.
+        liquidityCertificate.decreaseLiquidity(certificateId);
         (uint SPSLocked, uint withdrawal) = getSPSLockedByCertificateId(certificateId);
         liquidityCertificate.updateSPSLocked(certificateId, SPSLocked);
         uint rewards = getRewards(certificateId);
@@ -546,7 +526,6 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     error InvalidAddress(address addr);
     error CertificateNotSignalWithdraw();
     error CertificateNotExit();
-    error SignalWithdrawEpochEqualsCurrentEpoch();
     error NotExitDay();
     error IsExitDay();
 }
