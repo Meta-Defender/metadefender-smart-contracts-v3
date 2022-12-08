@@ -82,127 +82,135 @@ async function main() {
         'Exit',
     ];
 
-    const answers = await prompt({
-        type: 'list',
-        name: 'operation',
-        message: 'What do you want to do?',
-        choices,
-    });
+    while (true) {
+        const answers = await prompt({
+            type: 'list',
+            name: 'operation',
+            message: 'What do you want to do?',
+            choices,
+        });
 
-    switch (answers.operation) {
-        case 'Query':
-            const balance = await quoteToken.balanceOf(
-                await signer.getAddress(),
-            );
-            console.log(
-                'You have the balance of ' + Number(balance) / 1e18 + ' USDTs',
-            );
-            const certificates =
-                await liquidityCertificate.getLiquidityProviders(
+        switch (answers.operation) {
+            case 'Query':
+                const balance = await quoteToken.balanceOf(
                     await signer.getAddress(),
                 );
-            console.log(
-                chalk.green(
-                    'Here are your certificates(including expired ones):',
-                ),
-            );
-            for (let i = 0; i < certificates.length; i++) {
                 console.log(
-                    await liquidityCertificate.getCertificateInfo(
-                        certificates[i],
+                    'You have the balance of ' +
+                        Number(balance) / 1e18 +
+                        ' USDTs',
+                );
+                const certificates =
+                    await liquidityCertificate.getLiquidityProviders(
+                        await signer.getAddress(),
+                    );
+                console.log(
+                    chalk.green(
+                        'Here are your certificates(including expired ones):',
                     ),
                 );
-            }
-            const policies = await policy.getPolicies(
-                await signer.getAddress(),
-            );
-            console.log(chalk.red('Here are your policies'));
-            for (let i = 0; i < policies.length; i++) {
-                console.log(await policy.getPolicyInfo(policies[i]));
-            }
-            break;
-        case 'Get Me Some Test Token':
-            await quoteToken
-                .connect(signer)
-                .mint(await signer.getAddress(), toBN('10000'));
-            break;
-        case 'Approve':
-            await quoteToken
-                .connect(signer)
-                .approve(metaDefender.address, toBN('99999999'));
-            break;
-        case 'Provide Liquidity':
-            const provideLiquidity = await prompt({
-                type: 'input',
-                name: 'amount',
-                message: 'how much USDTs do you want to provide',
-            });
-            if (isNaN(Number(provideLiquidity))) {
-                await metaDefender
-                    .connect(signer)
-                    .certificateProviderEntrance(
-                        String(toBN(provideLiquidity.amount)),
-                    );
-            } else {
-                throw new Error('invalid number');
-            }
-            break;
-        case 'Time Travel':
-            console.log('current time is ' + (await currentTime()));
-            await fastForward(86400);
-            console.log('current time is ' + (await currentTime()));
-            break;
-        case 'Liquidity Withdraw':
-            const availableCertificate = [];
-            const certificatesToWithdraw =
-                await liquidityCertificate.getLiquidityProviders(
-                    await signer.getAddress(),
-                );
-            for (let i = 0; i < certificatesToWithdraw.length; i++) {
-                const certificateToWithdraw =
-                    await liquidityCertificate.getCertificateInfo(
-                        certificatesToWithdraw[i],
-                    );
-                if (certificateToWithdraw.isValid) {
-                    availableCertificate.push(
-                        String(certificatesToWithdraw[i]),
+                for (let i = 0; i < certificates.length; i++) {
+                    console.log(
+                        await liquidityCertificate.getCertificateInfo(
+                            certificates[i],
+                        ),
                     );
                 }
-            }
-            const toBeWithdrawn = await prompt({
-                type: 'list',
-                name: 'certificateId',
-                message: 'Which certificate you want to withdraw:)',
-                choices: availableCertificate,
-            });
-            await metaDefender
-                .connect(signer)
-                .certificateProviderExit(String(toBeWithdrawn.certificateId));
-            break;
-        case 'Buy Policy':
-            const policyCoverage = await prompt({
-                type: 'input',
-                name: 'coverage',
-                message: 'How much coverage do you want to buy?',
-            });
-            const policyDuration = await prompt({
-                type: 'input',
-                name: 'duration',
-                message: 'How long do you want to buy? (in days)',
-            });
-            if (
-                !isNaN(Number(policyCoverage.coverage)) &&
-                !isNaN(Number(policyDuration.duration))
-            ) {
+                const policies = await policy.getPolicies(
+                    await signer.getAddress(),
+                );
+                console.log(chalk.red('Here are your policies'));
+                for (let i = 0; i < policies.length; i++) {
+                    console.log(await policy.getPolicyInfo(policies[i]));
+                }
+                break;
+            case 'Get Me Some Test Token':
+                await quoteToken
+                    .connect(signer)
+                    .mint(await signer.getAddress(), toBN('10000'));
+                break;
+            case 'Approve':
+                await quoteToken
+                    .connect(signer)
+                    .approve(metaDefender.address, toBN('99999999'));
+                break;
+            case 'Provide Liquidity':
+                const provideLiquidity = await prompt({
+                    type: 'input',
+                    name: 'amount',
+                    message: 'how much USDTs do you want to provide',
+                });
+                if (isNaN(Number(provideLiquidity))) {
+                    await metaDefender
+                        .connect(signer)
+                        .certificateProviderEntrance(
+                            String(toBN(provideLiquidity.amount)),
+                        );
+                } else {
+                    throw new Error('invalid number');
+                }
+                break;
+            case 'Time Travel':
+                console.log('current time is ' + (await currentTime()));
+                await fastForward(86400);
+                console.log('current time is ' + (await currentTime()));
+                break;
+            case 'Liquidity Withdraw':
+                const availableCertificate = [];
+                const certificatesToWithdraw =
+                    await liquidityCertificate.getLiquidityProviders(
+                        await signer.getAddress(),
+                    );
+                for (let i = 0; i < certificatesToWithdraw.length; i++) {
+                    const certificateToWithdraw =
+                        await liquidityCertificate.getCertificateInfo(
+                            certificatesToWithdraw[i],
+                        );
+                    if (certificateToWithdraw.isValid) {
+                        availableCertificate.push(
+                            String(certificatesToWithdraw[i]),
+                        );
+                    }
+                }
+                const toBeWithdrawn = await prompt({
+                    type: 'list',
+                    name: 'certificateId',
+                    message: 'Which certificate you want to withdraw:)',
+                    choices: availableCertificate,
+                });
                 await metaDefender
                     .connect(signer)
-                    .buyPolicy(
-                        signerAddress,
-                        toBN(String(policyCoverage.coverage)),
-                        String(policyDuration.duration),
+                    .certificateProviderExit(
+                        String(toBeWithdrawn.certificateId),
                     );
-            }
-            break;
+                break;
+            case 'Buy Policy':
+                const policyCoverage = await prompt({
+                    type: 'input',
+                    name: 'coverage',
+                    message: 'How much coverage do you want to buy?',
+                });
+                const policyDuration = await prompt({
+                    type: 'input',
+                    name: 'duration',
+                    message: 'How long do you want to buy? (in days)',
+                });
+                if (
+                    !isNaN(Number(policyCoverage.coverage)) &&
+                    !isNaN(Number(policyDuration.duration))
+                ) {
+                    await metaDefender
+                        .connect(signer)
+                        .buyPolicy(
+                            signerAddress,
+                            toBN(String(policyCoverage.coverage)),
+                            String(policyDuration.duration),
+                        );
+                }
+                break;
+            case 'Exit':
+                process.exit(0);
+        }
     }
 }
 
