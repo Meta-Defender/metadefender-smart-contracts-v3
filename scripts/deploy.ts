@@ -106,11 +106,15 @@ async function main() {
         toBN('0.00'),
         toBN('100'),
     );
-
+    console.log('successfully init the MetaDefender contract');
     await LiquidityCertificate.init(MetaDefender.address, ZERO_ADDRESS);
+    console.log('successfully init the LiquidityCertificate contract');
     await Policy.init(MetaDefender.address, ZERO_ADDRESS, EpochManage.address);
+    console.log('successfully init the Policy contract');
     await MockRiskReserve.init(MetaDefender.address, TestERC20.address);
+    console.log('successfully init the MockRiskReserve contract');
     await EpochManage.init(MetaDefender.address, LiquidityCertificate.address);
+    console.log('successfully init the EpochManage contract');
 }
 
 main()
