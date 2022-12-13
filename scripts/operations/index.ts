@@ -46,9 +46,6 @@ async function main() {
     dotenv.config();
 
     const signers = await hre.ethers.getSigners();
-    const signer = await signers[0];
-    const signerAddress = await signers[0].getAddress();
-
     const _metaDefender = await hre.ethers.getContractFactory('MetaDefender');
     const metaDefender = await _metaDefender.attach(
         String(process.env.MetaDefenderAddress),
@@ -69,6 +66,9 @@ async function main() {
         String(process.env.TestERC20Address),
     );
 
+    let currentSigner = await signers[0];
+    const currentSignerAddress = await signers[0].getAddress();
+
     const prompt = inquirer.createPromptModule();
     const choices = [
         'Provide Liquidity',
@@ -77,8 +77,10 @@ async function main() {
         'Settle Policy',
         'Query',
         'Time Travel',
-        'Get Me Some Test Token',
+        'Give Me Some Test Token',
         'Approve',
+        'My Address',
+        'Choose Address',
         'Exit',
     ];
 
@@ -91,9 +93,33 @@ async function main() {
         });
 
         switch (answers.operation) {
+            case 'Choose Address':
+                const signers = await hre.ethers.getSigners();
+                const addresses = [];
+                for (let i = 0; i < signers.length; i++) {
+                    addresses.push(await signers[i].getAddress());
+                }
+                const chooseAddress = await prompt({
+                    type: 'list',
+                    name: 'address',
+                    message: 'Which address you want to choose:)',
+                    choices: addresses,
+                });
+                for (let i = 0; i < signers.length; i++) {
+                    if (
+                        chooseAddress.address ===
+                        (await signers[i].getAddress())
+                    ) {
+                        currentSigner = signers[i];
+                    }
+                }
+                break;
+            case 'My Address':
+                console.log(chalk.green(await currentSigner.getAddress()));
+                break;
             case 'Query':
                 const balance = await quoteToken.balanceOf(
-                    await signer.getAddress(),
+                    await currentSigner.getAddress(),
                 );
                 console.log(
                     'You have the balance of ' +
@@ -102,7 +128,7 @@ async function main() {
                 );
                 const certificates =
                     await liquidityCertificate.getLiquidityProviders(
-                        await signer.getAddress(),
+                        await currentSigner.getAddress(),
                     );
                 console.log(
                     chalk.green(
@@ -117,21 +143,22 @@ async function main() {
                     );
                 }
                 const policies = await policy.getPolicies(
-                    await signer.getAddress(),
+                    await currentSigner.getAddress(),
                 );
                 console.log(chalk.red('Here are your policies'));
                 for (let i = 0; i < policies.length; i++) {
                     console.log(await policy.getPolicyInfo(policies[i]));
                 }
                 break;
-            case 'Get Me Some Test Token':
-                await quoteToken
-                    .connect(signer)
-                    .mint(await signer.getAddress(), toBN('10000'));
+            case 'Give Me Some Test Token':
+                const res = await quoteToken
+                    .connect(currentSigner)
+                    .mint(await currentSigner.getAddress(), toBN('10000'));
+                console.log(res.hash);
                 break;
             case 'Approve':
                 await quoteToken
-                    .connect(signer)
+                    .connect(currentSigner)
                     .approve(metaDefender.address, toBN('99999999'));
                 break;
             case 'Provide Liquidity':
@@ -142,7 +169,7 @@ async function main() {
                 });
                 if (isNaN(Number(provideLiquidity))) {
                     await metaDefender
-                        .connect(signer)
+                        .connect(currentSigner)
                         .certificateProviderEntrance(
                             String(toBN(provideLiquidity.amount)),
                         );
@@ -159,7 +186,7 @@ async function main() {
                 const availableCertificate = [];
                 const certificatesToWithdraw =
                     await liquidityCertificate.getLiquidityProviders(
-                        await signer.getAddress(),
+                        await currentSigner.getAddress(),
                     );
                 for (let i = 0; i < certificatesToWithdraw.length; i++) {
                     const certificateToWithdraw =
@@ -179,7 +206,7 @@ async function main() {
                     choices: availableCertificate,
                 });
                 await metaDefender
-                    .connect(signer)
+                    .connect(currentSigner)
                     .certificateProviderExit(
                         String(toBeWithdrawn.certificateId),
                     );
@@ -200,9 +227,9 @@ async function main() {
                     !isNaN(Number(policyDuration.duration))
                 ) {
                     await metaDefender
-                        .connect(signer)
+                        .connect(currentSigner)
                         .buyPolicy(
-                            signerAddress,
+                            await currentSigner.getAddress(),
                             toBN(String(policyCoverage.coverage)),
                             String(policyDuration.duration),
                         );
