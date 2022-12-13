@@ -8,8 +8,7 @@ import "./Lib/SafeDecimalMath.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "./interfaces/IPolicy.sol";
 import "./interfaces/IEpochManage.sol";
-import "./interfaces/IEpochManage.sol";
-import "./interfaces/IEpochManage.sol";
+import "hardhat/console.sol";
 
 /**
  * @title Policy
@@ -204,17 +203,6 @@ contract Policy is IPolicy, ERC721Enumerable {
             revert InsufficientPrivilege();
         }
         _policyInfo[policyId].isClaimApplying = status;
-    }
-
-    /**
-     * @dev Hook that is called before any token transfer. This includes minting and burning.
-   */
-    function _beforeTokenTransfer(
-        address, // from
-        address, // to
-        uint tokenId
-    ) internal view override {
-        // TODO: YES, actually, you can transfer you policy NFT freely, but you will never change the beneficiary in the token. which means, even you lose your NFT, you can still apply for claim when the risk happens.
     }
 
     modifier onlyMetaDefender virtual {

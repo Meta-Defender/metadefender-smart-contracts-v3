@@ -13,7 +13,7 @@ import {
 } from '../../scripts/util/web3utils';
 import { seedTestSystem } from '../utils/seedTestSystem';
 
-describe('MetaDefender - uint tests', async () => {
+describe('LiquidityCertificate - uint tests', async () => {
     let deployer: Signer;
     let user: Signer;
     let provider1: Signer;
@@ -39,8 +39,8 @@ describe('MetaDefender - uint tests', async () => {
         it('should not allow init twice', async () => {
             await expect(
                 contracts.liquidityCertificate.init(
-                    MOCK_MINING_ADDRESS,
-                    MOCK_MINING_ADDRESS,
+                    contracts.metaDefender.address,
+                    ZERO_ADDRESS,
                 ),
             ).to.be.revertedWith('already initialized');
         });
@@ -96,10 +96,7 @@ describe('MetaDefender - uint tests', async () => {
                 contracts.liquidityCertificate
                     .connect(provider1)
                     .mint('1', toBN('10100')),
-            ).to.be.revertedWithCustomError(
-                contracts.liquidityCertificate,
-                'InsufficientPrivilege',
-            );
+            ).to.be.revertedWith('Only MetaDefender');
         });
     });
 });
