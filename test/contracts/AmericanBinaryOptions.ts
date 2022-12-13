@@ -15,7 +15,7 @@ import {
     stdNormalCDF,
 } from '../utils/americanBinaryOptions';
 import { expect } from 'chai';
-import { abs } from 'mathjs';
+import { abs, re } from 'mathjs';
 
 type BigNumberFive = [BigNumber, BigNumber, BigNumber, BigNumber, BigNumber];
 
@@ -243,14 +243,15 @@ describe('AmericanBinaryOptions - values', () => {
                 );
                 // only the difference is greater than 100000000000, otherwise we will consider the results is zero.
                 if (
-                    Number(toBN(expectedCall.toString()).mul(1e9)) -
-                        Number(result.toString()) >
-                    100000000000
+                    Math.abs(
+                        Number(toBN(expectedCall.toString())) -
+                            Number(result.toString()),
+                    ) > 100000000000
                 ) {
                     assertCloseToPercentage(
-                        toBN(expectedCall.toString()).mul(1e9),
+                        toBN(expectedCall.toString()),
                         result,
-                        toBN('0.05'),
+                        toBN('0.001'),
                     );
                 }
             }
