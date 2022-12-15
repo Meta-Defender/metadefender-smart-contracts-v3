@@ -50,7 +50,6 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     uint public constant MAX_COVERAGE_PERCENTAGE = 2e17;
     uint public constant WITHDRAWAL_FEE_RATE = 3e15;
     uint public constant BUFFER = 3;
-    // uint public constant STANDARD_RISK = 100e18;
     int public constant FREE_RATE = 6e16;
     uint public constant BASE_POINT = 1e16;
 
