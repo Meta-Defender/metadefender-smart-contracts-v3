@@ -66,8 +66,14 @@ async function main() {
         String(process.env.TestERC20Address),
     );
 
+    const _insurancePriceViewer = await hre.ethers.getContractFactory(
+        'InsurancePriceViewer',
+    );
+    const insurancePriceViewer = await _insurancePriceViewer.attach(
+        String(process.env.InsurancePriceViewerAddress),
+    );
+
     let currentSigner = await signers[0];
-    const currentSignerAddress = await signers[0].getAddress();
 
     const prompt = inquirer.createPromptModule();
     const choices = [
@@ -75,7 +81,10 @@ async function main() {
         'Liquidity Withdraw',
         'Buy Policy',
         'Settle Policy',
-        'Query',
+        'Query My Account',
+        'Query Insurance Price',
+        'Register Market',
+        'Query Market Addresses',
         'Time Travel',
         'Give Me Some Test Token',
         'Approve',
@@ -117,7 +126,31 @@ async function main() {
             case 'My Address':
                 console.log(chalk.green(await currentSigner.getAddress()));
                 break;
-            case 'Query':
+            case 'Query Insurance Price':
+                const policyCoverageQuery = await prompt({
+                    type: 'input',
+                    name: 'coverage',
+                    message: 'How much coverage do you want to buy?',
+                });
+                const policyDurationQuery = await prompt({
+                    type: 'input',
+                    name: 'duration',
+                    message: 'How long do you want to buy? (in days)',
+                });
+                if (
+                    !isNaN(Number(policyCoverageQuery.coverage)) &&
+                    !isNaN(Number(policyDurationQuery.duration))
+                ) {
+                    const price = await insurancePriceViewer
+                        .connect(currentSigner)
+                        .getPremium(
+                            toBN(String(policyCoverageQuery.coverage)),
+                            String(policyDurationQuery.duration),
+                        );
+                    console.log(chalk.green('Price: ' + price));
+                }
+                break;
+            case 'Query My Account':
                 const balance = await quoteToken.balanceOf(
                     await currentSigner.getAddress(),
                 );

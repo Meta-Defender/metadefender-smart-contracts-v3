@@ -891,6 +891,7 @@ describe('MetaDefender - uint tests', async () => {
                 .connect(coverBuyer1)
                 .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
             await fastForward(86400 * 370);
+            await fastForwardToNextNotExitDay();
             await contracts.metaDefender.connect(coverBuyer2).settlePolicy('0');
             expect(
                 await contracts.test.quoteToken.balanceOf(
@@ -912,6 +913,7 @@ describe('MetaDefender - uint tests', async () => {
                 .connect(coverBuyer1)
                 .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
             await fastForward(86400 * 370);
+            await fastForwardToNextNotExitDay();
             await contracts.metaDefender.connect(coverBuyer2).settlePolicy('0');
             expect(
                 await contracts.test.quoteToken.balanceOf(
