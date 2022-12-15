@@ -4,6 +4,7 @@ pragma solidity 0.8.9;
 import "../interfaces/IMetaDefender.sol";
 import "../interfaces/IAmericanBinaryOptions.sol";
 import "../Lib/SafeDecimalMath.sol";
+import "hardhat/console.sol";
 
 /**
  * @title OptionMarketViewer

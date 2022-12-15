@@ -8,6 +8,8 @@ import {
     MockRiskReserve,
     EpochManage,
     AmericanBinaryOptions,
+    InsurancePriceViewer,
+    MetaDefenderMarketsRegistry,
 } from '../../typechain-types';
 import { TestERC20 } from '../../typechain-types';
 
@@ -18,6 +20,10 @@ export type TestSystemContractsType = {
     epochManage: EpochManage;
     mockRiskReserve: MockRiskReserve;
     americanBinaryOptions: AmericanBinaryOptions;
+    periphery: {
+        insurancePriceViewer: InsurancePriceViewer;
+        metaDefenderMarketsRegistry: MetaDefenderMarketsRegistry;
+    };
     test: {
         quoteToken: TestERC20;
     };
@@ -65,6 +71,18 @@ export async function deployTestContracts(
         .connect(deployer)
         .deploy()) as AmericanBinaryOptions;
 
+    const insurancePriceViewer = (await (
+        await ethers.getContractFactory('InsurancePriceViewer')
+    )
+        .connect(deployer)
+        .deploy()) as InsurancePriceViewer;
+
+    const metaDefenderMarketsRegistry = (await (
+        await ethers.getContractFactory('MetaDefenderMarketsRegistry')
+    )
+        .connect(deployer)
+        .deploy()) as MetaDefenderMarketsRegistry;
+
     return {
         metaDefender,
         liquidityCertificate,
@@ -72,6 +90,10 @@ export async function deployTestContracts(
         epochManage,
         mockRiskReserve,
         americanBinaryOptions,
+        periphery: {
+            insurancePriceViewer,
+            metaDefenderMarketsRegistry,
+        },
         test: {
             quoteToken,
         },
@@ -118,6 +140,12 @@ export async function initTestSystem(
     await c.epochManage.init(
         c.metaDefender.address,
         c.liquidityCertificate.address,
+    );
+
+    // init periphery
+    await c.periphery.insurancePriceViewer.init(
+        c.metaDefender.address,
+        c.americanBinaryOptions.address,
     );
 }
 
