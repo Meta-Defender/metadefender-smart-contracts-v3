@@ -3,20 +3,15 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "../interfaces/IMetaDefenderMarketsRegistry.sol";
 
 /**
  * @title MetaDefenderMarketsRegistry
  * @author MetaDefender
  * @dev Registry that allow external services to keep track of the deployments MetaDefender Markets
  */
-contract MetaDefenderMarketsRegistry is Ownable {
+contract MetaDefenderMarketsRegistry is Ownable, IMetaDefenderMarketsRegistry{
     using EnumerableSet for EnumerableSet.AddressSet;
-
-    struct MarketAddresses {
-        address liquidityCertificate;
-        address policy;
-        address epochManage;
-    }
 
     EnumerableSet.AddressSet internal insuranceMarkets;
     mapping(address => MarketAddresses) public insuranceMarketsAddresses;
@@ -70,7 +65,7 @@ contract MetaDefenderMarketsRegistry is Ownable {
    *
    * @return Array of MetaDefender addresses
    */
-    function getInsuranceMarkets() external view returns (address[] memory) {
+    function getInsuranceMarkets() external view override returns (address[] memory) {
         address[] memory list = new address[](insuranceMarkets.length());
         for (uint i = 0; i < insuranceMarkets.length(); i++) {
             list[i] = insuranceMarkets.at(i);
@@ -79,7 +74,7 @@ contract MetaDefenderMarketsRegistry is Ownable {
     }
 
     /**
-     * @dev Gets the addresses of the contracts associated to an OptionMarket contract
+     * @dev Gets the addresses of the contracts associated to an InsuranceMarket contract
    *
    * @param insuranceMarketList Array of metaDefender contract addresses
    * @return Array of struct containing the associated contract addresses
@@ -87,6 +82,7 @@ contract MetaDefenderMarketsRegistry is Ownable {
     function getInsuranceMarketsAddresses(address[] calldata insuranceMarketList)
     external
     view
+    override
     returns (MarketAddresses[] memory)
     {
         MarketAddresses[] memory marketAddresses = new MarketAddresses[](insuranceMarketList.length);

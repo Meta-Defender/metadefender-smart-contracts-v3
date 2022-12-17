@@ -102,6 +102,16 @@ async function main() {
         'GlobalsViewerAddress=' + '"' + GlobalsViewer.address + '"' + '\n',
     );
 
+    const _MetaDefenderMarketsRegistry = await hre.ethers.getContractFactory(
+        'MetaDefenderMarketsRegistry',
+    );
+    const MetaDefenderMarketsRegistry =
+        await _MetaDefenderMarketsRegistry.deploy();
+    console.log(
+        'successfully deployed MetaDefenderMarketsRegistry: ' +
+            MetaDefenderMarketsRegistry.address,
+    );
+
     // begin init the contracts
     // init the metaDefender contract
     await MetaDefender.init(
@@ -124,13 +134,26 @@ async function main() {
     console.log('successfully init the Policy contract');
     await MockRiskReserve.init(MetaDefender.address, TestERC20.address);
     console.log('successfully init the MockRiskReserve contract');
-    await EpochManage.init(MetaDefender.address, LiquidityCertificate.address);
+    await EpochManage.init(
+        MetaDefender.address,
+        LiquidityCertificate.address,
+        Policy.address,
+    );
     console.log('successfully init the EpochManage contract');
     await GlobalsViewer.init(
-        MetaDefender.address,
+        MetaDefenderMarketsRegistry.address,
         AmericanBinaryOptions.address,
     );
     console.log('successfully init the GlobalsViewer contract');
+
+    console.log('registry in process...');
+    await MetaDefenderMarketsRegistry.addMarket(
+        MetaDefender.address,
+        LiquidityCertificate.address,
+        Policy.address,
+        EpochManage.address,
+    );
+    console.log('successfully registry the market');
 }
 
 main()

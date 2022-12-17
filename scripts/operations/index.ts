@@ -68,7 +68,7 @@ async function main() {
 
     const _globalsViewer = await hre.ethers.getContractFactory('GlobalsViewer');
     const globalsViewer = await _globalsViewer.attach(
-        String(process.env.GlobalsViewer),
+        String(process.env.GlobalsViewerAddress),
     );
 
     let currentSigner = await signers[0];
@@ -81,6 +81,7 @@ async function main() {
         'Settle Policy',
         'Query My Account',
         'Query Insurance Price',
+        'Query Global Views',
         'Register Market',
         'Query Market Addresses',
         'Time Travel',
@@ -100,6 +101,12 @@ async function main() {
         });
 
         switch (answers.operation) {
+            case 'Query Global Views':
+                const globals = await globalsViewer
+                    .connect(currentSigner)
+                    .getGlobals();
+                console.log(globals);
+                break;
             case 'Choose Address':
                 const signers = await hre.ethers.getSigners();
                 const addresses = [];
@@ -144,6 +151,7 @@ async function main() {
                         .getPremium(
                             toBN(String(policyCoverageQuery.coverage)),
                             String(policyDurationQuery.duration),
+                            metaDefender.address,
                         );
                     console.log(chalk.green('Price: ' + price));
                 }

@@ -145,10 +145,8 @@ export async function initTestSystem(
 
     // init periphery
     await c.periphery.globalsViewer.init(
-        c.metaDefender.address,
+        c.periphery.metaDefenderMarketsRegistry.address,
         c.americanBinaryOptions.address,
-        c.liquidityCertificate.address,
-        c.policy.address,
     );
 }
 
