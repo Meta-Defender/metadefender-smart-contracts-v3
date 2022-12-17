@@ -28,8 +28,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     address public override metaDefender;
     address public override protocol;
     uint public override totalValidCertificateLiquidity;
-    uint public override totalPendingEntranceCertificateLiquidity;
-    uint public override totalPendingExitCertificateLiquidity;
+    uint public override totalPendingCertificateLiquidity;
     bool internal initialized = false;
 
     /**
@@ -157,7 +156,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         uint certificateId = nextId++;
         _certificateInfo[certificateId] = CertificateInfo(enteredEpochIndex, 0, enteredEpochIndex, 0, liquidity, 0, true);
         // add totalLiquidity.
-        totalPendingEntranceCertificateLiquidity = totalPendingEntranceCertificateLiquidity.add(liquidity);
+        totalPendingCertificateLiquidity = totalPendingCertificateLiquidity.add(liquidity);
         _mint(tx.origin, certificateId);
 
         emit NewLPMinted(tx.origin,certificateId,enteredEpochIndex,liquidity);
@@ -165,7 +164,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     }
 
     /**
-     * @notice decreaseLiquidity. LiquidityCertificate.
+     * @notice decreaseLiquidity. decrease the liquidity when user withdraws from the pool.
    *
    * @param certificateId The id of the LiquidityCertificate.
    */
@@ -174,7 +173,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
             revert InsufficientPrivilege();
         }
         require(_isApprovedOrOwner(tx.origin, certificateId), "attempted to expire nonexistent certificate, or not owner");
-        totalPendingExitCertificateLiquidity = totalPendingExitCertificateLiquidity.add(_certificateInfo[certificateId].liquidity);
+        totalPendingCertificateLiquidity = totalPendingCertificateLiquidity.sub(_certificateInfo[certificateId].liquidity);
     }
 
 
@@ -196,9 +195,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
 
     function newEpochCreated() external override {
         // when the new epoch created
-        totalValidCertificateLiquidity = totalValidCertificateLiquidity.add(totalPendingEntranceCertificateLiquidity).sub(totalPendingExitCertificateLiquidity);
-        totalPendingEntranceCertificateLiquidity = 0;
-        totalPendingExitCertificateLiquidity = 0;
+        totalValidCertificateLiquidity = totalPendingCertificateLiquidity;
     }
 
     modifier onlyMetaDefender virtual {

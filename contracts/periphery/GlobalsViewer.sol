@@ -5,13 +5,14 @@ import "../interfaces/IMetaDefender.sol";
 import "../interfaces/IAmericanBinaryOptions.sol";
 import "../Lib/SafeDecimalMath.sol";
 import "hardhat/console.sol";
+import "../interfaces/IPolicy.sol";
 
 /**
  * @title OptionMarketViewer
  * @author MetaDefender
  * @dev Provides helpful functions to allow the dapp to operate more smoothly;
  */
-contract InsurancePriceViewer {
+contract GlobalsViewer {
     using SafeMath for uint;
     using SafeDecimalMath for uint;
 
@@ -21,8 +22,10 @@ contract InsurancePriceViewer {
         uint newRisk;
     }
 
-    IMetaDefender public metaDefender;
-    IAmericanBinaryOptions public americanBinaryOptions;
+    IMetaDefender internal metaDefender;
+    IAmericanBinaryOptions internal americanBinaryOptions;
+    ILiquidityCertificate internal liquidityCertificate;
+    IPolicy internal policy;
 
     bool public initialized = false;
 
@@ -35,12 +38,16 @@ contract InsurancePriceViewer {
    */
     function init(
         IMetaDefender _metaDefender,
-        IAmericanBinaryOptions _americanBinaryOptions
+        IAmericanBinaryOptions _americanBinaryOptions,
+        ILiquidityCertificate _liquidityCertificate,
+        IPolicy _policy
     ) external {
         require(!initialized, "Contract already initialized");
 
         metaDefender = _metaDefender;
         americanBinaryOptions = _americanBinaryOptions;
+        liquidityCertificate = _liquidityCertificate;
+        policy = _policy;
 
         initialized = true;
     }
@@ -56,5 +63,13 @@ contract InsurancePriceViewer {
             premium = 0;
         }
         return TradeInsuranceView(uint(premium), 10e18, newRisk);
+    }
+
+    function getTotalValidLiquidity() public view returns (uint) {
+        return liquidityCertificate.totalValidCertificateLiquidity();
+    }
+
+    function getTotalCoverage() public view returns (uint) {
+        return policy.totalCoverage();
     }
 }

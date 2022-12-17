@@ -66,11 +66,9 @@ async function main() {
         String(process.env.TestERC20Address),
     );
 
-    const _insurancePriceViewer = await hre.ethers.getContractFactory(
-        'InsurancePriceViewer',
-    );
-    const insurancePriceViewer = await _insurancePriceViewer.attach(
-        String(process.env.InsurancePriceViewerAddress),
+    const _globalsViewer = await hre.ethers.getContractFactory('GlobalsViewer');
+    const globalsViewer = await _globalsViewer.attach(
+        String(process.env.GlobalsViewer),
     );
 
     let currentSigner = await signers[0];
@@ -141,7 +139,7 @@ async function main() {
                     !isNaN(Number(policyCoverageQuery.coverage)) &&
                     !isNaN(Number(policyDurationQuery.duration))
                 ) {
-                    const price = await insurancePriceViewer
+                    const price = await globalsViewer
                         .connect(currentSigner)
                         .getPremium(
                             toBN(String(policyCoverageQuery.coverage)),

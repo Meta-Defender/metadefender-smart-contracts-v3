@@ -24,6 +24,10 @@ interface IPolicy {
 
     function MIN_COVERAGE() external view returns (uint);
 
+    function totalCoverage() external view returns (uint);
+
+    function totalPendingCoverage() external view returns (uint);
+
     function getPolicies(address beneficiary) external view returns (uint[] memory);
 
     function getPolicyInfo(uint policyId) external view returns (PolicyInfo memory);
@@ -45,6 +49,8 @@ interface IPolicy {
     function isSettleAvailable(uint policyId) external view returns (bool);
 
     function isClaimAvailable(uint policyId) external view returns (bool);
+
+    function newEpochCreated() external;
 
     function changeStatusIsClaimed(uint policyId, bool status) external;
 

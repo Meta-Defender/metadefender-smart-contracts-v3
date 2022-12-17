@@ -34,9 +34,7 @@ interface ILiquidityCertificate {
 
     function totalValidCertificateLiquidity() external view returns (uint);
 
-    function totalPendingEntranceCertificateLiquidity() external view returns (uint);
-
-    function totalPendingExitCertificateLiquidity() external view returns (uint);
+    function totalPendingCertificateLiquidity() external view returns (uint);
 
     function MIN_LIQUIDITY() external view returns (uint);
 

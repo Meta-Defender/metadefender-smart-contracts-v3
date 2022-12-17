@@ -92,25 +92,18 @@ async function main() {
     );
 
     // periphery contracts
-    const _InsurancePriceViewer = await hre.ethers.getContractFactory(
-        'InsurancePriceViewer',
-    );
-    const InsurancePriceViewer = await _InsurancePriceViewer.deploy();
+    const _GlobalsViewer = await hre.ethers.getContractFactory('GlobalsViewer');
+    const GlobalsViewer = await _GlobalsViewer.deploy();
     console.log(
-        'successfully deployed InsurancePriceViewer: ' +
-            InsurancePriceViewer.address,
+        'successfully deployed GlobalsViewer: ' + GlobalsViewer.address,
     );
     fs.appendFileSync(
         './.env',
-        'InsurancePriceViewerAddress=' +
-            '"' +
-            InsurancePriceViewer.address +
-            '"' +
-            '\n',
+        'GlobalsViewerAddress=' + '"' + GlobalsViewer.address + '"' + '\n',
     );
 
     // begin init the contracts
-    // init the metadefender contract
+    // init the metaDefender contract
     await MetaDefender.init(
         TestERC20.address,
         Signers[0].getAddress(),
@@ -133,11 +126,11 @@ async function main() {
     console.log('successfully init the MockRiskReserve contract');
     await EpochManage.init(MetaDefender.address, LiquidityCertificate.address);
     console.log('successfully init the EpochManage contract');
-    await InsurancePriceViewer.init(
+    await GlobalsViewer.init(
         MetaDefender.address,
         AmericanBinaryOptions.address,
     );
-    console.log('successfully init the InsurancePriceViewer contract');
+    console.log('successfully init the GlobalsViewer contract');
 }
 
 main()
