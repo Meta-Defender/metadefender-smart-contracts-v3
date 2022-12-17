@@ -8,10 +8,9 @@ import "./Lib/SafeDecimalMath.sol";
 import "./interfaces/IEpochManage.sol";
 import "./interfaces/IMetaDefender.sol";
 import "./interfaces/ILiquidityCertificate.sol";
+import "./interfaces/IPolicy.sol";
 
 // console
-import "hardhat/console.sol";
-import "./interfaces/IPolicy.sol";
 
 /// @title Epoch
 /// @notice Contains functions for managing epoch processes and relevant calculations

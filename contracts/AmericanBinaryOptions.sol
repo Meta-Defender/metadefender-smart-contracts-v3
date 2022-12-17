@@ -4,7 +4,6 @@ pragma solidity 0.8.9;
 // Libraries
 import "./Lib/SafeDecimalMath.sol";
 import "./Lib/SignedSafeDecimalMath.sol";
-import "hardhat/console.sol";
 
 import "./interfaces/IAmericanBinaryOptions.sol";
 
