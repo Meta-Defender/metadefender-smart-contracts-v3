@@ -8,7 +8,6 @@ import "./Lib/SafeDecimalMath.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "./interfaces/IPolicy.sol";
 import "./interfaces/IEpochManage.sol";
-import "hardhat/console.sol";
 
 /**
  * @title Policy
@@ -29,7 +28,8 @@ contract Policy is IPolicy, ERC721Enumerable {
     address public override protocol;
     bool internal initialized = false;
     IEpochManage internal epochManage;
-
+    uint public override totalCoverage;
+    uint public override totalPendingCoverage;
 
     /**
      * @param _name Token collection name
@@ -117,6 +117,8 @@ contract Policy is IPolicy, ERC721Enumerable {
             revert InsufficientCoverage();
         }
 
+        totalPendingCoverage = totalPendingCoverage.add(coverage);
+
         uint policyId = nextId++;
         _policyInfo[policyId] = PolicyInfo(beneficiary, coverage, fee, duration, standardRisk, enteredEpochIndex, SPS, false, false, false);
         _mint(beneficiary, policyId);
@@ -168,6 +170,11 @@ contract Policy is IPolicy, ERC721Enumerable {
         _burn(policyId);
     }
 
+    function newEpochCreated() external override {
+        // when the new epoch created
+        totalCoverage = totalPendingCoverage;
+    }
+
     /**
      * @dev Change the status of whether the policy has been claimed.
     * @param policyId The id of the policy.
@@ -191,6 +198,8 @@ contract Policy is IPolicy, ERC721Enumerable {
         }
         require(_policyInfo[policyId].enteredEpochIndex != 0, "policy does not exist");
         _policyInfo[policyId].isSettled= status;
+        // if the policy is settled with any reason(expire to settle or claim to settle), the totalCoverage will be reduced;
+        totalPendingCoverage = totalPendingCoverage.sub(_policyInfo[policyId].coverage);
     }
 
     /**

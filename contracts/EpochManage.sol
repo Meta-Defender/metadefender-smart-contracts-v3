@@ -11,6 +11,7 @@ import "./interfaces/ILiquidityCertificate.sol";
 
 // console
 import "hardhat/console.sol";
+import "./interfaces/IPolicy.sol";
 
 /// @title Epoch
 /// @notice Contains functions for managing epoch processes and relevant calculations
@@ -24,6 +25,7 @@ contract EpochManage is IEpochManage {
     bool public initialized = false;
 
     ILiquidityCertificate internal liquidityCertificate;
+    IPolicy internal policy;
     IMetaDefender internal metaDefender;
     mapping(uint64 => EpochInfo) internal _epochInfo;
 
@@ -32,11 +34,12 @@ contract EpochManage is IEpochManage {
      * @param _metaDefender MetaDefender address.
      * @param _liquidityCertificate LiquidityCertificateProtocol address.
      */
-    function init(IMetaDefender _metaDefender, ILiquidityCertificate _liquidityCertificate) external {
+    function init(IMetaDefender _metaDefender, ILiquidityCertificate _liquidityCertificate, IPolicy _policy) external {
         require(!initialized, "already initialized");
         require(address(_metaDefender) != address(0), "liquidityPool cannot be 0 address");
         metaDefender = _metaDefender;
         liquidityCertificate = _liquidityCertificate;
+        policy = _policy;
         initialized = true;
     }
 
@@ -90,6 +93,7 @@ contract EpochManage is IEpochManage {
     function checkAndCreateNewEpochAndUpdateAccRPSAccSPS(bool isNewEpoch) external override onlyMetaDefender() {
         IMetaDefender.GlobalInfo memory globalInfo = metaDefender.getGlobalInfo();
         if (isNewEpoch) {
+            policy.newEpochCreated();
             _epochInfo[currentEpochIndex].accRPS = globalInfo.accRPS;
             _epochInfo[currentEpochIndex].accSPS = globalInfo.accSPS;
         }
