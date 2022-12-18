@@ -31,6 +31,7 @@ contract GlobalsViewer {
         uint totalPendingCertificateLiquidity;
         uint totalCoverage;
         uint totalPendingCoverage;
+        address protocol;
     }
 
     IMetaDefender internal metaDefender;
@@ -70,19 +71,28 @@ contract GlobalsViewer {
         return TradeInsuranceView(uint(premium), 10e18, newRisk);
     }
 
-    function getGlobals() public view returns (GlobalsView memory) {
+    function getGlobals() public view returns (GlobalsView[] memory) {
         address[] memory markets = metaDefenderMarketsRegistry.getInsuranceMarkets();
         IMetaDefenderMarketsRegistry.MarketAddresses[] memory marketAddresses = metaDefenderMarketsRegistry.getInsuranceMarketsAddresses(markets);
         uint totalValidCertificateLiquidityInAll = 0;
         uint totalPendingCertificateLiquidityInAll = 0;
         uint totalCoverageInAll = 0;
         uint totalPendingCoverageInAll = 0;
+        GlobalsView[] memory globalsViews = new GlobalsView[](markets.length + 1);
         for (uint i = 0; i < marketAddresses.length; i++) {
+            globalsViews[i] = GlobalsView(
+                ILiquidityCertificate(marketAddresses[i].liquidityCertificate).totalValidCertificateLiquidity(),
+                ILiquidityCertificate(marketAddresses[i].liquidityCertificate).totalPendingCertificateLiquidity(),
+                IPolicy(marketAddresses[i].policy).totalCoverage(),
+                IPolicy(marketAddresses[i].policy).totalPendingCoverage(),
+                markets[i]
+            );
             totalValidCertificateLiquidityInAll = totalValidCertificateLiquidityInAll.add(ILiquidityCertificate(marketAddresses[i].liquidityCertificate).totalValidCertificateLiquidity());
             totalPendingCertificateLiquidityInAll = totalPendingCertificateLiquidityInAll.add(ILiquidityCertificate(marketAddresses[i].liquidityCertificate).totalPendingCertificateLiquidity());
             totalCoverageInAll = totalCoverageInAll.add(IPolicy(marketAddresses[i].policy).totalCoverage());
             totalPendingCoverageInAll = totalPendingCoverageInAll.add(IPolicy(marketAddresses[i].policy).totalPendingCoverage());
         }
-        return GlobalsView(totalValidCertificateLiquidityInAll, totalPendingCertificateLiquidityInAll, totalCoverageInAll, totalPendingCoverageInAll);
+        globalsViews[markets.length] = GlobalsView(totalValidCertificateLiquidityInAll, totalPendingCertificateLiquidityInAll, totalCoverageInAll, totalPendingCoverageInAll, address(0));
+        return globalsViews;
     }
 }
