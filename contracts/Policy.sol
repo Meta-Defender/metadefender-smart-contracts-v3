@@ -123,7 +123,7 @@ contract Policy is IPolicy, ERC721Enumerable {
         _policyInfo[policyId] = PolicyInfo(beneficiary, coverage, fee, duration, standardRisk, enteredEpochIndex, SPS, false, false, false);
         _mint(beneficiary, policyId);
 
-        emit NewPolicyMinted(beneficiary, policyId, coverage, fee, duration, standardRisk, enteredEpochIndex, SPS);
+        emit NewPolicyMinted(beneficiary, policyId, coverage, fee, duration, standardRisk, enteredEpochIndex, SPS, address(metaDefender));
         return policyId;
     }
 
@@ -222,5 +222,5 @@ contract Policy is IPolicy, ERC721Enumerable {
     error InsufficientPrivilege();
     error InsufficientCoverage();
 
-    event NewPolicyMinted(address beneficiary, uint policyId, uint coverage, uint fee, uint duration, uint standardRisk, uint enteredEpochIndex, uint SPS);
+    event NewPolicyMinted(address beneficiary, uint policyId, uint coverage, uint fee, uint duration, uint standardRisk, uint enteredEpochIndex, uint SPS, address protocol);
 }
