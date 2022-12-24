@@ -375,6 +375,31 @@ describe('MetaDefender - uint tests', async () => {
                 toBN(String((9000 + premium) * 0.0001)),
             );
         });
+
+        it('will claim revert if the rewars is 0', async () => {
+            await seedTestSystem(deployer, contracts, 20000, [
+                provider1,
+                coverBuyer1,
+            ]);
+            // provider asset
+            await contracts.metaDefender
+                .connect(provider1)
+                .certificateProviderEntrance(toBN('11000'));
+            await fastForward(86400);
+            // buy cover
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
+            await fastForward(86400);
+            // in this case provider's reward = 1
+            await contracts.metaDefender.connect(provider1).claimRewards('0');
+            await expect(
+                contracts.metaDefender.connect(provider1).claimRewards('0'),
+            ).to.be.revertedWithCustomError(
+                contracts.metaDefender,
+                'NoRewards',
+            );
+        });
     });
 
     describe('team claiming', async () => {

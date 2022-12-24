@@ -4,6 +4,8 @@ pragma solidity 0.8.9;
 // Libraries
 import "./Lib/SafeDecimalMath.sol";
 
+import "hardhat/console.sol";
+
 // Inherited
 import "./interfaces/IEpochManage.sol";
 import "./interfaces/IMetaDefender.sol";
@@ -71,9 +73,18 @@ contract EpochManage is IEpochManage {
         return (block.timestamp.sub(block.timestamp % 1 days)).div(1 days);
     }
 
+    function getTimestampFromEpoch(uint64 epochIndex) external view override returns (uint) {
+        return _epochInfo[epochIndex].epochId.mul(1 days);
+    }
+
     function isExitDay() external view override returns(bool) {
         uint currentEpoch = getCurrentEpoch();
         return currentEpoch % 7 == 0;
+    }
+
+    function nextExitDay() external view override returns(uint) {
+        uint currentEpoch = getCurrentEpoch();
+        return ((currentEpoch / 7 + 1 ) * 7).mul(1 days);
     }
 
     function checkAndCreateNewEpochAndUpdateLiquidity() external override onlyMetaDefender() returns (bool) {

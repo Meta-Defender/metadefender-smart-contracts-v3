@@ -285,7 +285,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     function getRewards(uint certificateId) public view override returns (uint) {
         ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
         IEpochManage.EpochInfo memory epochInfoCurrent = epochManage.getCurrentEpochInfo();
-        IEpochManage.EpochInfo memory epochInfoEntered = epochManage.getEpochInfo(certificateInfo.enteredEpochIndex);
+        IEpochManage.EpochInfo memory epochInfoEntered = epochManage.getEpochInfo(certificateInfo.rewardDebtEpochIndex);
         uint rewards = certificateInfo.liquidity.multiplyDecimal(epochInfoCurrent.accRPS.sub(epochInfoEntered.accRPS));
         return rewards;
     }
@@ -301,7 +301,11 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         uint rewards = getRewards(certificateId);
         uint64 currentEpochIndex = epochManage.currentEpochIndex();
         liquidityCertificate.updateRewardDebtEpochIndex(certificateId, currentEpochIndex);
-        aUSD.transfer(msg.sender, rewards);
+        if (rewards > 0) {
+            aUSD.transfer(msg.sender, rewards);
+        } else {
+            revert NoRewards();
+        }
     }
 
     /**
@@ -527,4 +531,5 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     error CertificateNotExit();
     error NotExitDay();
     error IsExitDay();
+    error NoRewards();
 }
