@@ -460,6 +460,8 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         aUSD.transfer(_to, _amount);
     }
 
+    function epochCheck() external override checkNewEpoch(){}
+
     modifier reentrancyGuard() virtual {
         counter = counter.add(1);
         // counter adds 1 to the existing 1 so becomes 2

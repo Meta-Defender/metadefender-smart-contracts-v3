@@ -49,4 +49,6 @@ interface IMetaDefender {
 
     function withdrawAfterExit(uint medalId) external;
 
+    function epochCheck() external;
+
 }
