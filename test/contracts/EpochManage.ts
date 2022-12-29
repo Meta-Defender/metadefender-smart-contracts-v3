@@ -23,12 +23,6 @@ describe('EpochManage - uint tests', async () => {
     let coverBuyer2: Signer;
     let contracts: TestSystemContractsType;
     let snapshotId: number;
-    const tAnnualised = 1;
-    const strikePrice = 1500;
-    const spotPrice = 1000;
-    const freeRate = 0.06;
-    const initialRisk = 0.1;
-    const standardRisk = 100;
 
     before(async function () {
         [deployer, user, provider1, provider2, coverBuyer1, coverBuyer2] =
