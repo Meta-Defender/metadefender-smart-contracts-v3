@@ -242,9 +242,6 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      */
     function certificateProviderExit(uint certificateId) external override reentrancyGuard checkNewEpoch(){
         uint64 currentEpochIndex = epochManage.currentEpochIndex();
-        if (!epochManage.isExitDay()){
-            revert NotExitDay();
-        }
         if (msg.sender != liquidityCertificate.belongsTo(certificateId) ) {
             revert InsufficientPrivilege();
         }
@@ -332,9 +329,6 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @param policyId the Id of policy.
      */
     function settlePolicy(uint policyId) external override checkNewEpoch(){
-        if (epochManage.isExitDay()) {
-            revert IsExitDay();
-        }
         IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
         if (policy.isSettleAvailable(policyId)) {
             policy.changeStatusIsSettled(policyId,true);

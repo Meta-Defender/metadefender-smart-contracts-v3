@@ -22,12 +22,8 @@ interface IEpochManage {
 
     function getTimestampFromEpoch(uint64 epochIndex) external view returns(uint);
 
-    function isExitDay() external view returns(bool);
-
     function checkAndCreateNewEpochAndUpdateLiquidity() external returns (bool);
 
     function checkAndCreateNewEpochAndUpdateAccRPSAccSPS() external;
-
-    function nextExitDay() external view returns(uint);
 
 }

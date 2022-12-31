@@ -77,16 +77,6 @@ contract EpochManage is IEpochManage {
         return _epochInfo[epochIndex].epochId.mul(1 days);
     }
 
-    function isExitDay() external view override returns(bool) {
-        uint currentEpoch = getCurrentEpoch();
-        return currentEpoch % 7 == 0;
-    }
-
-    function nextExitDay() external view override returns(uint) {
-        uint currentEpoch = getCurrentEpoch();
-        return ((currentEpoch / 7 + 1 ) * 7).mul(1 days);
-    }
-
     function checkAndCreateNewEpochAndUpdateLiquidity() external override onlyMetaDefender() returns (bool) {
         uint cei = getCurrentEpoch();
         if (cei != _epochInfo[currentEpochIndex].epochId) {
