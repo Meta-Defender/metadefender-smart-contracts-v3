@@ -112,6 +112,7 @@ describe('MetaDefender - uint tests', async () => {
             expect(globalInfo.standardRisk).to.be.equal(toBN('110'));
         });
     });
+
     describe('transfer official', async () => {
         it('should not allow transfer when the msg.sender is not the official', async () => {
             await expect(
@@ -282,7 +283,6 @@ describe('MetaDefender - uint tests', async () => {
                 'InsufficientPrivilege',
             );
         });
-
         it('should get the liquidity back except the locked value', async () => {
             await seedTestSystem(deployer, contracts, 20000, [
                 provider1,
@@ -317,6 +317,36 @@ describe('MetaDefender - uint tests', async () => {
                 toBN(String((18970 + premium) * 0.0001)),
             );
             await fastForward(86400 * 365);
+        });
+        it('should get the error if one withdraw just after buying the policy', async () => {
+            // ----P1----0:00----B1----B2----W1
+            await seedTestSystem(deployer, contracts, 20000, [
+                provider1,
+                coverBuyer1,
+                coverBuyer2,
+            ]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .certificateProviderEntrance(toBN('10000'));
+            await fastForwardToNextExitDay();
+            await contracts.metaDefender.epochCheck();
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
+            const res = await contracts.metaDefender
+                .connect(provider1)
+                .getSPSLockedByCertificateId('0');
+            expect(res[0]).to.be.equal(toBN('0.1'));
+            expect(res[1]).to.be.equal(toBN('9000'));
+            // if now the provider1 withdraw, he will get what he exactly put in.
+            await contracts.metaDefender
+                .connect(provider1)
+                .certificateProviderExit('0');
+            expect(
+                await contracts.test.quoteToken.balanceOf(
+                    await provider1.getAddress(),
+                ),
+            ).to.approximately(toBN('18973'), toBN('1'));
         });
     });
 
