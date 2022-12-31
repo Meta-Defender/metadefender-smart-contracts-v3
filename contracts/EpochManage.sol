@@ -100,13 +100,11 @@ contract EpochManage is IEpochManage {
         return false;
     }
 
-    function checkAndCreateNewEpochAndUpdateAccRPSAccSPS(bool isNewEpoch) external override onlyMetaDefender() {
+    function checkAndCreateNewEpochAndUpdateAccRPSAccSPS() external override onlyMetaDefender() {
         IMetaDefender.GlobalInfo memory globalInfo = metaDefender.getGlobalInfo();
-        if (isNewEpoch) {
-            policy.newEpochCreated();
-            _epochInfo[currentEpochIndex].accRPS = globalInfo.accRPS;
-            _epochInfo[currentEpochIndex].accSPS = globalInfo.accSPS;
-        }
+        policy.newEpochCreated();
+        _epochInfo[currentEpochIndex].accRPS = globalInfo.accRPS;
+        _epochInfo[currentEpochIndex].accSPS = globalInfo.accSPS;
     }
 
     modifier onlyMetaDefender virtual {

@@ -474,9 +474,9 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     }
 
     modifier checkNewEpoch() virtual {
-        bool isUpdated = epochManage.checkAndCreateNewEpochAndUpdateLiquidity();
+        epochManage.checkAndCreateNewEpochAndUpdateLiquidity();
         _;
-        epochManage.checkAndCreateNewEpochAndUpdateAccRPSAccSPS(isUpdated);
+        epochManage.checkAndCreateNewEpochAndUpdateAccRPSAccSPS();
     }
 
     /**
