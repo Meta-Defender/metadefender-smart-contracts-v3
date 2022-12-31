@@ -1,26 +1,13 @@
 import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
-import {
-    MOCK_MINING_ADDRESS,
-    MOCK_PROXY_ADDRESS,
-    toBN,
-    ZERO_ADDRESS,
-} from '../../scripts/util/web3utils';
-import {
-    fastForward,
-    fastForwardToNextExitDay,
-    fastForwardToNextNotExitDay,
-    restoreSnapshot,
-    takeSnapshot,
-} from '../utils';
+import { toBN } from '../../scripts/util/web3utils';
+import { fastForward, restoreSnapshot, takeSnapshot } from '../utils';
 import {
     deployTestSystem,
     TestSystemContractsType,
 } from '../utils/deployTestSystem';
 import { seedTestSystem } from '../utils/seedTestSystem';
 import { expect } from 'chai';
-import { time } from '@nomicfoundation/hardhat-network-helpers';
-import { exp } from 'mathjs';
 import { americanBinaryOptions } from '../utils/americanBinaryOptions';
 
 describe('MetaDefender - integrated tests', async () => {
@@ -148,7 +135,6 @@ describe('MetaDefender - integrated tests', async () => {
             //                                                                                        S(1)=S(2)=1000/50000=0.02
             // epoch        1               2                                                      3
             await fastForward(86400 * 380);
-            await fastForwardToNextNotExitDay();
             await contracts.metaDefender.settlePolicy('0');
             const sw0 =
                 await contracts.metaDefender.getSPSLockedByCertificateId('0');
@@ -164,7 +150,6 @@ describe('MetaDefender - integrated tests', async () => {
             //                                                                                        S(1)=100/10000=0.01 S(2)=0
             // epoch        1               2                                                      3
             await fastForward(86400 * 380);
-            await fastForwardToNextNotExitDay();
             await contracts.metaDefender.settlePolicy('1');
             const sw0 =
                 await contracts.metaDefender.getSPSLockedByCertificateId('0');
@@ -182,9 +167,8 @@ describe('MetaDefender - integrated tests', async () => {
             //                                                                                        S(1)=100/10000=0.01 S(2)=0
             // epoch        1               2                                                      3
             await fastForward(86400 * 380);
-            await fastForwardToNextNotExitDay();
             await contracts.metaDefender.settlePolicy('1');
-            await fastForwardToNextNotExitDay();
+            await fastForward(86400);
             await contracts.metaDefender.settlePolicy('0');
             const sw0 =
                 await contracts.metaDefender.getSPSLockedByCertificateId('0');
@@ -201,7 +185,6 @@ describe('MetaDefender - integrated tests', async () => {
             //                                                                                                         W(1)+R = (10000-1000) * 0.997 + premium1 + 0.2* premium2 = 9901.2 W(2) = 40000 * 0.997 + 0.80 * premium2 = 39880 + 0.8 * premium2
             // epoch      1             2                     3                                                 4
             await fastForward(86400 * 380);
-            await fastForwardToNextNotExitDay();
             await contracts.metaDefender.settlePolicy('1');
             const tokenBefore1 = await contracts.test.quoteToken.balanceOf(
                 await provider1.getAddress(),
@@ -209,14 +192,14 @@ describe('MetaDefender - integrated tests', async () => {
             const tokenBefore2 = await contracts.test.quoteToken.balanceOf(
                 await provider2.getAddress(),
             );
-            await fastForwardToNextExitDay();
+            await fastForward(86400);
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderExit('0');
             await contracts.metaDefender
                 .connect(provider2)
                 .certificateProviderExit('1');
-            await fastForwardToNextNotExitDay();
+            await fastForward(86400);
             await contracts.metaDefender.settlePolicy('0');
             const tokenAfter1 = await contracts.test.quoteToken.balanceOf(
                 await provider1.getAddress(),
@@ -262,7 +245,6 @@ describe('MetaDefender - integrated tests', async () => {
             //                                                                                                           W(1)+R=10000*0.997+premium1+0.2*premium2 W(2)=40000+0.8*premium
             // epoch      1             2                   3                                             4              5
             await fastForward(86400 * 380);
-            await fastForwardToNextNotExitDay();
             await contracts.metaDefender.settlePolicy('1');
             const tokenBefore1 = await contracts.test.quoteToken.balanceOf(
                 await provider1.getAddress(),
@@ -270,9 +252,9 @@ describe('MetaDefender - integrated tests', async () => {
             const tokenBefore2 = await contracts.test.quoteToken.balanceOf(
                 await provider2.getAddress(),
             );
-            await fastForwardToNextNotExitDay();
+            await fastForward(86400);
             await contracts.metaDefender.settlePolicy('0');
-            await fastForwardToNextExitDay();
+            await fastForward(86400);
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderExit('0');
@@ -322,7 +304,6 @@ describe('MetaDefender - integrated tests', async () => {
             //                                                                                           W(1)+R = (10000-1000) * 0.997 + premium1 + 0.2* premium2 = 9901.2 W(2) = 40000 * 0.997 + 0.80 * premium2 = 39880 + 0.8 * premium2
             // epoch      1             2                   3                                    4                   5
             await fastForward(86400 * 380);
-            await fastForwardToNextNotExitDay();
             await contracts.metaDefender.settlePolicy('1');
             const tokenBefore1 = await contracts.test.quoteToken.balanceOf(
                 await provider1.getAddress(),
@@ -330,14 +311,14 @@ describe('MetaDefender - integrated tests', async () => {
             const tokenBefore2 = await contracts.test.quoteToken.balanceOf(
                 await provider2.getAddress(),
             );
-            await fastForwardToNextExitDay();
+            await fastForward(86400);
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderExit('0');
             await contracts.metaDefender
                 .connect(provider2)
                 .certificateProviderExit('1');
-            await fastForwardToNextNotExitDay();
+            await fastForward(86400);
             await contracts.metaDefender.settlePolicy('0');
             await contracts.metaDefender
                 .connect(provider1)
