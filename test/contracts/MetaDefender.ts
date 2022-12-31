@@ -6,13 +6,7 @@ import {
     toBN,
     ZERO_ADDRESS,
 } from '../../scripts/util/web3utils';
-import {
-    fastForward,
-    fastForwardToNextExitDay,
-    fastForwardToNextNotExitDay,
-    restoreSnapshot,
-    takeSnapshot,
-} from '../utils';
+import { fastForward, restoreSnapshot, takeSnapshot } from '../utils';
 import {
     deployTestSystem,
     TestSystemContractsType,
@@ -259,7 +253,7 @@ describe('MetaDefender - uint tests', async () => {
 
     describe('certificateProvider exit', async () => {
         it('should revert if the certificate is invalid', async () => {
-            await fastForwardToNextExitDay();
+            await fastForward(86400);
             await expect(
                 contracts.metaDefender.certificateProviderExit('7777'),
             ).to.be.revertedWith('ERC721: invalid token ID');
@@ -273,7 +267,7 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderEntrance(toBN('11000'));
-            await fastForwardToNextExitDay();
+            await fastForward(86400);
             await expect(
                 contracts.metaDefender
                     .connect(provider2)
@@ -296,7 +290,7 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(coverBuyer1)
                 .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
-            await fastForwardToNextExitDay();
+            await fastForward(86400);
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderExit('0');
@@ -328,7 +322,7 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderEntrance(toBN('10000'));
-            await fastForwardToNextExitDay();
+            await fastForward(86400);
             await contracts.metaDefender.epochCheck();
             await contracts.metaDefender
                 .connect(coverBuyer1)
@@ -773,7 +767,7 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(coverBuyer1)
                 .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
-            await fastForwardToNextExitDay();
+            await fastForward(86400);
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderExit('0');
@@ -821,7 +815,7 @@ describe('MetaDefender - uint tests', async () => {
             await contracts.metaDefender
                 .connect(coverBuyer1)
                 .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
-            await fastForwardToNextExitDay();
+            await fastForward(86400);
             await contracts.metaDefender
                 .connect(provider1)
                 .certificateProviderExit('0');
@@ -871,7 +865,6 @@ describe('MetaDefender - uint tests', async () => {
                 .connect(coverBuyer1)
                 .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
             await fastForward(86400 * 350);
-            await fastForwardToNextNotExitDay();
             await expect(
                 contracts.metaDefender.connect(coverBuyer1).settlePolicy('0'),
             ).to.be.revertedWith('policy is not expired');
@@ -890,7 +883,6 @@ describe('MetaDefender - uint tests', async () => {
                 .connect(coverBuyer1)
                 .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
             await fastForward(86400 * 366);
-            await fastForwardToNextNotExitDay();
             expect(
                 await contracts.metaDefender
                     .connect(coverBuyer2)
@@ -912,8 +904,8 @@ describe('MetaDefender - uint tests', async () => {
                 .connect(coverBuyer1)
                 .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
             // after 90 day and a half
-            await fastForward(365 * 86400);
-            await fastForwardToNextNotExitDay();
+            await fastForward(86400 * 365);
+            await fastForward(86400);
             await contracts.metaDefender.connect(coverBuyer1).settlePolicy('0');
             // 20000 - premium - 10 + 10 = 20000 - premium
             const premium = americanBinaryOptions(
@@ -946,7 +938,6 @@ describe('MetaDefender - uint tests', async () => {
                 .connect(coverBuyer1)
                 .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
             await fastForward(86400 * 370);
-            await fastForwardToNextNotExitDay();
             await contracts.metaDefender.connect(coverBuyer2).settlePolicy('0');
             expect(
                 await contracts.test.quoteToken.balanceOf(
@@ -968,7 +959,6 @@ describe('MetaDefender - uint tests', async () => {
                 .connect(coverBuyer1)
                 .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
             await fastForward(86400 * 370);
-            await fastForwardToNextNotExitDay();
             await contracts.metaDefender.connect(coverBuyer2).settlePolicy('0');
             expect(
                 await contracts.test.quoteToken.balanceOf(

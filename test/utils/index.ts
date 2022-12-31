@@ -26,20 +26,6 @@ export async function fastForward(seconds: number) {
     await mineBlock();
 }
 
-export async function fastForwardToNextExitDay() {
-    const currentDay = Math.floor((await time.latest()) / 86400);
-    await fastForward(86400 * (7 - (currentDay % 7)));
-}
-
-export async function fastForwardToNextNotExitDay() {
-    const currentDay = Math.floor((await time.latest()) / 86400);
-    if (currentDay % 7 === 6) {
-        await fastForward(86400 * 2);
-    } else {
-        await fastForward(86400);
-    }
-}
-
 export async function getCurrentFriday() {
     return moment().startOf('week').add(5, 'days').add(16, 'hours').unix();
 }

@@ -6,11 +6,7 @@ import {
 import { ethers } from 'hardhat';
 import { restoreSnapshot, takeSnapshot } from '../utils';
 import { expect } from 'chai';
-import {
-    MOCK_MINING_ADDRESS,
-    toBN,
-    ZERO_ADDRESS,
-} from '../../scripts/util/web3utils';
+import { toBN, ZERO_ADDRESS } from '../../scripts/util/web3utils';
 import { seedTestSystem } from '../utils/seedTestSystem';
 
 describe('LiquidityCertificate - uint tests', async () => {

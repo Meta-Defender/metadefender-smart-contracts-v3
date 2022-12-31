@@ -1,25 +1,12 @@
 import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
-import {
-    MOCK_MINING_ADDRESS,
-    MOCK_PROXY_ADDRESS,
-    toBN,
-    ZERO_ADDRESS,
-} from '../../scripts/util/web3utils';
-import {
-    fastForward,
-    fastForwardToNextExitDay,
-    fastForwardToNextNotExitDay,
-    restoreSnapshot,
-    takeSnapshot,
-} from '../utils';
+import { toBN } from '../../scripts/util/web3utils';
+import { fastForward, restoreSnapshot, takeSnapshot } from '../utils';
 import {
     deployTestSystem,
     TestSystemContractsType,
 } from '../utils/deployTestSystem';
-import { expect } from 'chai';
 import { seedTestSystem } from '../utils/seedTestSystem';
-import { americanBinaryOptions } from '../utils/americanBinaryOptions';
 
 describe('MetaDefender - integrated tests', async () => {
     let deployer: Signer;
