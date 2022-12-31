@@ -58,7 +58,6 @@ describe('MetaDefender - integrated tests', async () => {
             await fastForward(86400);
             await contracts.metaDefender.epochCheck();
             for (let i = 0; i < 90; i++) {
-                console.log(i);
                 await contracts.metaDefender
                     .connect(coverBuyer1)
                     .buyPolicy(
@@ -74,7 +73,6 @@ describe('MetaDefender - integrated tests', async () => {
                 .certificateProviderEntrance(toBN('9000'));
             await fastForward(86400);
             for (let i = 0; i < 90; i++) {
-                console.log(i);
                 await contracts.metaDefender
                     .connect(coverBuyer2)
                     .buyPolicy(
