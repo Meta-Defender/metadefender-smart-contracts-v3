@@ -7,6 +7,7 @@ import {
     TestSystemContractsType,
 } from '../utils/deployTestSystem';
 import { seedTestSystem } from '../utils/seedTestSystem';
+import { expect } from 'chai';
 
 describe('MetaDefender - integrated tests', async () => {
     let deployer: Signer;
@@ -30,10 +31,10 @@ describe('MetaDefender - integrated tests', async () => {
         snapshotId = await takeSnapshot();
     });
 
-    describe('leveraged', async () => {
-        // TODO: leveraged problem has not been resolved.
-        it('should withdraw zero when leveraged', async () => {
-            // ----P1=1000----0:00----B1=10*90----0:00----P2=9000----0:00----B2=100*90=9000----0:00----queryWithdrawP1
+    describe('claim situation', async () => {
+        it('the one before the policyBuying will suffer the loss while the one after the policyBuying will not', async () => {
+            // ----P1----0:00----B1----0:00----P2-----0:00-----claimForB1----approve----0:00----queryWithdrawP1,P2
+            //epoch 1            2             3                  4                             5
             await seedTestSystem(deployer, contracts, 100000, [
                 provider1,
                 provider2,
@@ -45,36 +46,28 @@ describe('MetaDefender - integrated tests', async () => {
                 .certificateProviderEntrance(toBN('1000'));
             await fastForward(86400);
             await contracts.metaDefender.epochCheck();
-            for (let i = 0; i < 90; i++) {
-                await contracts.metaDefender
-                    .connect(coverBuyer1)
-                    .buyPolicy(
-                        await coverBuyer1.getAddress(),
-                        toBN('10'),
-                        '100',
-                    );
-            }
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyPolicy(await coverBuyer1.getAddress(), toBN('100'), '100');
             await fastForward(86400);
             await contracts.metaDefender.epochCheck();
             await contracts.metaDefender
                 .connect(provider2)
-                .certificateProviderEntrance(toBN('9000'));
-            await fastForward(86400);
-            for (let i = 0; i < 90; i++) {
-                await contracts.metaDefender
-                    .connect(coverBuyer2)
-                    .buyPolicy(
-                        await coverBuyer2.getAddress(),
-                        toBN('100'),
-                        '100',
-                    );
-            }
+                .certificateProviderEntrance(toBN('10000'));
             await fastForward(86400);
             await contracts.metaDefender.epochCheck();
-            const withdrawal = await contracts.metaDefender
-                .connect(provider1)
-                .getSPSLockedByCertificateId('0');
-            console.log(withdrawal);
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .policyClaimApply('0');
+            await contracts.metaDefender.connect(deployer).approveApply('0');
+            await fastForward(86400);
+            await contracts.metaDefender.epochCheck();
+            const withdrawP1 =
+                await contracts.metaDefender.getSPSLockedByCertificateId('0');
+            const withdrawP2 =
+                await contracts.metaDefender.getSPSLockedByCertificateId('1');
+            expect(withdrawP1[0]).to.be.equal(toBN('0.1'));
+            expect(withdrawP2[0]).to.be.equal(toBN('0'));
         });
     });
 });

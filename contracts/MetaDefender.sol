@@ -264,12 +264,12 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @param certificateId the certificateId
      */
     function getSPSLockedByCertificateId(uint certificateId) public view override returns(uint, uint) {
-        // lockedSPS = accSPSLeft - accSPSProvide + provideEpoch.crossSPS - withdrawEpoch.crossSPS
+        // lockedSPS = (accSPSLeft - accSPSProvide) - (withdrawEpoch.crossSPS - provideEpoch.crossSPS) - enteredEpoch.crossSPSClaimed
         ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
         IEpochManage.EpochInfo memory epochInfoEntered = epochManage.getEpochInfo(certificateInfo.enteredEpochIndex);
         IEpochManage.EpochInfo memory epochInfoExit = epochManage.getEpochInfo(certificateInfo.exitedEpochIndex);
         IEpochManage.EpochInfo memory epochInfoCurrent = epochManage.getCurrentEpochInfo();
-        uint SPSLocked = certificateInfo.exitedEpochIndex == 0 ? epochInfoCurrent.accSPS.add(epochInfoEntered.crossSPS).sub(epochInfoCurrent.crossSPS).sub(epochInfoEntered.accSPS) : epochInfoExit.accSPS.add(epochInfoEntered.crossSPS).sub(epochInfoExit.crossSPS).sub(epochInfoEntered.accSPS);
+        uint SPSLocked = certificateInfo.exitedEpochIndex == 0 ? epochInfoCurrent.accSPS.add(epochInfoEntered.crossSPS).sub(epochInfoCurrent.crossSPS).sub(epochInfoEntered.accSPS).sub(epochInfoEntered.crossSPSClaimed) : epochInfoExit.accSPS.add(epochInfoEntered.crossSPS).sub(epochInfoExit.crossSPS).sub(epochInfoEntered.accSPS).sub(epochInfoEntered.crossSPSClaimed);
         uint withdrawal = certificateInfo.exitedEpochIndex == 0 ? certificateInfo.liquidity.multiplyDecimal(SafeDecimalMath.UNIT.sub(SPSLocked)) : certificateInfo.liquidity.multiplyDecimal(certificateInfo.SPSLocked.sub(SPSLocked));
         return (SPSLocked, withdrawal);
     }
@@ -360,6 +360,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         if (policy.isClaimAvailable(policyId)) {
             policy.changeStatusIsSettled(policyId,true);
             epochManage.updateCrossShadow(policyInfo.SPS, policyInfo.enteredEpochIndex);
+            epochManage.updateCrossShadowClaimed(policyInfo.SPS, policyInfo.enteredEpochIndex);
             // in claiming, we will not reduce the risk exposure.
             if (isReserve) {
                 // we will change the SPS.

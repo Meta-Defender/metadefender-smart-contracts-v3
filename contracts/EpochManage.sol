@@ -61,6 +61,19 @@ contract EpochManage is IEpochManage {
         }
     }
 
+    function updateCrossShadowClaimed(uint SPS, uint64 enteredEpochIndex) external override onlyMetaDefender() {
+        uint64 i = 1;
+        while (currentEpochIndex - i >= enteredEpochIndex) {
+            uint64 previousEpochIndex = currentEpochIndex - i;
+            _epochInfo[previousEpochIndex].crossSPSClaimed= _epochInfo[previousEpochIndex].crossSPSClaimed.add(SPS);
+            i++;
+        }
+    }
+
+    /**
+     * @dev get epochInfo by epochIndex
+     * @param epochIndex the index of the epoch.
+     */
     function getEpochInfo(uint64 epochIndex) external view override returns (EpochInfo memory) {
         return _epochInfo[epochIndex];
     }
@@ -85,6 +98,7 @@ contract EpochManage is IEpochManage {
             _epochInfo[currentEpochIndex].epochId = cei;
             _epochInfo[currentEpochIndex].accRPS = _epochInfo[currentEpochIndex - 1].accRPS;
             _epochInfo[currentEpochIndex].accSPS = _epochInfo[currentEpochIndex - 1].accSPS;
+            _epochInfo[currentEpochIndex].crossSPSClaimed = _epochInfo[currentEpochIndex - 1].crossSPSClaimed;
             return true;
         }
         return false;
