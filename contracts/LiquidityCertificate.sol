@@ -173,7 +173,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
             revert InsufficientPrivilege();
         }
         require(_isApprovedOrOwner(tx.origin, certificateId), "attempted to expire nonexistent certificate, or not owner");
-        totalPendingCertificateLiquidity = totalPendingCertificateLiquidity.sub(_certificateInfo[certificateId].liquidity);
+        totalValidCertificateLiquidity = totalValidCertificateLiquidity.sub(_certificateInfo[certificateId].liquidity);
     }
 
 

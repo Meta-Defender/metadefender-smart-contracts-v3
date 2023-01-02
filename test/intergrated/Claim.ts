@@ -70,4 +70,27 @@ describe('MetaDefender - integrated tests', async () => {
             expect(withdrawP2[0]).to.be.equal(toBN('0'));
         });
     });
+
+    describe('buy policy after withdrawing', async () => {
+        it('can still buy the policy after all certificate is withdrawn', async () => {
+            //----P1----0:00----W1----B1----
+            //epoch1            2
+            await seedTestSystem(deployer, contracts, 100000, [
+                provider1,
+                coverBuyer1,
+            ]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .certificateProviderEntrance(toBN('1000'));
+            await fastForward(86400);
+            await contracts.metaDefender.epochCheck();
+            await contracts.metaDefender
+                .connect(provider1)
+                .certificateProviderExit('0');
+            // now the liquidity is zero
+            const validLiquidity =
+                await contracts.liquidityCertificate.totalValidCertificateLiquidity();
+            expect(validLiquidity).to.be.equal(toBN('0'));
+        });
+    });
 });
