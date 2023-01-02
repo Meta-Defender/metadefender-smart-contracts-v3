@@ -13,9 +13,7 @@ interface IEpochManage {
 
     function currentEpochIndex() external returns (uint64);
 
-    function updateCrossShadow(uint SPS, uint64 enteredEpochIndex) external;
-
-    function updateCrossShadowClaimed(uint SPS, uint64 enteredEpochIndex) external;
+    function updateCrossShadow(uint SPS, uint64 enteredEpochIndex, bool isClaimed) external;
 
     function getEpochInfo(uint64 epochIndex) external view returns (EpochInfo memory);
 

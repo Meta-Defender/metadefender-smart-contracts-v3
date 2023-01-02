@@ -52,20 +52,14 @@ contract EpochManage is IEpochManage {
      * @param SPS shadow per share.
      * @param enteredEpochIndex the time when the policy is generated.
      */
-    function updateCrossShadow(uint SPS, uint64 enteredEpochIndex) external override onlyMetaDefender() {
+    function updateCrossShadow(uint SPS, uint64 enteredEpochIndex, bool isClaimed) external override onlyMetaDefender() {
         uint64 i = 1;
         while (currentEpochIndex - i >= enteredEpochIndex) {
             uint64 previousEpochIndex = currentEpochIndex - i;
             _epochInfo[previousEpochIndex].crossSPS= _epochInfo[previousEpochIndex].crossSPS.add(SPS);
-            i++;
-        }
-    }
-
-    function updateCrossShadowClaimed(uint SPS, uint64 enteredEpochIndex) external override onlyMetaDefender() {
-        uint64 i = 1;
-        while (currentEpochIndex - i >= enteredEpochIndex) {
-            uint64 previousEpochIndex = currentEpochIndex - i;
-            _epochInfo[previousEpochIndex].crossSPSClaimed= _epochInfo[previousEpochIndex].crossSPSClaimed.add(SPS);
+            if (isClaimed) {
+                _epochInfo[previousEpochIndex].crossSPSClaimed= _epochInfo[previousEpochIndex].crossSPSClaimed.add(SPS);
+            }
             i++;
         }
     }

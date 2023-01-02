@@ -332,7 +332,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
         if (policy.isSettleAvailable(policyId)) {
             policy.changeStatusIsSettled(policyId,true);
-            epochManage.updateCrossShadow(policyInfo.SPS, policyInfo.enteredEpochIndex);
+            epochManage.updateCrossShadow(policyInfo.SPS, policyInfo.enteredEpochIndex, false);
             // change the SPS.
             globalInfo.accSPS = globalInfo.accSPS.sub(policyInfo.SPS);
             // reduce the risk.
@@ -359,8 +359,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
         if (policy.isClaimAvailable(policyId)) {
             policy.changeStatusIsSettled(policyId,true);
-            epochManage.updateCrossShadow(policyInfo.SPS, policyInfo.enteredEpochIndex);
-            epochManage.updateCrossShadowClaimed(policyInfo.SPS, policyInfo.enteredEpochIndex);
+            epochManage.updateCrossShadow(policyInfo.SPS, policyInfo.enteredEpochIndex, true);
             // in claiming, we will not reduce the risk exposure.
             if (isReserve) {
                 // we will change the SPS.
