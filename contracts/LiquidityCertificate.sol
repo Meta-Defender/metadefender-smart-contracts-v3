@@ -174,8 +174,16 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         }
         require(_isApprovedOrOwner(tx.origin, certificateId), "attempted to expire nonexistent certificate, or not owner");
         totalValidCertificateLiquidity = totalValidCertificateLiquidity.sub(_certificateInfo[certificateId].liquidity);
+        totalPendingCertificateLiquidity = totalPendingCertificateLiquidity.sub(_certificateInfo[certificateId].liquidity);
     }
-
+    
+    function decreaseLiquidityByJudger(uint certificateId) external onlyMetaDefender(){
+        if (msg.sender != metaDefender) {
+            revert InsufficientPrivilege();
+        }
+        totalValidCertificateLiquidity = totalValidCertificateLiquidity.sub(_certificateInfo[certificateId].liquidity);
+        totalPendingCertificateLiquidity = totalPendingCertificateLiquidity.sub(_certificateInfo[certificateId].liquidity);
+    }
 
     /**
      * @notice expire. LiquidityCertificate.
@@ -188,6 +196,15 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
             revert InsufficientPrivilege();
         }
         require(_isApprovedOrOwner(tx.origin, certificateId), "attempted to expire nonexistent certificate, or not owner");
+        _certificateInfo[certificateId].exitedEpochIndex = currentEpochIndex;
+        _certificateInfo[certificateId].isValid = false;
+        emit Expired(certificateId);
+    }
+
+    function expireByJudger(uint certificateId, uint64 currentEpochIndex) external override onlyMetaDefender() {
+        if (msg.sender != metaDefender) {
+            revert InsufficientPrivilege();
+        }
         _certificateInfo[certificateId].exitedEpochIndex = currentEpochIndex;
         _certificateInfo[certificateId].isValid = false;
         emit Expired(certificateId);
