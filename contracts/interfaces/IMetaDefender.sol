@@ -8,6 +8,7 @@ interface IMetaDefender {
     struct GlobalInfo {
         uint accSPS;
         uint accRPS;
+        uint accRealSPS;
         uint risk;
         uint reward4Team;
         uint standardRisk;
@@ -48,6 +49,10 @@ interface IMetaDefender {
     function mine(uint _amount, address _to) external;
 
     function withdrawAfterExit(uint medalId) external;
+
+    function getRealLiquidityByCertificateId(uint256 certificateId) external view returns(uint);
+
+    function getLostLiquidityByCertificateId(uint256 certificateId) external view returns(uint);
 
     function epochCheck() external;
 
