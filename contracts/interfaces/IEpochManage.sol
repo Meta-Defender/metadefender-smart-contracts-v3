@@ -6,12 +6,12 @@ interface IEpochManage {
     struct EpochInfo {
         uint epochId;
         uint crossSPS;
-        uint crossSPSClaimed;
+        uint accRealSPSComp;//crossSPSClaimed;//comp
         uint accRPS;
         uint accSPS;
     }
 
-    function currentEpochIndex() external returns (uint64);
+    function currentEpochIndex() external view returns (uint64);
 
     function updateCrossShadow(uint SPS, uint64 enteredEpochIndex, bool isClaimed) external;
 

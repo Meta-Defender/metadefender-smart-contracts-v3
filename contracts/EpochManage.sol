@@ -51,7 +51,6 @@ contract EpochManage is IEpochManage {
                     ---------0-------SPS------ SPS-------SPS-------0---------
      * @param SPS shadow per share.
      * @param enteredEpochIndex the time when the policy is generated.
-     * @param isClaimed use capital in md pool.
      */
     function updateCrossShadow(uint SPS, uint64 enteredEpochIndex, bool isClaimed) external override onlyMetaDefender() {
         if(!isClaimed){
@@ -71,7 +70,7 @@ contract EpochManage is IEpochManage {
 
         
     }
-
+    }
     /**
      * @dev get epochInfo by epochIndex
      * @param epochIndex the index of the epoch.

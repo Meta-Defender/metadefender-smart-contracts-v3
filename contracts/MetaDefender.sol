@@ -293,7 +293,8 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         (uint256 SPSLocked, uint256 withdrawal) = getSPSLockedByCertificateId(
             certificateId
         );
-        if(liquidityCertificate.totalValidCertificateLiquidity.sub(withdrawal) < policy.totalCoverage || liquidityCertificate.totalValidCertificateLiquidity.sub(withdrawal)< policy.totalPendingCoverage){
+    
+        if(liquidityCertificate.totalValidCertificateLiquidity().sub(withdrawal) < policy.totalCoverage() || liquidityCertificate.totalValidCertificateLiquidity().sub(withdrawal) < policy.totalPendingCoverage()){
             revert TotalCoverageExceed();
         }
         liquidityCertificate.decreaseLiquidity(certificateId);
@@ -361,14 +362,14 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         return (SPSLocked, withdrawal);
     }
 
-    function caculateMultForMedal(uint certificateInfoSPSLocked, uint spsLocked) internal view returns(uint){
+    function caculateMultForMedal(uint certificateInfoSPSLocked, uint spsLocked) internal pure returns(uint){
          if(spsLocked >= SafeDecimalMath.UNIT){
             return 0;
             }else{
                 if(certificateInfoSPSLocked >= SafeDecimalMath.UNIT){
                     return SafeDecimalMath.UNIT.sub(spsLocked);
                 }else{
-                    return certificateInfoSPSLocked.sub(SPSLocked);
+                    return certificateInfoSPSLocked.sub(spsLocked);
                 }
             }       
     }
@@ -426,13 +427,22 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         if(getRealLiquidityByCertificateId(certificateId)>0){
             revert ShouldNotDelete();
         }
+
+        ILiquidityCertificate.CertificateInfo
+            memory certificateInfo = liquidityCertificate.getCertificateInfo(
+                certificateId
+            );
+        if(certificateInfo.isValid == false){
+            revert InsufficientPrivilege();
+        }
+
         uint64 currentEpochIndex = epochManage.currentEpochIndex();
         liquidityCertificate.decreaseLiquidityByJudger(certificateId);
         (uint256 SPSLocked, ) = getSPSLockedByCertificateId(
             certificateId
         );
         liquidityCertificate.updateSPSLocked(certificateId, SPSLocked);
-        uint256 rewards = getRewardsWhileExit(certificateId);
+        uint256 rewards = getRewardsWhileExit(certificateInfo);
         liquidityCertificate.expireByJudger(certificateId, currentEpochIndex);
         if (rewards > 0) {
             aUSD.transfer(liquidityCertificate.belongsTo(certificateId), rewards);
@@ -464,7 +474,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             return 0;
         } else {
             IEpochManage.EpochInfo memory epochInfoPrevious = epochManage
-                .getEpochInfo(epochManage.currentEpochIndex().sub(1));
+                .getEpochInfo(epochManage.currentEpochIndex()-1);
             IEpochManage.EpochInfo memory epochInfoRewardDebt = epochManage
                 .getEpochInfo(certificateInfo.rewardDebtEpochIndex);
             uint256 rewards = certificateInfo.liquidity.multiplyDecimal(
@@ -477,7 +487,6 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     function getRewardsWhileExit(ILiquidityCertificate.CertificateInfo memory certificateInfo)
         internal
         view
-        override
         returns (uint256)
     {
 
@@ -512,7 +521,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         }
         uint256 rewards = getRewards(certificateId);
         if (rewards > 0) {
-            uint64 previousEpochIndex = epochManage.currentEpochIndex().sub(1);
+            uint64 previousEpochIndex = epochManage.currentEpochIndex()-1;
             liquidityCertificate.updateRewardDebtEpochIndex(
                 certificateId,
                 previousEpochIndex
