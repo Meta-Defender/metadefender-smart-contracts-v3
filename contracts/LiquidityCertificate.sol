@@ -177,7 +177,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         totalPendingCertificateLiquidity = totalPendingCertificateLiquidity.sub(_certificateInfo[certificateId].liquidity);
     }
     
-    function decreaseLiquidityByJudger(uint certificateId) external onlyMetaDefender(){
+    function decreaseLiquidityByJudger(uint certificateId) external override onlyMetaDefender(){
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
@@ -201,7 +201,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         emit Expired(certificateId);
     }
 
-    function expireByJudger(uint certificateId, uint64 currentEpochIndex) external override onlyMetaDefender() {
+    function expireByJudger(uint certificateId, uint64 currentEpochIndex) external onlyMetaDefender() {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }

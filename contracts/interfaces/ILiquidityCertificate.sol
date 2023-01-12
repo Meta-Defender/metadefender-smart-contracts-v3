@@ -59,7 +59,11 @@ interface ILiquidityCertificate {
 
     function decreaseLiquidity(uint certificateId) external;
 
+    function decreaseLiquidityByJudger(uint certificateId) external;
+
     function expire(uint certificateId, uint64 currentEpochIndex) external;
+
+    function expireByJudger(uint certificateId, uint64 currentEpochIndex) external;
 
     function belongsTo(uint certificateId) external view returns (address);
 }
