@@ -277,17 +277,29 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         reentrancyGuard
         checkNewEpoch
     {
+        ILiquidityCertificate.CertificateInfo
+            memory certificateInfo = liquidityCertificate.getCertificateInfo(
+                certificateId
+            );
+        if(certificateInfo.isValid == false){
+            revert InsufficientPrivilege();
+        }
+
         uint64 currentEpochIndex = epochManage.currentEpochIndex();
         if (msg.sender != liquidityCertificate.belongsTo(certificateId)) {
             revert InsufficientPrivilege();
         }
-        liquidityCertificate.decreaseLiquidity(certificateId);
+        //liquidityCertificate.decreaseLiquidity(certificateId);
         (uint256 SPSLocked, uint256 withdrawal) = getSPSLockedByCertificateId(
             certificateId
         );
+        if(liquidityCertificate.totalValidCertificateLiquidity.sub(withdrawal) < policy.totalCoverage || liquidityCertificate.totalValidCertificateLiquidity.sub(withdrawal)< policy.totalPendingCoverage){
+            revert TotalCoverageExceed();
+        }
+        liquidityCertificate.decreaseLiquidity(certificateId);
         liquidityCertificate.updateSPSLocked(certificateId, SPSLocked);
         //uint256 rewards = getRewards(certificateId);
-        uint256 rewards = getRewardsWhileExit(certificateId);
+        uint256 rewards = getRewardsWhileExit(certificateInfo);
         liquidityCertificate.expire(certificateId, currentEpochIndex);
         // transfer
         uint256 fee = withdrawal.multiplyDecimal(WITHDRAWAL_FEE_RATE);
@@ -362,7 +374,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     }
 
     //get real liquidity
-
+    // only for living certificate
     function getRealLiquidityByCertificateId(uint256 certificateId)
         public
         view
@@ -373,44 +385,20 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             memory certificateInfo = liquidityCertificate.getCertificateInfo(
                 certificateId
             );
+        if(certificateInfo.isValid == false){
+            revert CertificateExit();
+        }
         IEpochManage.EpochInfo memory epochInfoEntered = epochManage
             .getEpochInfo(certificateInfo.enteredEpochIndex);
-
-        IEpochManage.EpochInfo memory epochInfoExit = epochManage.getEpochInfo(
-            certificateInfo.exitedEpochIndex
-        );
 
         uint multForCertificate = SafeDecimalMath.UNIT.add(epochInfoEntered.accRealSPSComp) >= globalInfo.accRealSPS 
         ? SafeDecimalMath.UNIT.add(epochInfoEntered.accRealSPSComp).sub(globalInfo.accRealSPS) : 0;
 
-        // uint multForMedal = certificateInfo.SPSLocked.add(epochInfoEntered.accRealSPSComp) >= globalInfo.accRealSPS
-        // ? certificateInfo.SPSLocked.add(epochInfoEntered.accRealSPSComp).sub(globalInfo.accRealSPS) : 0;
-        uint multForMedal = caculateMultForMedalRealLiquidity(certificateInfo.SPSLocked,epochInfoEntered.accRealSPSComp);
+        uint realLiquidity = certificateInfo.liquidity.multiplyDecimal(multForCertificate);
 
-        uint realLiquidity = certificateInfo.exitedEpochIndex == 0
-            ? certificateInfo.liquidity.multiplyDecimal(
-                multForCertificate
-            ): certificateInfo.liquidity.multiplyDecimal(
-                multForMedal
-            );
         return realLiquidity;
     }
 
-    function caculateMultForMedalRealLiquidity(uint certificateInfoSPSLocked, uint accRealSPSComp) internal view returns(uint){
-        if(certificateInfoSPSLocked.add(accRealSPSComp)<=globalInfo.accRealSPS){
-            return 0;
-        }else{
-            uint certificateInfoSPSLockedUseable = certificateInfoSPSLocked;
-            if(certificateInfoSPSLocked>SafeDecimalMath.UNIT){
-                certificateInfoSPSLockedUseable = SafeDecimalMath.UNIT;
-            }
-            if(certificateInfoSPSLockedUseable.add(accRealSPSComp)>=globalInfo.accRealSPS){
-                return certificateInfoSPSLockedUseable.add(accRealSPSComp).sub(globalInfo.accRealSPS);
-            }else{
-                return 0;
-            }
-        }
-    }
 
     //caculate lost liquidity for certificate or medal
     //while dealing with left assets
@@ -418,8 +406,11 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         ILiquidityCertificate.CertificateInfo
             memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
 
-        IEpochManage.EpochInfo memory epochInfoEntered = epochManage
-            .getEpochInfo(certificateInfo.enteredEpochIndex);
+        if(certificateInfo.isValid == false){
+            revert CertificateExit();
+        }
+
+        IEpochManage.EpochInfo memory epochInfoEntered = epochManage.getEpochInfo(certificateInfo.enteredEpochIndex);
         
         uint lostParam = globalInfo.accRealSPS.sub(epochInfoEntered.accRealSPSComp) <= SafeDecimalMath.UNIT ? globalInfo.accRealSPS.sub(epochInfoEntered.accRealSPSComp) : SafeDecimalMath.UNIT;
         uint lost = certificateInfo.liquidity.multiplyDecimal(lostParam);
@@ -428,7 +419,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
 
     //delete a provider after his real liquidity drops to 0
     //only executable by judger
-    function deletCertificateProviderByCertificateId(uint256 certificateId) external checkNewEpoch {
+    function deleteCertificateProviderByCertificateId(uint256 certificateId) external checkNewEpoch {
         if (msg.sender != judger) {
             revert InsufficientPrivilege();
         }
@@ -483,16 +474,12 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         }
     }
 
-    function getRewardsWhileExit(uint256 certificateId)
+    function getRewardsWhileExit(ILiquidityCertificate.CertificateInfo memory certificateInfo)
         internal
         view
         override
         returns (uint256)
     {
-        ILiquidityCertificate.CertificateInfo
-            memory certificateInfo = liquidityCertificate.getCertificateInfo(
-                certificateId
-            );
 
         if (
             certificateInfo.enteredEpochIndex == epochManage.currentEpochIndex()
@@ -812,9 +799,11 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     error InvalidAddress(address addr);
     error CertificateNotSignalWithdraw();
     error CertificateNotExit();
+    error CertificateExit();
     error NotExitDay();
     error IsExitDay();
     error NoRewards();
     error NotClaimAvailable();
     error ShouldNotDelete();
+    error TotalCoverageExceed();
 }
