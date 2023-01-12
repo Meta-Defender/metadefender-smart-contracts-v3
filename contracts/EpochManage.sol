@@ -51,17 +51,25 @@ contract EpochManage is IEpochManage {
                     ---------0-------SPS------ SPS-------SPS-------0---------
      * @param SPS shadow per share.
      * @param enteredEpochIndex the time when the policy is generated.
+     * @param isClaimed use capital in md pool.
      */
     function updateCrossShadow(uint SPS, uint64 enteredEpochIndex, bool isClaimed) external override onlyMetaDefender() {
-        uint64 i = 1;
-        while (currentEpochIndex - i >= enteredEpochIndex) {
+        if(!isClaimed){
+            uint64 i = 1;
+            while (currentEpochIndex - i >= enteredEpochIndex) {
             uint64 previousEpochIndex = currentEpochIndex - i;
             _epochInfo[previousEpochIndex].crossSPS= _epochInfo[previousEpochIndex].crossSPS.add(SPS);
-            if (isClaimed) {
-                _epochInfo[previousEpochIndex].crossSPSClaimed= _epochInfo[previousEpochIndex].crossSPSClaimed.add(SPS);
-            }
             i++;
         }
+        }else{
+            uint64 i = 0;
+            while (currentEpochIndex - i >= enteredEpochIndex) {
+            uint64 previousEpochIndex = currentEpochIndex - i;
+            _epochInfo[previousEpochIndex].accRealSPSComp= _epochInfo[previousEpochIndex].accRealSPSComp.add(SPS);
+            i++;
+        }
+
+        
     }
 
     /**
@@ -92,7 +100,7 @@ contract EpochManage is IEpochManage {
             _epochInfo[currentEpochIndex].epochId = cei;
             _epochInfo[currentEpochIndex].accRPS = _epochInfo[currentEpochIndex - 1].accRPS;
             _epochInfo[currentEpochIndex].accSPS = _epochInfo[currentEpochIndex - 1].accSPS;
-            _epochInfo[currentEpochIndex].crossSPSClaimed = _epochInfo[currentEpochIndex - 1].crossSPSClaimed;
+            _epochInfo[currentEpochIndex].accRealSPSComp = _epochInfo[currentEpochIndex - 1].accRealSPSComp;
             return true;
         }
         return false;
