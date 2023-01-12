@@ -2,30 +2,31 @@
 pragma solidity ^0.8.9;
 
 // test contracts
-import "hardhat/console.sol";
+import 'hardhat/console.sol';
 
 // openzeppelin contracts
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import '@openzeppelin/contracts/utils/math/SafeMath.sol';
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
 
 // interfaces
-import "./interfaces/IMetaDefender.sol";
-import "./interfaces/IMockRiskReserve.sol";
-import "./interfaces/ILiquidityCertificate.sol";
-import "./interfaces/IPolicy.sol";
-import "./interfaces/IEpochManage.sol";
+import './interfaces/IMetaDefender.sol';
+import './interfaces/IMockRiskReserve.sol';
+import './interfaces/ILiquidityCertificate.sol';
+import './interfaces/IPolicy.sol';
+import './interfaces/IEpochManage.sol';
 
-import "./Lib/SafeDecimalMath.sol";
-import "./interfaces/IEpochManage.sol";
-import "./interfaces/IEpochManage.sol";
-import "./interfaces/IAmericanBinaryOptions.sol";
-import "./interfaces/IMetaDefender.sol";
+import './Lib/SafeDecimalMath.sol';
+import './interfaces/IEpochManage.sol';
+import './interfaces/IEpochManage.sol';
+import './interfaces/IAmericanBinaryOptions.sol';
+import './interfaces/IMetaDefender.sol';
 
 contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
-    using SafeMath for uint;
-    using SafeDecimalMath for uint;
+    using SafeMath for uint256;
+    using SafeMath for uint64;
+    using SafeDecimalMath for uint256;
 
     GlobalInfo internal globalInfo;
 
@@ -44,22 +45,22 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     address public judger;
     address public official;
     address public protocol;
-    uint public teamReserveRate;
-    uint public constant FEE_RATE = 5e16;
-    uint public constant FEE = 10e18;
-    uint public constant MAX_COVERAGE_PERCENTAGE = 2e17;
-    uint public constant WITHDRAWAL_FEE_RATE = 3e15;
-    uint public constant BUFFER = 3;
-    int public constant FREE_RATE = 6e16;
-    uint public constant BASE_POINT = 1e16;
+    uint256 public teamReserveRate;
+    uint256 public constant FEE_RATE = 5e16;
+    uint256 public constant FEE = 10e18;
+    uint256 public constant MAX_COVERAGE_PERCENTAGE = 2e17;
+    uint256 public constant WITHDRAWAL_FEE_RATE = 3e15;
+    uint256 public constant BUFFER = 3;
+    int256 public constant FREE_RATE = 6e16;
+    uint256 public constant BASE_POINT = 1e16;
 
     // index the providers
-    uint public providerCount;
+    uint256 public providerCount;
     // index the providers who exit the market
-    uint public medalCount;
+    uint256 public medalCount;
 
     /// @dev Counter for reentrancy guard.
-    uint internal counter = 1;
+    uint256 internal counter = 1;
 
     constructor() {}
 
@@ -82,20 +83,15 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         IERC20 _aUSD,
         address _judger,
         address _official,
-
         // riskReserve
         IMockRiskReserve _mockRiskReserve,
-
         // NFT LPs and policy NFT
         ILiquidityCertificate _liquidityCertificate,
         IPolicy _policy,
-
         // calculation
         IAmericanBinaryOptions _americanBinaryOptions,
-
         // functional contracts.
         IEpochManage _epochManage,
-
         // params
         uint256 _initialRisk,
         uint256 _teamReserveRate,
@@ -120,7 +116,12 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         initialized = true;
     }
 
-    function getGlobalInfo() external view override returns (GlobalInfo memory) {
+    function getGlobalInfo()
+        external
+        view
+        override
+        returns (GlobalInfo memory)
+    {
         return globalInfo;
     }
 
@@ -162,7 +163,10 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @param proxy is the proxy address
      * @param isValid is the mining route is valid or not
      */
-    function validMiningProxyManage(address proxy, bool isValid) external override {
+    function validMiningProxyManage(address proxy, bool isValid)
+        external
+        override
+    {
         if (msg.sender != official) {
             revert InsufficientPrivilege();
         }
@@ -173,7 +177,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @dev updateStandardRisk
      * @param standardRisk the latest standardRisk
      */
-    function updateStandardRisk(uint standardRisk) external override {
+    function updateStandardRisk(uint256 standardRisk) external override {
         if (msg.sender != official) {
             revert InsufficientPrivilege();
         }
@@ -186,31 +190,53 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @param coverage is the coverage to be secured.
      * @param duration is the time (in epoch) the policy lasts.
      */
-    function buyPolicy(address beneficiary, uint coverage, uint duration) external override nonReentrant checkNewEpoch() {
-        if  (coverage > 100 * globalInfo.standardRisk) {
+    function buyPolicy(
+        address beneficiary,
+        uint256 coverage,
+        uint256 duration
+    ) external override nonReentrant checkNewEpoch {
+        if (coverage > 100 * globalInfo.standardRisk) {
             revert CoverageTooLarge(coverage);
         }
-        globalInfo.risk = globalInfo.risk.add(coverage.divideDecimal(globalInfo.standardRisk).multiplyDecimal(BASE_POINT));
-        int premium = americanBinaryOptions.americanBinaryOptionPrices(duration * 1 days, globalInfo.risk, 1000e18, 1500e18, FREE_RATE);
+        globalInfo.risk = globalInfo.risk.add(
+            coverage.divideDecimal(globalInfo.standardRisk).multiplyDecimal(
+                BASE_POINT
+            )
+        );
+        int256 premium = americanBinaryOptions.americanBinaryOptionPrices(
+            duration * 1 days,
+            globalInfo.risk,
+            1000e18,
+            1500e18,
+            FREE_RATE
+        );
         if (premium < 0) {
             premium = 0;
         }
         // team reward. mocked in 5e16.
-        uint reward4Team = uint(premium).multiplyDecimal(teamReserveRate);
+        uint256 reward4Team = uint256(premium).multiplyDecimal(teamReserveRate);
         globalInfo.reward4Team = globalInfo.reward4Team.add(reward4Team);
         // fee = 10e18 which is 10 usdt.
         // the user will pay premium + reward4Team + fee
-        aUSD.transferFrom(msg.sender, address(this), uint(premium).add(FEE).add(reward4Team));
+        aUSD.transferFrom(
+            msg.sender,
+            address(this),
+            uint256(premium).add(FEE).add(reward4Team)
+        );
 
         // update globals
-        uint deltaRPS = uint(premium).divideDecimal(liquidityCertificate.totalValidCertificateLiquidity());
-        uint deltaSPS = coverage.divideDecimal(liquidityCertificate.totalValidCertificateLiquidity());
+        uint256 deltaRPS = uint256(premium).divideDecimal(
+            liquidityCertificate.totalValidCertificateLiquidity()
+        );
+        uint256 deltaSPS = coverage.divideDecimal(
+            liquidityCertificate.totalValidCertificateLiquidity()
+        );
 
         globalInfo.accSPS = globalInfo.accSPS.add(deltaSPS);
         globalInfo.accRPS = globalInfo.accRPS.add(deltaRPS);
 
         // mint a new policy NFT
-        uint policyId = policy.mint(
+        uint256 policyId = policy.mint(
             beneficiary,
             coverage,
             FEE,
@@ -227,7 +253,12 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @dev provider enters and provide the capitals
      * @param amount the amount of ausd to be provided
      */
-    function certificateProviderEntrance(uint amount) external override reentrancyGuard checkNewEpoch(){
+    function certificateProviderEntrance(uint256 amount)
+        external
+        override
+        reentrancyGuard
+        checkNewEpoch
+    {
         aUSD.transferFrom(msg.sender, address(this), amount);
         providerCount = liquidityCertificate.mint(
             epochManage.currentEpochIndex(),
@@ -240,18 +271,26 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @dev providerExit retrieve the rewards for the providers in the pool
      * @param certificateId the certificateId
      */
-    function certificateProviderExit(uint certificateId) external override reentrancyGuard checkNewEpoch(){
+    function certificateProviderExit(uint256 certificateId)
+        external
+        override
+        reentrancyGuard
+        checkNewEpoch
+    {
         uint64 currentEpochIndex = epochManage.currentEpochIndex();
-        if (msg.sender != liquidityCertificate.belongsTo(certificateId) ) {
+        if (msg.sender != liquidityCertificate.belongsTo(certificateId)) {
             revert InsufficientPrivilege();
         }
         liquidityCertificate.decreaseLiquidity(certificateId);
-        (uint SPSLocked, uint withdrawal) = getSPSLockedByCertificateId(certificateId);
+        (uint256 SPSLocked, uint256 withdrawal) = getSPSLockedByCertificateId(
+            certificateId
+        );
         liquidityCertificate.updateSPSLocked(certificateId, SPSLocked);
-        uint rewards = getRewards(certificateId);
+        //uint256 rewards = getRewards(certificateId);
+        uint256 rewards = getRewardsWhileExit(certificateId);
         liquidityCertificate.expire(certificateId, currentEpochIndex);
         // transfer
-        uint fee = withdrawal.multiplyDecimal(WITHDRAWAL_FEE_RATE);
+        uint256 fee = withdrawal.multiplyDecimal(WITHDRAWAL_FEE_RATE);
         globalInfo.reward4Team = globalInfo.reward4Team.add(fee);
         if (withdrawal.add(rewards) > 0) {
             aUSD.transfer(msg.sender, withdrawal.add(rewards).sub(fee));
@@ -263,42 +302,234 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @dev getSPSLockedByCertificateId calculates the rewards locked in the certificateId
      * @param certificateId the certificateId
      */
-    function getSPSLockedByCertificateId(uint certificateId) public view override returns(uint, uint) {
+    //keep do not change:sdg
+    function getSPSLockedByCertificateId(uint256 certificateId)
+        public
+        view
+        override
+        returns (uint256, uint256)
+    {
         // lockedSPS = (accSPSLeft - accSPSProvide) - (withdrawEpoch.crossSPS - provideEpoch.crossSPS) - enteredEpoch.crossSPSClaimed
-        ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
-        IEpochManage.EpochInfo memory epochInfoEntered = epochManage.getEpochInfo(certificateInfo.enteredEpochIndex);
-        IEpochManage.EpochInfo memory epochInfoExit = epochManage.getEpochInfo(certificateInfo.exitedEpochIndex);
-        IEpochManage.EpochInfo memory epochInfoCurrent = epochManage.getCurrentEpochInfo();
-        uint SPSLocked = certificateInfo.exitedEpochIndex == 0 ? epochInfoCurrent.accSPS.add(epochInfoEntered.crossSPS).sub(epochInfoCurrent.crossSPS).sub(epochInfoEntered.accSPS).sub(epochInfoEntered.crossSPSClaimed) : epochInfoExit.accSPS.add(epochInfoEntered.crossSPS).sub(epochInfoExit.crossSPS).sub(epochInfoEntered.accSPS).sub(epochInfoEntered.crossSPSClaimed);
-        uint withdrawal = certificateInfo.exitedEpochIndex == 0 ? certificateInfo.liquidity.multiplyDecimal(SafeDecimalMath.UNIT.sub(SPSLocked)) : certificateInfo.liquidity.multiplyDecimal(certificateInfo.SPSLocked.sub(SPSLocked));
+        ILiquidityCertificate.CertificateInfo
+            memory certificateInfo = liquidityCertificate.getCertificateInfo(
+                certificateId
+            );
+        IEpochManage.EpochInfo memory epochInfoEntered = epochManage
+            .getEpochInfo(certificateInfo.enteredEpochIndex);
+        IEpochManage.EpochInfo memory epochInfoExit = epochManage.getEpochInfo(
+            certificateInfo.exitedEpochIndex
+        );
+        IEpochManage.EpochInfo memory epochInfoCurrent = epochManage
+            .getCurrentEpochInfo();
+        uint256 SPSLocked = certificateInfo.exitedEpochIndex == 0
+            ? epochInfoCurrent
+                .accSPS
+                .add(epochInfoEntered.crossSPS)
+                .sub(epochInfoCurrent.crossSPS)
+                .sub(epochInfoEntered.accSPS)
+            : //.sub(epochInfoEntered.crossSPSClaimed)
+            epochInfoExit
+                .accSPS
+                .add(epochInfoEntered.crossSPS)
+                .sub(epochInfoExit.crossSPS)
+                .sub(epochInfoEntered.accSPS);
+        //.sub(epochInfoEntered.crossSPSClaimed);
+        
+        uint multForCertificate = SafeDecimalMath.UNIT >= SPSLocked ? SafeDecimalMath.UNIT.sub(SPSLocked) : 0; //for certificate
+        //uint multForMedal = (certificateInfo.SPSLocked >= SPSLocked && certificateInfo.SPSLocked <= SafeDecimalMath.UNIT) ? certificateInfo.SPSLocked.sub(SPSLocked) : 0; // for medal
+        uint multForMedal = caculateMultForMedal(certificateInfo.SPSLocked,SPSLocked);
+        
+        uint256 withdrawal = certificateInfo.exitedEpochIndex == 0
+            ? certificateInfo.liquidity.multiplyDecimal(
+                multForCertificate
+            )
+            : certificateInfo.liquidity.multiplyDecimal(
+                multForMedal
+            );
         return (SPSLocked, withdrawal);
     }
 
+    function caculateMultForMedal(uint certificateInfoSPSLocked, uint spsLocked) internal view returns(uint){
+         if(spsLocked >= SafeDecimalMath.UNIT){
+            return 0;
+            }else{
+                if(certificateInfoSPSLocked >= SafeDecimalMath.UNIT){
+                    return SafeDecimalMath.UNIT.sub(spsLocked);
+                }else{
+                    return certificateInfoSPSLocked.sub(SPSLocked);
+                }
+            }       
+    }
+
+    //get real liquidity
+
+    function getRealLiquidityByCertificateId(uint256 certificateId)
+        public
+        view
+        override
+        returns (uint256)
+    {
+        ILiquidityCertificate.CertificateInfo
+            memory certificateInfo = liquidityCertificate.getCertificateInfo(
+                certificateId
+            );
+        IEpochManage.EpochInfo memory epochInfoEntered = epochManage
+            .getEpochInfo(certificateInfo.enteredEpochIndex);
+
+        IEpochManage.EpochInfo memory epochInfoExit = epochManage.getEpochInfo(
+            certificateInfo.exitedEpochIndex
+        );
+
+        uint multForCertificate = SafeDecimalMath.UNIT.add(epochInfoEntered.accRealSPSComp) >= globalInfo.accRealSPS 
+        ? SafeDecimalMath.UNIT.add(epochInfoEntered.accRealSPSComp).sub(globalInfo.accRealSPS) : 0;
+
+        // uint multForMedal = certificateInfo.SPSLocked.add(epochInfoEntered.accRealSPSComp) >= globalInfo.accRealSPS
+        // ? certificateInfo.SPSLocked.add(epochInfoEntered.accRealSPSComp).sub(globalInfo.accRealSPS) : 0;
+        uint multForMedal = caculateMultForMedalRealLiquidity(certificateInfo.SPSLocked,epochInfoEntered.accRealSPSComp);
+
+        uint realLiquidity = certificateInfo.exitedEpochIndex == 0
+            ? certificateInfo.liquidity.multiplyDecimal(
+                multForCertificate
+            ): certificateInfo.liquidity.multiplyDecimal(
+                multForMedal
+            );
+        return realLiquidity;
+    }
+
+    function caculateMultForMedalRealLiquidity(uint certificateInfoSPSLocked, uint accRealSPSComp) internal view returns(uint){
+        if(certificateInfoSPSLocked.add(accRealSPSComp)<=globalInfo.accRealSPS){
+            return 0;
+        }else{
+            uint certificateInfoSPSLockedUseable = certificateInfoSPSLocked;
+            if(certificateInfoSPSLocked>SafeDecimalMath.UNIT){
+                certificateInfoSPSLockedUseable = SafeDecimalMath.UNIT;
+            }
+            if(certificateInfoSPSLockedUseable.add(accRealSPSComp)>=globalInfo.accRealSPS){
+                return certificateInfoSPSLockedUseable.add(accRealSPSComp).sub(globalInfo.accRealSPS);
+            }else{
+                return 0;
+            }
+        }
+    }
+
+    //caculate lost liquidity for certificate or medal
+    //while dealing with left assets
+    function getLostLiquidityByCertificateId(uint256 certificateId) public view override returns(uint){
+        ILiquidityCertificate.CertificateInfo
+            memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
+
+        IEpochManage.EpochInfo memory epochInfoEntered = epochManage
+            .getEpochInfo(certificateInfo.enteredEpochIndex);
+        
+        uint lostParam = globalInfo.accRealSPS.sub(epochInfoEntered.accRealSPSComp) <= SafeDecimalMath.UNIT ? globalInfo.accRealSPS.sub(epochInfoEntered.accRealSPSComp) : SafeDecimalMath.UNIT;
+        uint lost = certificateInfo.liquidity.multiplyDecimal(lostParam);
+        return lost;
+    }
+
+    //delete a provider after his real liquidity drops to 0
+    //only executable by judger
+    function deletCertificateProviderByCertificateId(uint256 certificateId) external checkNewEpoch {
+        if (msg.sender != judger) {
+            revert InsufficientPrivilege();
+        }
+        if(getRealLiquidityByCertificateId(certificateId)>0){
+            revert ShouldNotDelete();
+        }
+        uint64 currentEpochIndex = epochManage.currentEpochIndex();
+        liquidityCertificate.decreaseLiquidityByJudger(certificateId);
+        (uint256 SPSLocked, ) = getSPSLockedByCertificateId(
+            certificateId
+        );
+        liquidityCertificate.updateSPSLocked(certificateId, SPSLocked);
+        uint256 rewards = getRewardsWhileExit(certificateId);
+        liquidityCertificate.expireByJudger(certificateId, currentEpochIndex);
+        if (rewards > 0) {
+            aUSD.transfer(liquidityCertificate.belongsTo(certificateId), rewards);
+        }
+        emit ProviderExit(liquidityCertificate.belongsTo(certificateId));
+    }
 
     /**
      * @dev getRewards calculates the rewards for the provider
      * @param certificateId the certificateId
      */
-    function getRewards(uint certificateId) public view override returns (uint) {
-        ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
-        IEpochManage.EpochInfo memory epochInfoCurrent = epochManage.getCurrentEpochInfo();
-        IEpochManage.EpochInfo memory epochInfoEntered = epochManage.getEpochInfo(certificateInfo.rewardDebtEpochIndex);
-        uint rewards = certificateInfo.liquidity.multiplyDecimal(epochInfoCurrent.accRPS.sub(epochInfoEntered.accRPS));
-        return rewards;
+    function getRewards(uint256 certificateId)
+        public
+        view
+        override
+        returns (uint256)
+    {
+        ILiquidityCertificate.CertificateInfo
+            memory certificateInfo = liquidityCertificate.getCertificateInfo(
+                certificateId
+            );
+        //IEpochManage.EpochInfo memory epochInfoCurrent = epochManage.getCurrentEpochInfo();
+
+        if (
+            certificateInfo.enteredEpochIndex ==
+            epochManage.currentEpochIndex() ||
+            certificateInfo.isValid == false
+        ) {
+            return 0;
+        } else {
+            IEpochManage.EpochInfo memory epochInfoPrevious = epochManage
+                .getEpochInfo(epochManage.currentEpochIndex().sub(1));
+            IEpochManage.EpochInfo memory epochInfoRewardDebt = epochManage
+                .getEpochInfo(certificateInfo.rewardDebtEpochIndex);
+            uint256 rewards = certificateInfo.liquidity.multiplyDecimal(
+                epochInfoPrevious.accRPS.sub(epochInfoRewardDebt.accRPS)
+            );
+            return rewards;
+        }
+    }
+
+    function getRewardsWhileExit(uint256 certificateId)
+        internal
+        view
+        override
+        returns (uint256)
+    {
+        ILiquidityCertificate.CertificateInfo
+            memory certificateInfo = liquidityCertificate.getCertificateInfo(
+                certificateId
+            );
+
+        if (
+            certificateInfo.enteredEpochIndex == epochManage.currentEpochIndex()
+        ) {
+            return 0;
+        } else {
+            IEpochManage.EpochInfo memory epochInfoCurrent = epochManage
+                .getEpochInfo(epochManage.currentEpochIndex());
+            IEpochManage.EpochInfo memory epochInfoRewardDebt = epochManage
+                .getEpochInfo(certificateInfo.rewardDebtEpochIndex);
+            uint256 rewards = certificateInfo.liquidity.multiplyDecimal(
+                epochInfoCurrent.accRPS.sub(epochInfoRewardDebt.accRPS)
+            );
+            return rewards;
+        }
     }
 
     /**
      * @dev claimRewards retrieve the rewards for the providers in the pool
      * @param certificateId the certificateId
      */
-    function claimRewards(uint certificateId) external override reentrancyGuard checkNewEpoch() {
+    function claimRewards(uint256 certificateId)
+        external
+        override
+        reentrancyGuard
+        checkNewEpoch
+    {
         if (msg.sender != (liquidityCertificate.belongsTo(certificateId))) {
             revert InsufficientPrivilege();
         }
-        uint rewards = getRewards(certificateId);
-        uint64 currentEpochIndex = epochManage.currentEpochIndex();
-        liquidityCertificate.updateRewardDebtEpochIndex(certificateId, currentEpochIndex);
+        uint256 rewards = getRewards(certificateId);
         if (rewards > 0) {
+            uint64 previousEpochIndex = epochManage.currentEpochIndex().sub(1);
+            liquidityCertificate.updateRewardDebtEpochIndex(
+                certificateId,
+                previousEpochIndex
+            );
             aUSD.transfer(msg.sender, rewards);
         } else {
             revert NoRewards();
@@ -309,17 +540,27 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @dev withdrawAfterExit retrieve the rewards for the providers in the pool
      * @param certificateId The medalId.
      */
-    function withdrawAfterExit(uint certificateId) external override reentrancyGuard checkNewEpoch() {
-        ILiquidityCertificate.CertificateInfo memory certificateInfo = liquidityCertificate.getCertificateInfo(certificateId);
+    function withdrawAfterExit(uint256 certificateId)
+        external
+        override
+        reentrancyGuard
+        checkNewEpoch
+    {
+        ILiquidityCertificate.CertificateInfo
+            memory certificateInfo = liquidityCertificate.getCertificateInfo(
+                certificateId
+            );
         if (msg.sender != (liquidityCertificate.belongsTo(certificateId))) {
             revert InsufficientPrivilege();
         }
         if (certificateInfo.exitedEpochIndex == 0) {
             revert CertificateNotExit();
         }
-        (uint SPSLocked, uint withdrawal) = getSPSLockedByCertificateId(certificateId);
+        (uint256 SPSLocked, uint256 withdrawal) = getSPSLockedByCertificateId(
+            certificateId
+        );
         liquidityCertificate.updateSPSLocked(certificateId, SPSLocked);
-        uint fee = withdrawal.multiplyDecimal(WITHDRAWAL_FEE_RATE);
+        uint256 fee = withdrawal.multiplyDecimal(WITHDRAWAL_FEE_RATE);
         globalInfo.reward4Team = globalInfo.reward4Team.add(fee);
         aUSD.transfer(msg.sender, withdrawal.sub(fee));
     }
@@ -328,19 +569,37 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @dev settle the policy by a policy id
      * @param policyId the Id of policy.
      */
-    function settlePolicy(uint policyId) external override checkNewEpoch(){
+    function settlePolicy(uint256 policyId) external override checkNewEpoch {
         IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
         if (policy.isSettleAvailable(policyId)) {
-            policy.changeStatusIsSettled(policyId,true);
-            epochManage.updateCrossShadow(policyInfo.SPS, policyInfo.enteredEpochIndex, false);
+            policy.changeStatusIsSettled(policyId, true);
+            epochManage.updateCrossShadow(
+                policyInfo.SPS,
+                policyInfo.enteredEpochIndex,
+                false
+            );
             // change the SPS.
             globalInfo.accSPS = globalInfo.accSPS.sub(policyInfo.SPS);
             // reduce the risk.
-            globalInfo.risk = globalInfo.risk.sub(policyInfo.coverage.divideDecimal(policyInfo.standardRisk).multiplyDecimal(BASE_POINT));
-            IEpochManage.EpochInfo memory epochInfo = epochManage.getEpochInfo(policyInfo.enteredEpochIndex);
-            if (epochManage.getCurrentEpochInfo().epochId.sub(epochInfo.epochId) <= BUFFER) {
+            globalInfo.risk = globalInfo.risk.sub(
+                policyInfo
+                    .coverage
+                    .divideDecimal(policyInfo.standardRisk)
+                    .multiplyDecimal(BASE_POINT)
+            );
+            IEpochManage.EpochInfo memory epochInfo = epochManage.getEpochInfo(
+                policyInfo.enteredEpochIndex
+            );
+            if (
+                epochManage.getCurrentEpochInfo().epochId.sub(
+                    epochInfo.epochId
+                ) <= BUFFER
+            ) {
                 // to make sure the policyHolder himself settle.
-                require(msg.sender == policyInfo.beneficiary, "Only policy holder can settle the policy in 3 days");
+                require(
+                    msg.sender == policyInfo.beneficiary,
+                    'Only policy holder can settle the policy in 3 days'
+                );
                 aUSD.transfer(policyInfo.beneficiary, policyInfo.fee);
             } else {
                 aUSD.transfer(msg.sender, policyInfo.fee);
@@ -349,25 +608,44 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         emit PolicyCancelled(policyId);
     }
 
-
     /**
      * @dev claim the policy by a policy id
      * @param policyId the Id of policy.
      * @param isReserve whether the reserve is enough to pay the claim.
      */
-    function claimPolicy(uint policyId, bool isReserve) internal checkNewEpoch(){
+    function claimPolicy(uint256 policyId, bool isReserve)
+        internal
+        checkNewEpoch
+    {
         IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
         if (policy.isClaimAvailable(policyId)) {
-            policy.changeStatusIsSettled(policyId,true);
-            epochManage.updateCrossShadow(policyInfo.SPS, policyInfo.enteredEpochIndex, true);
-            // in claiming, we will not reduce the risk exposure.
+            policy.changeStatusIsSettled(policyId, true);
+
             if (isReserve) {
+                epochManage.updateCrossShadow(
+                    policyInfo.SPS,
+                    policyInfo.enteredEpochIndex,
+                    false
+                );
                 // we will change the SPS.
                 globalInfo.accSPS = globalInfo.accSPS.sub(policyInfo.SPS);
+                // in claiming, we will not reduce the risk exposure.
+            } else {
+                globalInfo.accRealSPS = globalInfo.accRealSPS.add(
+                    policyInfo.SPS
+                );
+                epochManage.updateCrossShadow(
+                    policyInfo.SPS,
+                    policyInfo.enteredEpochIndex,
+                    true
+                );
             }
+
             aUSD.transfer(policyInfo.beneficiary, policyInfo.fee);
+            emit PolicyClaimed(policyId);
+        } else {
+            revert NotClaimAvailable();
         }
-        emit PolicyClaimed(policyId);
     }
 
     /**
@@ -375,11 +653,20 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      *
      * @param policyId the policy id
      */
-    function policyClaimApply(uint policyId) external override checkNewEpoch() {
+    function policyClaimApply(uint256 policyId)
+        external
+        override
+        checkNewEpoch
+    {
         IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
-        IEpochManage.EpochInfo memory enteredEpochInfo = epochManage.getEpochInfo(policyInfo.enteredEpochIndex);
-        IEpochManage.EpochInfo memory currentEpochInfo = epochManage.getCurrentEpochInfo();
-        if (currentEpochInfo.epochId > enteredEpochInfo.epochId.add(policyInfo.duration).add(BUFFER)) {
+        IEpochManage.EpochInfo memory enteredEpochInfo = epochManage
+            .getEpochInfo(policyInfo.enteredEpochIndex);
+        IEpochManage.EpochInfo memory currentEpochInfo = epochManage
+            .getCurrentEpochInfo();
+        if (
+            currentEpochInfo.epochId >
+            enteredEpochInfo.epochId.add(policyInfo.duration).add(BUFFER)
+        ) {
             revert PolicyAlreadyStale(policyId);
         }
         if (policyInfo.isClaimed == true) {
@@ -399,7 +686,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      *
      * @param policyId the policy id
      */
-    function refuseApply(uint policyId) external override {
+    function refuseApply(uint256 policyId) external override {
         if (msg.sender != judger) {
             revert InsufficientPrivilege();
         }
@@ -415,7 +702,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      *
      * @param policyId the policy id
      */
-    function approveApply(uint policyId) external override {
+    function approveApply(uint256 policyId) external override {
         if (msg.sender != judger) {
             revert InsufficientPrivilege();
         }
@@ -441,7 +728,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      * @param _to the proxy address
      * @param _amount the amount of ausd to be used for mining.
      */
-    function mine(uint _amount, address _to) external override {
+    function mine(uint256 _amount, address _to) external override {
         if (msg.sender != judger) {
             revert InsufficientPrivilege();
         }
@@ -454,12 +741,12 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         aUSD.transfer(_to, _amount);
     }
 
-    function epochCheck() external override checkNewEpoch(){}
+    function epochCheck() external override checkNewEpoch {}
 
     modifier reentrancyGuard() virtual {
         counter = counter.add(1);
         // counter adds 1 to the existing 1 so becomes 2
-        uint guard = counter;
+        uint256 guard = counter;
         // assigns 2 to the "guard" variable
         _;
         if (guard != counter) {
@@ -476,12 +763,12 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     /**
      * @dev Emitted when the provider entered.
      */
-    event ProviderEntered(uint provider);
+    event ProviderEntered(uint256 provider);
 
     /**
      * @dev Emitted when the user bought the cover.
      */
-    event NewPolicyMinted(uint policyId);
+    event NewPolicyMinted(uint256 policyId);
 
     /**
      * @dev Emitted when the user bought the cover.
@@ -491,12 +778,12 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     /**
      * @dev Emitted when the user bought the cover.
      */
-    event PolicyCancelled(uint id);
+    event PolicyCancelled(uint256 id);
 
     /**
      * @dev Claimed when the user bought the cover.
      */
-    event PolicyClaimed(uint id);
+    event PolicyClaimed(uint256 id);
 
     /**
      * @notice errors
@@ -505,21 +792,21 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     error ContractAlreadyInitialized();
     error InsufficientPrivilege();
     error InsufficientUsableCapital();
-    error InsufficientLiquidity(uint id);
-    error CoverageTooLarge(uint coverage);
+    error InsufficientLiquidity(uint256 id);
+    error CoverageTooLarge(uint256 coverage);
     error ProviderDetected(address providerAddress);
-    error ProviderNotExist(uint _certificateId);
-    error ProviderNotStale(uint id);
-    error PolicyAlreadyCancelled(uint id);
-    error PreviousPolicyNotCancelled(uint id);
-    error PolicyCanNotBeCancelled(uint id);
-    error PolicyCanOnlyCancelledByHolder(uint id);
-    error InvalidPolicy(uint id);
-    error PolicyAlreadyStale(uint id);
+    error ProviderNotExist(uint256 _certificateId);
+    error ProviderNotStale(uint256 id);
+    error PolicyAlreadyCancelled(uint256 id);
+    error PreviousPolicyNotCancelled(uint256 id);
+    error PolicyCanNotBeCancelled(uint256 id);
+    error PolicyCanOnlyCancelledByHolder(uint256 id);
+    error InvalidPolicy(uint256 id);
+    error PolicyAlreadyStale(uint256 id);
     error SenderNotBeneficiary(address sender, address beneficiary);
-    error PolicyAlreadyClaimed(uint id);
-    error ClaimUnderProcessing(uint id);
-    error ClaimNotUnderProcessing(uint id);
+    error PolicyAlreadyClaimed(uint256 id);
+    error ClaimUnderProcessing(uint256 id);
+    error ClaimNotUnderProcessing(uint256 id);
     error InvalidMiningProxy(address proxy);
     error ReentrancyGuardDetected();
     error InvalidAddress(address addr);
@@ -528,4 +815,6 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     error NotExitDay();
     error IsExitDay();
     error NoRewards();
+    error NotClaimAvailable();
+    error ShouldNotDelete();
 }
