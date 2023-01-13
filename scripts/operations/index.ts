@@ -82,6 +82,7 @@ async function main() {
         'Query My Account',
         'Query Insurance Price',
         'Query Global Views',
+        'Calculate Premium',
         'Register Market',
         'Query Market Addresses',
         'Time Travel',
@@ -101,6 +102,27 @@ async function main() {
         });
 
         switch (answers.operation) {
+            case 'Calculate Premium': {
+                const policyCoverageQuery = await prompt({
+                    type: 'input',
+                    name: 'coverage',
+                    message: 'How much coverage do you want to buy?',
+                });
+                const policyDurationQuery = await prompt({
+                    type: 'input',
+                    name: 'duration',
+                    message: 'How long do you want to buy? (in days)',
+                });
+                const premium = await globalsViewer
+                    .connect(currentSigner)
+                    .getPremium(
+                        toBN(String(policyCoverageQuery.coverage)),
+                        String(policyDurationQuery.duration),
+                        metaDefender.address,
+                    );
+                console.log(premium);
+                break;
+            }
             case 'Query Global Views':
                 const globals = await globalsViewer
                     .connect(currentSigner)
