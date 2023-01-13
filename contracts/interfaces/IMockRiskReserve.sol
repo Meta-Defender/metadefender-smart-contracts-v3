@@ -2,8 +2,7 @@
 pragma solidity 0.8.9;
 
 interface IMockRiskReserve {
+    function payTo(address user, uint256 amount) external;
 
-    function payTo(address user, uint amount) external;
-
-    function mockMint(uint amount) external;
+    function mockMint(uint256 amount) external;
 }
