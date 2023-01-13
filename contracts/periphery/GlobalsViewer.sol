@@ -74,7 +74,7 @@ contract GlobalsViewer {
         );
         int premium = americanBinaryOptions.americanBinaryOptionPrices(
             duration * 1 days,
-            globalInfo.risk,
+            newRisk,
             1000e18,
             1500e18,
             6e16
