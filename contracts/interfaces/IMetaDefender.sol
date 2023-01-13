@@ -5,12 +5,12 @@ import './ILiquidityCertificate.sol';
 
 interface IMetaDefender {
     struct GlobalInfo {
-        uint accSPS;
-        uint accRPS;
-        uint accRealSPS;
-        uint risk;
-        uint reward4Team;
-        uint standardRisk;
+        uint256 accSPS;
+        uint256 accRPS;
+        uint256 accRealSPS;
+        uint256 risk;
+        uint256 reward4Team;
+        uint256 standardRisk;
     }
 
     function getGlobalInfo() external view returns (GlobalInfo memory);
@@ -19,7 +19,7 @@ interface IMetaDefender {
 
     function transferOfficial(address official) external;
 
-    function updateStandardRisk(uint standardRisk) external;
+    function updateStandardRisk(uint256 standardRisk) external;
 
     function teamClaim() external;
 
@@ -27,41 +27,44 @@ interface IMetaDefender {
 
     function buyPolicy(
         address beneficiary,
-        uint coverage,
-        uint duration
+        uint256 coverage,
+        uint256 duration
     ) external;
 
-    function claimRewards(uint certificateId) external;
+    function claimRewards(uint256 certificateId) external;
 
     function getSPSLockedByCertificateId(
-        uint certificateId
-    ) external view returns (uint, uint);
+        uint256 certificateId
+    ) external view returns (uint256, uint256);
 
-    function certificateProviderEntrance(uint _amount) external;
+    function certificateProviderEntrance(uint256 _amount) external;
 
-    function certificateProviderExit(uint certificateId) external;
+    function certificateProviderExit(uint256 certificateId) external;
 
-    function settlePolicy(uint policyId) external;
+    function settlePolicy(uint256 policyId) external;
 
-    function policyClaimApply(uint _id) external;
+    function policyClaimApply(uint256 _id) external;
 
-    function refuseApply(uint _id) external;
+    function refuseApply(uint256 _id) external;
 
-    function getRewards(uint certificateId, bool isExit) external view returns (uint);
+    function getRewards(
+        uint256 certificateId,
+        bool isExit
+    ) external view returns (uint256);
 
-    function approveApply(uint _id) external;
+    function approveApply(uint256 _id) external;
 
-    function mine(uint _amount, address _to) external;
+    function mine(uint256 _amount, address _to) external;
 
-    function withdrawAfterExit(uint medalId) external;
+    function withdrawAfterExit(uint256 medalId) external;
 
     function getRealLiquidityByCertificateId(
         uint256 certificateId
-    ) external view returns (uint);
+    ) external view returns (uint256);
 
     function getLostLiquidityByCertificateId(
         uint256 certificateId
-    ) external view returns (uint);
+    ) external view returns (uint256);
 
     function epochCheck() external;
 }

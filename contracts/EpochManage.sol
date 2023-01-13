@@ -17,9 +17,9 @@ import './interfaces/IPolicy.sol';
 /// @title Epoch
 /// @notice Contains functions for managing epoch processes and relevant calculations
 contract EpochManage is IEpochManage {
-    using SafeMath for uint;
+    using SafeMath for uint256;
     using SafeMath for uint64;
-    using SafeDecimalMath for uint;
+    using SafeDecimalMath for uint256;
 
     uint64 public override currentEpochIndex;
     bool public initialized = false;
@@ -59,7 +59,7 @@ contract EpochManage is IEpochManage {
      * @param enteredEpochIndex the time when the policy is generated.
      */
     function updateCrossShadow(
-        uint SPS,
+        uint256 SPS,
         uint64 enteredEpochIndex,
         bool isClaimed
     ) external override onlyMetaDefender {
@@ -103,13 +103,13 @@ contract EpochManage is IEpochManage {
         return _epochInfo[currentEpochIndex];
     }
 
-    function getCurrentEpoch() public view override returns (uint) {
+    function getCurrentEpoch() public view override returns (uint256) {
         return (block.timestamp.sub(block.timestamp % 1 days)).div(1 days);
     }
 
     function getTimestampFromEpoch(
         uint64 epochIndex
-    ) external view override returns (uint) {
+    ) external view override returns (uint256) {
         return _epochInfo[epochIndex].epochId.mul(1 days);
     }
 
@@ -119,7 +119,7 @@ contract EpochManage is IEpochManage {
         onlyMetaDefender
         returns (bool)
     {
-        uint cei = getCurrentEpoch();
+        uint256 cei = getCurrentEpoch();
         if (cei != _epochInfo[currentEpochIndex].epochId) {
             currentEpochIndex = currentEpochIndex + 1;
             liquidityCertificate.newEpochCreated();

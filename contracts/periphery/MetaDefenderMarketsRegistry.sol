@@ -77,7 +77,7 @@ contract MetaDefenderMarketsRegistry is Ownable, IMetaDefenderMarketsRegistry {
         returns (address[] memory)
     {
         address[] memory list = new address[](insuranceMarkets.length());
-        for (uint i = 0; i < insuranceMarkets.length(); i++) {
+        for (uint256 i = 0; i < insuranceMarkets.length(); i++) {
             list[i] = insuranceMarkets.at(i);
         }
         return list;
@@ -95,7 +95,7 @@ contract MetaDefenderMarketsRegistry is Ownable, IMetaDefenderMarketsRegistry {
         MarketAddresses[] memory marketAddresses = new MarketAddresses[](
             insuranceMarketList.length
         );
-        for (uint i = 0; i < insuranceMarketList.length; i++) {
+        for (uint256 i = 0; i < insuranceMarketList.length; i++) {
             marketAddresses[i] = insuranceMarketsAddresses[
                 insuranceMarketList[i]
             ];

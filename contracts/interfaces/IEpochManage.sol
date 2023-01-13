@@ -3,17 +3,17 @@ pragma solidity 0.8.9;
 
 interface IEpochManage {
     struct EpochInfo {
-        uint epochId;
-        uint crossSPS;
-        uint accRealSPSComp; //crossSPSClaimed;//comp
-        uint accRPS;
-        uint accSPS;
+        uint256 epochId;
+        uint256 crossSPS;
+        uint256 accRealSPSComp; //crossSPSClaimed;//comp
+        uint256 accRPS;
+        uint256 accSPS;
     }
 
     function currentEpochIndex() external view returns (uint64);
 
     function updateCrossShadow(
-        uint SPS,
+        uint256 SPS,
         uint64 enteredEpochIndex,
         bool isClaimed
     ) external;
@@ -24,11 +24,11 @@ interface IEpochManage {
 
     function getCurrentEpochInfo() external view returns (EpochInfo memory);
 
-    function getCurrentEpoch() external view returns (uint);
+    function getCurrentEpoch() external view returns (uint256);
 
     function getTimestampFromEpoch(
         uint64 epochIndex
-    ) external view returns (uint);
+    ) external view returns (uint256);
 
     function checkAndCreateNewEpochAndUpdateLiquidity() external returns (bool);
 

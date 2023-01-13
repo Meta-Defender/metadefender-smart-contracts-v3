@@ -17,20 +17,20 @@ import 'hardhat/console.sol';
  * @dev Provides helpful functions to allow the dapp to operate more smoothly;
  */
 contract GlobalsViewer {
-    using SafeMath for uint;
-    using SafeDecimalMath for uint;
+    using SafeMath for uint256;
+    using SafeDecimalMath for uint256;
 
     struct TradeInsuranceView {
-        uint premium;
-        uint fee;
-        uint newRisk;
+        uint256 premium;
+        uint256 fee;
+        uint256 newRisk;
     }
 
     struct GlobalsView {
-        uint totalValidCertificateLiquidity;
-        uint totalPendingCertificateLiquidity;
-        uint totalCoverage;
-        uint totalPendingCoverage;
+        uint256 totalValidCertificateLiquidity;
+        uint256 totalPendingCertificateLiquidity;
+        uint256 totalCoverage;
+        uint256 totalPendingCoverage;
         address protocol;
     }
 
@@ -62,14 +62,14 @@ contract GlobalsViewer {
      * @dev Gets the premium from the AmericanBinaryOptions contract and calculates the fee.
      */
     function getPremium(
-        uint coverage,
-        uint duration,
+        uint256 coverage,
+        uint256 duration,
         address _metaDefender
     ) public view returns (TradeInsuranceView memory) {
         IMetaDefender.GlobalInfo memory globalInfo = IMetaDefender(
             _metaDefender
         ).getGlobalInfo();
-        uint newRisk = globalInfo.risk.add(
+        uint256 newRisk = globalInfo.risk.add(
             coverage.divideDecimal(globalInfo.standardRisk)
         );
         int premium = americanBinaryOptions.americanBinaryOptionPrices(
@@ -82,7 +82,7 @@ contract GlobalsViewer {
         if (premium < 0) {
             premium = 0;
         }
-        return TradeInsuranceView(uint(premium), 10e18, newRisk);
+        return TradeInsuranceView(uint256(premium), 10e18, newRisk);
     }
 
     function getGlobals() public view returns (GlobalsView[] memory) {
@@ -91,14 +91,14 @@ contract GlobalsViewer {
         IMetaDefenderMarketsRegistry.MarketAddresses[]
             memory marketAddresses = metaDefenderMarketsRegistry
                 .getInsuranceMarketsAddresses(markets);
-        uint totalValidCertificateLiquidityInAll = 0;
-        uint totalPendingCertificateLiquidityInAll = 0;
-        uint totalCoverageInAll = 0;
-        uint totalPendingCoverageInAll = 0;
+        uint256 totalValidCertificateLiquidityInAll = 0;
+        uint256 totalPendingCertificateLiquidityInAll = 0;
+        uint256 totalCoverageInAll = 0;
+        uint256 totalPendingCoverageInAll = 0;
         GlobalsView[] memory globalsViews = new GlobalsView[](
             markets.length + 1
         );
-        for (uint i = 0; i < marketAddresses.length; i++) {
+        for (uint256 i = 0; i < marketAddresses.length; i++) {
             globalsViews[i] = GlobalsView(
                 ILiquidityCertificate(marketAddresses[i].liquidityCertificate)
                     .totalValidCertificateLiquidity(),

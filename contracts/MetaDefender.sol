@@ -359,9 +359,9 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     }
 
     function calculationForMedal(
-        uint certificateInfoSPSLocked,
-        uint SPSLocked
-    ) internal pure returns (uint) {
+        uint256 certificateInfoSPSLocked,
+        uint256 SPSLocked
+    ) internal pure returns (uint256) {
         if (SPSLocked >= SafeDecimalMath.UNIT) {
             return 0;
         } else {
@@ -390,7 +390,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         IEpochManage.EpochInfo memory epochInfoEntered = epochManage
             .getEpochInfo(certificateInfo.enteredEpochIndex);
 
-        uint multForCertificate = SafeDecimalMath.UNIT.add(
+        uint256 multForCertificate = SafeDecimalMath.UNIT.add(
             epochInfoEntered.accRealSPSComp
         ) >= globalInfo.accRealSPS
             ? SafeDecimalMath.UNIT.add(epochInfoEntered.accRealSPSComp).sub(
@@ -398,7 +398,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             )
             : 0;
 
-        uint realLiquidity = certificateInfo.liquidity.multiplyDecimal(
+        uint256 realLiquidity = certificateInfo.liquidity.multiplyDecimal(
             multForCertificate
         );
 
@@ -411,7 +411,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      */
     function getLostLiquidityByCertificateId(
         uint256 certificateId
-    ) external view override returns (uint) {
+    ) external view override returns (uint256) {
         ILiquidityCertificate.CertificateInfo
             memory certificateInfo = liquidityCertificate.getCertificateInfo(
                 certificateId
@@ -424,12 +424,12 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
         IEpochManage.EpochInfo memory epochInfoEntered = epochManage
             .getEpochInfo(certificateInfo.enteredEpochIndex);
 
-        uint lostParam = globalInfo.accRealSPS.sub(
+        uint256 lostParam = globalInfo.accRealSPS.sub(
             epochInfoEntered.accRealSPSComp
         ) <= SafeDecimalMath.UNIT
             ? globalInfo.accRealSPS.sub(epochInfoEntered.accRealSPSComp)
             : SafeDecimalMath.UNIT;
-        uint lost = certificateInfo.liquidity.multiplyDecimal(lostParam);
+        uint256 lost = certificateInfo.liquidity.multiplyDecimal(lostParam);
         return lost;
     }
 

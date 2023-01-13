@@ -17,18 +17,18 @@ import './interfaces/ILiquidityCertificate.sol';
  * It is minted when users provide, and burned when users withdraw.
  */
 contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
-    using SafeMath for uint;
-    using SafeDecimalMath for uint;
+    using SafeMath for uint256;
+    using SafeDecimalMath for uint256;
 
     /// @dev The minimum amount of liquidity a certificate can be minted with.
-    uint public constant override MIN_LIQUIDITY = 1e18;
+    uint256 public constant override MIN_LIQUIDITY = 1e18;
 
-    uint internal nextId;
-    mapping(uint => CertificateInfo) internal _certificateInfo;
+    uint256 internal nextId;
+    mapping(uint256 => CertificateInfo) internal _certificateInfo;
     address public override metaDefender;
     address public override protocol;
-    uint public override totalValidCertificateLiquidity;
-    uint public override totalPendingCertificateLiquidity;
+    uint256 public override totalValidCertificateLiquidity;
+    uint256 public override totalPendingCertificateLiquidity;
     bool internal initialized = false;
 
     /**
@@ -63,11 +63,11 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
      */
     function getLiquidityProviders(
         address owner
-    ) external view override returns (uint[] memory) {
-        uint numCerts = balanceOf(owner);
-        uint[] memory ids = new uint[](numCerts);
+    ) external view override returns (uint256[] memory) {
+        uint256 numCerts = balanceOf(owner);
+        uint256[] memory ids = new uint256[](numCerts);
 
-        for (uint i = 0; i < numCerts; i++) {
+        for (uint256 i = 0; i < numCerts; i++) {
             ids[i] = tokenOfOwnerByIndex(owner, i);
         }
         return ids;
@@ -79,8 +79,8 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
      * @param certificateId The id of the LiquidityCertificate.
      */
     function getLiquidity(
-        uint certificateId
-    ) external view override returns (uint) {
+        uint256 certificateId
+    ) external view override returns (uint256) {
         return _certificateInfo[certificateId].liquidity;
     }
 
@@ -90,7 +90,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
      * @param certificateId The id of the LiquidityProvider.
      */
     function getCertificateInfo(
-        uint certificateId
+        uint256 certificateId
     )
         external
         view
@@ -110,7 +110,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
      * @param certificateId The id of the LiquidityProvider.
      */
     function updateRewardDebtEpochIndex(
-        uint certificateId,
+        uint256 certificateId,
         uint64 currentEpochIndex
     ) external override onlyMetaDefender {
         _certificateInfo[certificateId]
@@ -123,8 +123,8 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
      * @param certificateId The id of the LiquidityProvider.
      */
     function updateSPSLocked(
-        uint certificateId,
-        uint SPSLocked
+        uint256 certificateId,
+        uint256 SPSLocked
     ) external override onlyMetaDefender {
         _certificateInfo[certificateId].SPSLocked = SPSLocked;
     }
@@ -134,7 +134,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
      *
      * @param certificateId The id of the LiquidityProvider.
      */
-    function belongsTo(uint certificateId) external view returns (address) {
+    function belongsTo(uint256 certificateId) external view returns (address) {
         return ownerOf(certificateId);
     }
 
@@ -146,13 +146,13 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
      */
     function mint(
         uint64 enteredEpochIndex,
-        uint liquidity
-    ) external override onlyMetaDefender returns (uint) {
+        uint256 liquidity
+    ) external override onlyMetaDefender returns (uint256) {
         if (liquidity < MIN_LIQUIDITY) {
             revert InsufficientLiquidity();
         }
 
-        uint certificateId = nextId++;
+        uint256 certificateId = nextId++;
         _certificateInfo[certificateId] = CertificateInfo(
             enteredEpochIndex,
             0,
@@ -183,7 +183,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
      * @param certificateId The id of the LiquidityCertificate.
      */
     function decreaseLiquidity(
-        uint certificateId
+        uint256 certificateId
     ) external override onlyMetaDefender {
         require(
             _isApprovedOrOwner(tx.origin, certificateId),
@@ -198,7 +198,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     }
 
     function decreaseLiquidityByJudger(
-        uint certificateId
+        uint256 certificateId
     ) external override onlyMetaDefender {
         totalValidCertificateLiquidity = totalValidCertificateLiquidity.sub(
             _certificateInfo[certificateId].liquidity
@@ -215,7 +215,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
      * @param currentEpochIndex the currentEpochIndex.
      */
     function expire(
-        uint certificateId,
+        uint256 certificateId,
         uint64 currentEpochIndex
     ) external override onlyMetaDefender {
         require(
@@ -228,7 +228,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     }
 
     function expireByJudger(
-        uint certificateId,
+        uint256 certificateId,
         uint64 currentEpochIndex
     ) external onlyMetaDefender {
         _certificateInfo[certificateId].exitedEpochIndex = currentEpochIndex;
@@ -251,10 +251,10 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
 
     event NewLPMinted(
         address owner,
-        uint certificateId,
-        uint enteredEpochIndex,
-        uint liquidity,
+        uint256 certificateId,
+        uint256 enteredEpochIndex,
+        uint256 liquidity,
         address protocol
     );
-    event Expired(uint certificateId);
+    event Expired(uint256 certificateId);
 }
