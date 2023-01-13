@@ -27,11 +27,11 @@ contract MockRiskReserve is IMockRiskReserve {
     * @dev mock payTo the user who get hacked.
    * @param amount The amount mockRiskReserve want to mint for itself.
    */
-    function payTo(address user, uint amount) external override onlyMetaDefender {
+    function payTo(address user, uint256 amount) external override onlyMetaDefender {
         aUSD.transfer(user, amount);
     }
 
-    function mockMint(uint amount) external override {
+    function mockMint(uint256 amount) external override {
        aUSD.mint(address(this),amount);
     }
 

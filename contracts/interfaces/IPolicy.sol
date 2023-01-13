@@ -2,15 +2,14 @@
 pragma solidity 0.8.9;
 
 interface IPolicy {
-
     struct PolicyInfo {
         address beneficiary;
-        uint coverage;
-        uint fee;
-        uint duration;
-        uint standardRisk;
+        uint256 coverage;
+        uint256 fee;
+        uint256 duration;
+        uint256 standardRisk;
         uint64 enteredEpochIndex;
-        uint SPS;
+        uint256 SPS;
         bool isClaimed;
         bool isClaimApplying;
         bool isSettled;
@@ -22,39 +21,46 @@ interface IPolicy {
     // get the metaDefender address
     function metaDefender() external view returns (address);
 
-    function MIN_COVERAGE() external view returns (uint);
+    function MIN_COVERAGE() external view returns (uint256);
 
-    function totalCoverage() external view returns (uint);
+    function totalCoverage() external view returns (uint256);
 
-    function totalPendingCoverage() external view returns (uint);
+    function totalPendingCoverage() external view returns (uint256);
 
-    function getPolicies(address beneficiary) external view returns (uint[] memory);
+    function getPolicies(
+        address beneficiary
+    ) external view returns (uint256[] memory);
 
-    function getPolicyInfo(uint policyId) external view returns (PolicyInfo memory);
+    function getPolicyInfo(
+        uint256 policyId
+    ) external view returns (PolicyInfo memory);
 
     function mint(
         address beneficiary,
-        uint coverage,
-        uint fee,
+        uint256 coverage,
+        uint256 fee,
         uint64 enteredEpochIndex,
-        uint duration,
-        uint SPS,
-        uint standardRisk
-    ) external returns (uint);
+        uint256 duration,
+        uint256 SPS,
+        uint256 standardRisk
+    ) external returns (uint256);
 
-    function burn(address spender, uint certificateId) external;
+    function burn(address spender, uint256 certificateId) external;
 
-    function belongsTo(uint policyId) external view returns (address);
+    function belongsTo(uint256 policyId) external view returns (address);
 
-    function isSettleAvailable(uint policyId) external view returns (bool);
+    function isSettleAvailable(uint256 policyId) external view returns (bool);
 
-    function isClaimAvailable(uint policyId) external view returns (bool);
+    function isClaimAvailable(uint256 policyId) external view returns (bool);
 
     function newEpochCreated() external;
 
-    function changeStatusIsClaimed(uint policyId, bool status) external;
+    function changeStatusIsClaimed(uint256 policyId, bool status) external;
 
-    function changeStatusIsClaimApplying(uint policyId, bool status) external;
+    function changeStatusIsClaimApplying(
+        uint256 policyId,
+        bool status
+    ) external;
 
-    function changeStatusIsSettled(uint policyId, bool status) external;
+    function changeStatusIsSettled(uint256 policyId, bool status) external;
 }
