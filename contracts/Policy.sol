@@ -260,6 +260,7 @@ contract Policy is IPolicy, ERC721Enumerable {
             revert InsufficientPrivilege();
         }
         _policyInfo[policyId].isClaimed = status;
+        emit PolicyClaimed(policyId, status);
     }
 
     /**
@@ -283,6 +284,7 @@ contract Policy is IPolicy, ERC721Enumerable {
         totalPendingCoverage = totalPendingCoverage.sub(
             _policyInfo[policyId].coverage
         );
+        emit PolicySettled(policyId, status);
     }
 
     /**
@@ -298,6 +300,7 @@ contract Policy is IPolicy, ERC721Enumerable {
             revert InsufficientPrivilege();
         }
         _policyInfo[policyId].isClaimApplying = status;
+        emit PolicyUnderClaimApplying(policyId, status);
     }
 
     modifier onlyMetaDefender() virtual {
@@ -308,6 +311,10 @@ contract Policy is IPolicy, ERC721Enumerable {
     error InsufficientPrivilege();
     error InsufficientCoverage();
 
+    // events
+    event PolicyUnderClaimApplying(uint256 policyId, bool status);
+    event PolicyClaimed(uint256 policyId, bool status);
+    event PolicySettled(uint256 policyId, bool status);
     event NewPolicyMinted(
         address beneficiary,
         uint256 policyId,
