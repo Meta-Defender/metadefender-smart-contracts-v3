@@ -35,11 +35,11 @@ library SignedSafeDecimalMath {
     uint8 public constant highPrecisionDecimals = 27;
 
     /* The number representing 1.0. */
-    int public constant UNIT = int(10 ** uint(decimals));
+    int public constant UNIT = int(10 ** uint256(decimals));
 
     /* The number representing 1.0 for higher fidelity numbers. */
-    int public constant PRECISE_UNIT = int(10 ** uint(highPrecisionDecimals));
-    int private constant UNIT_TO_HIGH_PRECISION_CONVERSION_FACTOR = int(10 ** uint(highPrecisionDecimals - decimals));
+    int public constant PRECISE_UNIT = int(10 ** uint256(highPrecisionDecimals));
+    int private constant UNIT_TO_HIGH_PRECISION_CONVERSION_FACTOR = int(10 ** uint256(highPrecisionDecimals - decimals));
 
     /**
      * @return Provides an interface to UNIT.

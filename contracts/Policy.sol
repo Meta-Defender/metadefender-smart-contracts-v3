@@ -16,20 +16,20 @@ import './interfaces/IEpochManage.sol';
  * It is minted when users buy the cover.
  */
 contract Policy is IPolicy, ERC721Enumerable {
-    using SafeMath for uint;
-    using SafeDecimalMath for uint;
+    using SafeMath for uint256;
+    using SafeDecimalMath for uint256;
 
     /// @dev The minimum amount of the coverage one can buy.
-    uint public constant override MIN_COVERAGE = 1e18;
+    uint256 public constant override MIN_COVERAGE = 1e18;
 
-    uint internal nextId;
-    mapping(uint => PolicyInfo) internal _policyInfo;
+    uint256 internal nextId;
+    mapping(uint256 => PolicyInfo) internal _policyInfo;
     address public override metaDefender;
     address public override protocol;
     bool internal initialized = false;
     IEpochManage internal epochManage;
-    uint public override totalCoverage;
-    uint public override totalPendingCoverage;
+    uint256 public override totalCoverage;
+    uint256 public override totalPendingCoverage;
 
     /**
      * @param _name Token collection name
@@ -68,11 +68,11 @@ contract Policy is IPolicy, ERC721Enumerable {
      */
     function getPolicies(
         address beneficiary
-    ) external view override returns (uint[] memory) {
-        uint numCerts = balanceOf(beneficiary);
-        uint[] memory ids = new uint[](numCerts);
+    ) external view override returns (uint256[] memory) {
+        uint256 numCerts = balanceOf(beneficiary);
+        uint256[] memory ids = new uint256[](numCerts);
 
-        for (uint i = 0; i < numCerts; i++) {
+        for (uint256 i = 0; i < numCerts; i++) {
             ids[i] = tokenOfOwnerByIndex(beneficiary, i);
         }
 
@@ -85,7 +85,7 @@ contract Policy is IPolicy, ERC721Enumerable {
      * @param policyId The id of a certain policy.
      */
     function getPolicyInfo(
-        uint policyId
+        uint256 policyId
     ) external view override returns (IPolicy.PolicyInfo memory) {
         require(
             _policyInfo[policyId].enteredEpochIndex != 0,
@@ -99,7 +99,7 @@ contract Policy is IPolicy, ERC721Enumerable {
      *
      * @param policyId The id of the policy.
      */
-    function belongsTo(uint policyId) external view returns (address) {
+    function belongsTo(uint256 policyId) external view returns (address) {
         return ownerOf(policyId);
     }
 
@@ -114,13 +114,13 @@ contract Policy is IPolicy, ERC721Enumerable {
      */
     function mint(
         address beneficiary,
-        uint coverage,
-        uint fee,
+        uint256 coverage,
+        uint256 fee,
         uint64 enteredEpochIndex,
-        uint duration,
-        uint SPS,
-        uint standardRisk
-    ) external override onlyMetaDefender returns (uint) {
+        uint256 duration,
+        uint256 SPS,
+        uint256 standardRisk
+    ) external override onlyMetaDefender returns (uint256) {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
@@ -131,7 +131,7 @@ contract Policy is IPolicy, ERC721Enumerable {
 
         totalPendingCoverage = totalPendingCoverage.add(coverage);
 
-        uint policyId = nextId++;
+        uint256 policyId = nextId++;
         _policyInfo[policyId] = PolicyInfo(
             beneficiary,
             coverage,
@@ -165,7 +165,7 @@ contract Policy is IPolicy, ERC721Enumerable {
      * @param policyId The id of the policy.
      */
     function isSettleAvailable(
-        uint policyId
+        uint256 policyId
     ) external view override returns (bool) {
         IEpochManage.EpochInfo memory currentEpochInfo = epochManage
             .getCurrentEpochInfo();
@@ -200,7 +200,7 @@ contract Policy is IPolicy, ERC721Enumerable {
      * @param policyId The id of the policy.
      */
     function isClaimAvailable(
-        uint policyId
+        uint256 policyId
     ) external view override returns (bool) {
         require(
             _policyInfo[policyId].enteredEpochIndex != 0,
@@ -229,7 +229,7 @@ contract Policy is IPolicy, ERC721Enumerable {
      */
     function burn(
         address spender,
-        uint policyId
+        uint256 policyId
     ) external override onlyMetaDefender {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
@@ -253,7 +253,7 @@ contract Policy is IPolicy, ERC721Enumerable {
      * @param status The status of whether the policy has been claimed.
      */
     function changeStatusIsClaimed(
-        uint policyId,
+        uint256 policyId,
         bool status
     ) external override onlyMetaDefender {
         if (msg.sender != metaDefender) {
@@ -268,7 +268,7 @@ contract Policy is IPolicy, ERC721Enumerable {
      * @param status The status of whether the policy has been cancelled.
      */
     function changeStatusIsSettled(
-        uint policyId,
+        uint256 policyId,
         bool status
     ) external override onlyMetaDefender {
         if (msg.sender != metaDefender) {
@@ -291,7 +291,7 @@ contract Policy is IPolicy, ERC721Enumerable {
      * @param status The status of whether the policy is under claim applying.
      */
     function changeStatusIsClaimApplying(
-        uint policyId,
+        uint256 policyId,
         bool status
     ) external override onlyMetaDefender {
         if (msg.sender != metaDefender) {
@@ -310,13 +310,13 @@ contract Policy is IPolicy, ERC721Enumerable {
 
     event NewPolicyMinted(
         address beneficiary,
-        uint policyId,
-        uint coverage,
-        uint fee,
-        uint duration,
-        uint standardRisk,
-        uint enteredEpochIndex,
-        uint SPS,
+        uint256 policyId,
+        uint256 coverage,
+        uint256 fee,
+        uint256 duration,
+        uint256 standardRisk,
+        uint256 enteredEpochIndex,
+        uint256 SPS,
         address protocol
     );
 }
