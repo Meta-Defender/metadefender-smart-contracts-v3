@@ -2,7 +2,6 @@
 pragma solidity 0.8.9;
 
 interface IPolicy {
-
     struct PolicyInfo {
         address beneficiary;
         uint coverage;
@@ -28,9 +27,13 @@ interface IPolicy {
 
     function totalPendingCoverage() external view returns (uint);
 
-    function getPolicies(address beneficiary) external view returns (uint[] memory);
+    function getPolicies(
+        address beneficiary
+    ) external view returns (uint[] memory);
 
-    function getPolicyInfo(uint policyId) external view returns (PolicyInfo memory);
+    function getPolicyInfo(
+        uint policyId
+    ) external view returns (PolicyInfo memory);
 
     function mint(
         address beneficiary,

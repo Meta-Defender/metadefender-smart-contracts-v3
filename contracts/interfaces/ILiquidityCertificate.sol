@@ -2,28 +2,13 @@
 pragma solidity 0.8.9;
 
 interface ILiquidityCertificate {
-
     struct CertificateInfo {
         uint64 enteredEpochIndex;
         uint64 exitedEpochIndex;
         uint64 rewardDebtEpochIndex;
-        uint64 signalWithdrawalEpochIndex;
         uint256 liquidity;
         uint256 SPSLocked;
         bool isValid;
-    }
-
-    struct CertificateInfoCurrent {
-        // amount = liquidity * η
-        uint amount;
-        // frozen
-        uint frozen;
-        // the amount of money one can withdraw when he/she wants to exit from the pool and it will become 0 when shadow > amount
-        uint withdrawal;
-        // the amount of money one protect for other, which may be greater than that he/she deposits.
-        uint SPS;
-        // the share of pool when someone exits.
-        uint liquidity;
     }
 
     // get the protocol address
@@ -38,15 +23,20 @@ interface ILiquidityCertificate {
 
     function MIN_LIQUIDITY() external view returns (uint);
 
-    function getLiquidityProviders(address owner) external view returns (uint[] memory);
+    function getLiquidityProviders(
+        address owner
+    ) external view returns (uint[] memory);
 
     function getLiquidity(uint certificateId) external view returns (uint);
 
-    function getCertificateInfo(uint certificateId) external view returns (CertificateInfo memory);
+    function getCertificateInfo(
+        uint certificateId
+    ) external view returns (CertificateInfo memory);
 
-    function updateRewardDebtEpochIndex(uint certificateId, uint64 currentEpochIndex) external;
-
-    function updateSignalWithdrawEpochIndex(uint certificateId, uint64 currentEpochIndex) external;
+    function updateRewardDebtEpochIndex(
+        uint certificateId,
+        uint64 currentEpochIndex
+    ) external;
 
     function updateSPSLocked(uint certificateId, uint SPSLocked) external;
 
@@ -63,7 +53,10 @@ interface ILiquidityCertificate {
 
     function expire(uint certificateId, uint64 currentEpochIndex) external;
 
-    function expireByJudger(uint certificateId, uint64 currentEpochIndex) external;
+    function expireByJudger(
+        uint certificateId,
+        uint64 currentEpochIndex
+    ) external;
 
     function belongsTo(uint certificateId) external view returns (address);
 }

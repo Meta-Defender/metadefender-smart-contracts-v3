@@ -2,7 +2,6 @@
 pragma solidity 0.8.9;
 
 interface IMetaDefenderMarketsRegistry {
-
     struct MarketAddresses {
         address liquidityCertificate;
         address policy;
@@ -11,9 +10,7 @@ interface IMetaDefenderMarketsRegistry {
 
     function getInsuranceMarkets() external view returns (address[] memory);
 
-    function getInsuranceMarketsAddresses(address[] calldata) external view returns (MarketAddresses[] memory);
-
+    function getInsuranceMarketsAddresses(
+        address[] calldata
+    ) external view returns (MarketAddresses[] memory);
 }
-
-
-
