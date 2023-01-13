@@ -256,7 +256,7 @@ describe('MetaDefender - uint tests', async () => {
             await fastForward(86400);
             await expect(
                 contracts.metaDefender.certificateProviderExit('7777'),
-            ).to.be.revertedWith('ERC721: invalid token ID');
+            ).to.be.revertedWith('certificate does not exist');
         });
         it('should revert if the certificate not belongs to the msg.sender', async () => {
             await seedTestSystem(deployer, contracts, 20000, [
