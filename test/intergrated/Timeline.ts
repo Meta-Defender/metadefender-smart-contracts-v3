@@ -71,11 +71,13 @@ describe('MetaDefender - integrated tests', async () => {
 
     describe('rewards/shadow check', async () => {
         // we will design an initial state for the system.
-        // -(0:00)------P1-----0:00-----B1-----P2-----0:00-----B2---------
-        //                                                            |  |
-        //                                                            R(1)=Premium(1)+Premium(2)*P1/(P1+P2) = 1+1/, R(2)=Premium(2) * P2/(P1+P2)
+        // -(0:00)------P1-----0:00-----B1-----P2-----0:00-----B2----0:00-------
+        //                                                                  |  |
+        //                                                                  R(1)=Premium(1)+Premium(2)*P1/(P1+P2) = 1+1/, R(2)=Premium(2) * P2/(P1+P2)
         // epoch        1(0,0)        2(1,100)                 3(2,200)
         it('should get the rewards correctly', async () => {
+            await fastForward(86400);
+            await contracts.metaDefender.connect(provider1).epochCheck();
             const tokenBefore1 = await contracts.test.quoteToken.balanceOf(
                 await provider1.getAddress(),
             );
