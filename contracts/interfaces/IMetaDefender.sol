@@ -47,7 +47,7 @@ interface IMetaDefender {
 
     function refuseApply(uint _id) external;
 
-    function getRewards(uint certificateId) external view returns (uint);
+    function getRewards(uint certificateId, bool isExit) external view returns (uint);
 
     function approveApply(uint _id) external;
 
