@@ -2,10 +2,10 @@
 pragma solidity 0.8.9;
 
 // Libraries
-import "./Lib/SafeDecimalMath.sol";
-import "./Lib/SignedSafeDecimalMath.sol";
+import './Lib/SafeDecimalMath.sol';
+import './Lib/SignedSafeDecimalMath.sol';
 
-import "./interfaces/IAmericanBinaryOptions.sol";
+import './interfaces/IAmericanBinaryOptions.sol';
 
 /**
  * @title BlackScholes
@@ -26,11 +26,12 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
     uint private constant LN_2_PRECISE = 693147180559945309417232122;
     uint private constant SQRT_TWOPI = 2506628274631000502415765285;
     /// @dev Below this value, return 0
-    int private constant MIN_CDF_STD_DIST_INPUT = (int(PRECISE_UNIT) * - 45) / 10; // -4.5
+    int private constant MIN_CDF_STD_DIST_INPUT =
+        (int(PRECISE_UNIT) * -45) / 10; // -4.5
     /// @dev Above this value, return 1
     int private constant MAX_CDF_STD_DIST_INPUT = int(PRECISE_UNIT) * 10;
     /// @dev Below this value, the result is always 0
-    int private constant MIN_EXP = - 63 * int(PRECISE_UNIT);
+    int private constant MIN_EXP = -63 * int(PRECISE_UNIT);
     /// @dev Above this value the a lot of precision is lost, and uint256s come close to not being able to handle the size
     uint private constant MAX_EXP = 100 * PRECISE_UNIT;
     /// @dev Value to use to avoid any division by 0 or values near 0
@@ -44,28 +45,30 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
 
     /**
      * @dev Returns absolute value of an int as a uint.
-   */
+     */
     function abs(int x) public pure override returns (uint) {
-        return uint(x < 0 ? - x : x);
+        return uint(x < 0 ? -x : x);
     }
 
     /**
      * @dev Returns the floor of a PRECISE_UNIT (x - (x % 1e27))
-   */
+     */
     function floor(uint x) internal pure returns (uint) {
         return x - (x % PRECISE_UNIT);
     }
 
     /**
      * @dev Returns the natural log of the value using Halley's method.
-   */
+     */
     function ln(uint x) internal pure returns (int) {
         int res;
         int next;
 
         for (uint i = 0; i < 8; i++) {
             int e = int(exp(res));
-            next = res.add((int(x).sub(e).mul(2)).divideDecimalRoundPrecise(int(x).add(e)));
+            next = res.add(
+                (int(x).sub(e).mul(2)).divideDecimalRoundPrecise(int(x).add(e))
+            );
             if (next == res) {
                 break;
             }
@@ -81,14 +84,15 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
 
     /**
      * @dev Returns the exponent of the value using taylor expansion with range reduction.
-   */
+     */
     function exp(uint x) public pure override returns (uint) {
         if (x == 0) {
             return PRECISE_UNIT;
         }
-        require(x <= MAX_EXP, "cannot handle exponents greater than 100");
+        require(x <= MAX_EXP, 'cannot handle exponents greater than 100');
 
-        uint k = floor(x.divideDecimalRoundPrecise(LN_2_PRECISE)) / PRECISE_UNIT;
+        uint k = floor(x.divideDecimalRoundPrecise(LN_2_PRECISE)) /
+            PRECISE_UNIT;
         uint p = 2 ** k;
         uint r = x.sub(k.mul(LN_2_PRECISE));
 
@@ -108,8 +112,8 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
 
     /**
      * @dev Returns the exponent of the value using taylor expansion with range reduction, with support for negative
-   * numbers.
-   */
+     * numbers.
+     */
     function exp(int x) public pure override returns (uint) {
         if (0 <= x) {
             return exp(uint(x));
@@ -117,14 +121,14 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
             // exp(-63) < 1e-27, so we just return 0
             return 0;
         } else {
-            return PRECISE_UNIT.divideDecimalRoundPrecise(exp(uint(- x)));
+            return PRECISE_UNIT.divideDecimalRoundPrecise(exp(uint(-x)));
         }
     }
 
     /**
      * @dev Returns the square root of the value using Newton's method. This ignores the unit, so numbers should be
-   * multiplied by their unit before being passed in.
-   */
+     * multiplied by their unit before being passed in.
+     */
     function sqrt(uint x) public pure override returns (uint y) {
         uint z = (x.add(1)) / 2;
         y = x;
@@ -136,7 +140,7 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
 
     /**
      * @dev Returns the square root of the value using Newton's method.
-   */
+     */
     function sqrtPrecise(uint x) internal pure returns (uint) {
         // Add in an extra unit factor for the square root to gobble;
         // otherwise, sqrt(x * UNIT) = sqrt(x) * sqrt(UNIT)
@@ -145,23 +149,32 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
 
     /**
      * @dev The standard normal distribution of the value.
-   */
+     */
     function stdNormal(int x) internal pure returns (uint) {
-        return exp(- x.multiplyDecimalRoundPrecise(x / 2)).divideDecimalRoundPrecise(SQRT_TWOPI);
+        return
+            exp(-x.multiplyDecimalRoundPrecise(x / 2))
+                .divideDecimalRoundPrecise(SQRT_TWOPI);
     }
 
     function erf(int x) internal view returns (int) {
-        return int(stdNormalCDF(x.multiplyDecimalRoundPrecise(int(1414213562373095048801688724))) * 2) - int(PRECISE_UNIT);
+        return
+            int(
+                stdNormalCDF(
+                    x.multiplyDecimalRoundPrecise(
+                        int(1414213562373095048801688724)
+                    )
+                ) * 2
+            ) - int(PRECISE_UNIT);
     }
 
     /**
-    * @dev Returns call and put prices for options with given parameters.
-   * @param timeToExpirySec Number of seconds to the expiry of the option
-   * @param volatilityDecimal Implied volatility over the period til expiry as a percentage
-   * @param spotDecimal The current price of the base asset
-   * @param strikeDecimal The strike price of the option
-   * @param rateDecimal The percentage risk free rate + carry cost
-   */
+     * @dev Returns call and put prices for options with given parameters.
+     * @param timeToExpirySec Number of seconds to the expiry of the option
+     * @param volatilityDecimal Implied volatility over the period til expiry as a percentage
+     * @param spotDecimal The current price of the base asset
+     * @param strikeDecimal The strike price of the option
+     * @param rateDecimal The percentage risk free rate + carry cost
+     */
     function americanBinaryOptionPrices(
         uint timeToExpirySec,
         uint volatilityDecimal,
@@ -176,19 +189,46 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
         int ratePrecise = rateDecimal.decimalToPreciseDecimal();
 
         // 27
-        int a = ln(spotPrecise.divideDecimalRoundPrecise(strikePrecise)).divideDecimalRoundPrecise(int(volatilityPrecise));
+        int a = ln(spotPrecise.divideDecimalRoundPrecise(strikePrecise))
+            .divideDecimalRoundPrecise(int(volatilityPrecise));
 
-        int xi = ratePrecise.divideDecimalRoundPrecise(int(volatilityPrecise)) - int(volatilityPrecise) / 2;
-        uint b = sqrtPrecise(uint(xi.multiplyDecimalRoundPrecise(xi) + 2 * ratePrecise));
-        int erf1 = erf((int(b.multiplyDecimalRoundPrecise(tAnnualised)) - a).divideDecimalRoundPrecise(int((sqrtPrecise(2 * tAnnualised)))));
-        int erf2 = erf((int(b.multiplyDecimalRoundPrecise(tAnnualised)) + a).divideDecimalRoundPrecise(int((sqrtPrecise(2 * tAnnualised)))));
+        int xi = ratePrecise.divideDecimalRoundPrecise(int(volatilityPrecise)) -
+            int(volatilityPrecise) /
+            2;
+        uint b = sqrtPrecise(
+            uint(xi.multiplyDecimalRoundPrecise(xi) + 2 * ratePrecise)
+        );
+        int erf1 = erf(
+            (int(b.multiplyDecimalRoundPrecise(tAnnualised)) - a)
+                .divideDecimalRoundPrecise(int((sqrtPrecise(2 * tAnnualised))))
+        );
+        int erf2 = erf(
+            (int(b.multiplyDecimalRoundPrecise(tAnnualised)) + a)
+                .divideDecimalRoundPrecise(int((sqrtPrecise(2 * tAnnualised))))
+        );
 
         int call = 0;
 
         if (a > 0) {
-            call = int(exp(a.multiplyDecimalRoundPrecise(xi - int(b))) / 2).multiplyDecimalRoundPrecise(int(PRECISE_UNIT) + erf1 + int(exp(2 * a.multiplyDecimalRoundPrecise(int(b)))).multiplyDecimalRoundPrecise(int(PRECISE_UNIT) - erf2));
+            call = int(exp(a.multiplyDecimalRoundPrecise(xi - int(b))) / 2)
+                .multiplyDecimalRoundPrecise(
+                    int(PRECISE_UNIT) +
+                        erf1 +
+                        int(exp(2 * a.multiplyDecimalRoundPrecise(int(b))))
+                            .multiplyDecimalRoundPrecise(
+                                int(PRECISE_UNIT) - erf2
+                            )
+                );
         } else if (a < 0) {
-            call = int(exp(a.multiplyDecimalRoundPrecise(xi - int(b))) / 2).multiplyDecimalRoundPrecise(int(PRECISE_UNIT) - erf1 + int(exp(2 * a.multiplyDecimalRoundPrecise(int(b)))).multiplyDecimalRoundPrecise(int(PRECISE_UNIT) + erf2));
+            call = int(exp(a.multiplyDecimalRoundPrecise(xi - int(b))) / 2)
+                .multiplyDecimalRoundPrecise(
+                    int(PRECISE_UNIT) -
+                        erf1 +
+                        int(exp(2 * a.multiplyDecimalRoundPrecise(int(b))))
+                            .multiplyDecimalRoundPrecise(
+                                int(PRECISE_UNIT) + erf2
+                            )
+                );
         } else {
             call = int(PRECISE_UNIT);
         }
@@ -197,8 +237,8 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
 
     /*
      * @dev The standard normal cumulative distribution of the value. Only has to operate precisely between -1 and 1 for
-   * the calculation of option prices, but handles up to -4 with good accuracy.
-   */
+     * the calculation of option prices, but handles up to -4 with good accuracy.
+     */
     function stdNormalCDF(int x) internal pure returns (uint) {
         // Based on testing, errors are ~0.1% at -4, which is still acceptable; and around 0.3% at -4.5.
         // This function seems to become increasingly inaccurate past -5 ( >%5 inaccuracy)
@@ -215,13 +255,16 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
         int t1 = int(1e7 + int((2315419 * abs(x)) / PRECISE_UNIT));
         uint exponent = uint(x.multiplyDecimalRoundPrecise(x / 2));
         int d = int((3989423 * PRECISE_UNIT) / exp(exponent));
-        uint prob =
-        uint(
+        uint prob = uint(
             (d *
-            (3193815 +
-            ((- 3565638 + ((17814780 + ((- 18212560 + (13302740 * 1e7) / t1) * 1e7) / t1) * 1e7) / t1) * 1e7) /
-            t1) *
-            1e7) / t1
+                (3193815 +
+                    ((-3565638 +
+                        ((17814780 +
+                            ((-18212560 + (13302740 * 1e7) / t1) * 1e7) /
+                            t1) * 1e7) /
+                        t1) * 1e7) /
+                    t1) *
+                1e7) / t1
         );
         if (x > 0) prob = 1e14 - prob;
         return (PRECISE_UNIT * prob) / 1e14;
@@ -229,7 +272,7 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
 
     /**
      * @dev Converts an integer number of seconds to a fractional number of years.
-   */
+     */
     function annualise(uint secs) internal pure returns (uint yearFraction) {
         return secs.divideDecimalRoundPrecise(SECONDS_PER_YEAR);
     }
@@ -240,12 +283,12 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
 
     /**
      * @dev Returns internal coefficients of the Black-Scholes call price formula, d1 and d2.
-   * @param tAnnualised Number of years to expiry
-   * @param volatility Implied volatility over the period til expiry as a percentage
-   * @param spot The current price of the base asset
-   * @param strike The strike price of the option
-   * @param rate The percentage risk free rate + carry cost
-   */
+     * @param tAnnualised Number of years to expiry
+     * @param volatility Implied volatility over the period til expiry as a percentage
+     * @param spot The current price of the base asset
+     * @param strike The strike price of the option
+     * @param rate The percentage risk free rate + carry cost
+     */
     function d1d2(
         uint tAnnualised,
         uint volatility,
@@ -256,28 +299,31 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
         // Set minimum values for tAnnualised and volatility to not break computation in extreme scenarios
         // These values will result in option prices reflecting only the difference in stock/strike, which is expected.
         // This should be caught before calling this function, however the function shouldn't break if the values are 0.
-        tAnnualised = tAnnualised < MIN_T_ANNUALISED ? MIN_T_ANNUALISED : tAnnualised;
+        tAnnualised = tAnnualised < MIN_T_ANNUALISED
+            ? MIN_T_ANNUALISED
+            : tAnnualised;
         volatility = volatility < MIN_VOLATILITY ? MIN_VOLATILITY : volatility;
 
-        int vtSqrt = int(volatility.multiplyDecimalRoundPrecise(sqrtPrecise(tAnnualised)));
-        int log = ln(spot.divideDecimalRoundPrecise(strike));
-        int v2t =
-        int(volatility.multiplyDecimalRoundPrecise(volatility) / 2).add(rate).multiplyDecimalRoundPrecise(
-            int(tAnnualised)
+        int vtSqrt = int(
+            volatility.multiplyDecimalRoundPrecise(sqrtPrecise(tAnnualised))
         );
+        int log = ln(spot.divideDecimalRoundPrecise(strike));
+        int v2t = int(volatility.multiplyDecimalRoundPrecise(volatility) / 2)
+            .add(rate)
+            .multiplyDecimalRoundPrecise(int(tAnnualised));
         d1 = log.add(v2t).divideDecimalRoundPrecise(vtSqrt);
         d2 = d1.sub(vtSqrt);
     }
 
     /**
      * @dev Internal coefficients of the Black-Scholes call price formula.
-   * @param tAnnualised Number of years to expiry
-   * @param spot The current price of the base asset
-   * @param strike The strike price of the option
-   * @param rate The percentage risk free rate + carry cost
-   * @param d1 Internal coefficient of Black-Scholes
-   * @param d2 Internal coefficient of Black-Scholes
-   */
+     * @param tAnnualised Number of years to expiry
+     * @param spot The current price of the base asset
+     * @param strike The strike price of the option
+     * @param rate The percentage risk free rate + carry cost
+     * @param d1 Internal coefficient of Black-Scholes
+     * @param d2 Internal coefficient of Black-Scholes
+     */
     function _optionPrices(
         uint tAnnualised,
         uint spot,
@@ -286,7 +332,9 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
         int d1,
         int d2
     ) internal pure returns (uint call, uint put) {
-        uint strikePV = strike.multiplyDecimalRoundPrecise(exp(- rate.multiplyDecimalRoundPrecise(int(tAnnualised))));
+        uint strikePV = strike.multiplyDecimalRoundPrecise(
+            exp(-rate.multiplyDecimalRoundPrecise(int(tAnnualised)))
+        );
         uint spotNd1 = spot.multiplyDecimalRoundPrecise(stdNormalCDF(d1));
         uint strikeNd2 = strikePV.multiplyDecimalRoundPrecise(stdNormalCDF(d2));
 
@@ -300,12 +348,12 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
 
     /**
      * @dev Returns call and put prices for options with given parameters.
-   * @param timeToExpirySec Number of seconds to the expiry of the option
-   * @param volatilityDecimal Implied volatility over the period til expiry as a percentage
-   * @param spotDecimal The current price of the base asset
-   * @param strikeDecimal The strike price of the option
-   * @param rateDecimal The percentage risk free rate + carry cost
-   */
+     * @param timeToExpirySec Number of seconds to the expiry of the option
+     * @param volatilityDecimal Implied volatility over the period til expiry as a percentage
+     * @param spotDecimal The current price of the base asset
+     * @param strikeDecimal The strike price of the option
+     * @param rateDecimal The percentage risk free rate + carry cost
+     */
     function optionPrices(
         uint timeToExpirySec,
         uint volatilityDecimal,
@@ -317,9 +365,21 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
         uint spotPrecise = spotDecimal.decimalToPreciseDecimal();
         uint strikePrecise = strikeDecimal.decimalToPreciseDecimal();
         int ratePrecise = rateDecimal.decimalToPreciseDecimal();
-        (int d1, int d2) =
-        d1d2(tAnnualised, volatilityDecimal.decimalToPreciseDecimal(), spotPrecise, strikePrecise, ratePrecise);
-        (call, put) = _optionPrices(tAnnualised, spotPrecise, strikePrecise, ratePrecise, d1, d2);
+        (int d1, int d2) = d1d2(
+            tAnnualised,
+            volatilityDecimal.decimalToPreciseDecimal(),
+            spotPrecise,
+            strikePrecise,
+            ratePrecise
+        );
+        (call, put) = _optionPrices(
+            tAnnualised,
+            spotPrecise,
+            strikePrecise,
+            ratePrecise,
+            d1,
+            d2
+        );
         return (call.preciseDecimalToDecimal(), put.preciseDecimalToDecimal());
     }
 
@@ -329,34 +389,39 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
 
     /**
      * @dev Returns the option's delta value
-   * @param d1 Internal coefficient of Black-Scholes
-   */
-    function _delta(int d1) internal pure returns (int callDelta, int putDelta) {
+     * @param d1 Internal coefficient of Black-Scholes
+     */
+    function _delta(
+        int d1
+    ) internal pure returns (int callDelta, int putDelta) {
         callDelta = int(stdNormalCDF(d1));
         putDelta = callDelta - int(PRECISE_UNIT);
     }
 
     /**
      * @dev Returns the option's vega value based on d1
-   *
-   * @param d1 Internal coefficient of Black-Scholes
-   * @param tAnnualised Number of years to expiry
-   * @param spot The current price of the base asset
-   */
+     *
+     * @param d1 Internal coefficient of Black-Scholes
+     * @param tAnnualised Number of years to expiry
+     * @param spot The current price of the base asset
+     */
     function _vega(
         uint tAnnualised,
         uint spot,
         int d1
     ) internal pure returns (uint vega) {
-        return sqrtPrecise(tAnnualised).multiplyDecimalRoundPrecise(stdNormal(d1).multiplyDecimalRoundPrecise(spot));
+        return
+            sqrtPrecise(tAnnualised).multiplyDecimalRoundPrecise(
+                stdNormal(d1).multiplyDecimalRoundPrecise(spot)
+            );
     }
 
     /**
      * @dev Returns the option's vega value with expiry modified to be at least VEGA_STANDARDISATION_MIN_DAYS
-   * @param d1 Internal coefficient of Black-Scholes
-   * @param spot The current price of the base asset
-   * @param timeToExpirySec Number of seconds to expiry
-   */
+     * @param d1 Internal coefficient of Black-Scholes
+     * @param spot The current price of the base asset
+     * @param timeToExpirySec Number of seconds to expiry
+     */
     function _standardVega(
         int d1,
         uint spot,
@@ -364,41 +429,51 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
     ) internal pure returns (uint) {
         uint tAnnualised = annualise(timeToExpirySec);
 
-        timeToExpirySec = timeToExpirySec < VEGA_STANDARDISATION_MIN_DAYS ? VEGA_STANDARDISATION_MIN_DAYS : timeToExpirySec;
+        timeToExpirySec = timeToExpirySec < VEGA_STANDARDISATION_MIN_DAYS
+            ? VEGA_STANDARDISATION_MIN_DAYS
+            : timeToExpirySec;
         uint daysToExpiry = (timeToExpirySec.mul(PRECISE_UNIT)) / 1 days;
         uint thirty = 30 * PRECISE_UNIT;
-        uint normalisationFactor = sqrtPrecise(thirty.divideDecimalRoundPrecise(daysToExpiry)).div(100);
-        return _vega(tAnnualised, spot, d1).multiplyDecimalRoundPrecise(normalisationFactor).preciseDecimalToDecimal();
+        uint normalisationFactor = sqrtPrecise(
+            thirty.divideDecimalRoundPrecise(daysToExpiry)
+        ).div(100);
+        return
+            _vega(tAnnualised, spot, d1)
+                .multiplyDecimalRoundPrecise(normalisationFactor)
+                .preciseDecimalToDecimal();
     }
 
     /**
      * @dev Returns call/put prices and delta/stdVega for options with given parameters.
-   * @param timeToExpirySec Number of seconds to the expiry of the option
-   * @param volatilityDecimal Implied volatility over the period til expiry as a percentage
-   * @param spotDecimal The current price of the base asset
-   * @param strikeDecimal The strike price of the option
-   * @param rateDecimal The percentage risk free rate + carry cost
-   */
+     * @param timeToExpirySec Number of seconds to the expiry of the option
+     * @param volatilityDecimal Implied volatility over the period til expiry as a percentage
+     * @param spotDecimal The current price of the base asset
+     * @param strikeDecimal The strike price of the option
+     * @param rateDecimal The percentage risk free rate + carry cost
+     */
     function pricesDeltaStdVega(
         uint timeToExpirySec,
         uint volatilityDecimal,
         uint spotDecimal,
         uint strikeDecimal,
         int rateDecimal
-    ) external pure override returns (IAmericanBinaryOptions.PricesDeltaStdVega memory) {
+    )
+        external
+        pure
+        override
+        returns (IAmericanBinaryOptions.PricesDeltaStdVega memory)
+    {
         uint tAnnualised = annualise(timeToExpirySec);
         uint spotPrecise = spotDecimal.decimalToPreciseDecimal();
 
-        (int d1, int d2) =
-        d1d2(
+        (int d1, int d2) = d1d2(
             tAnnualised,
             volatilityDecimal.decimalToPreciseDecimal(),
             spotPrecise,
             strikeDecimal.decimalToPreciseDecimal(),
             rateDecimal.decimalToPreciseDecimal()
         );
-        (uint callPrice, uint putPrice) =
-        _optionPrices(
+        (uint callPrice, uint putPrice) = _optionPrices(
             tAnnualised,
             spotPrecise,
             strikeDecimal.decimalToPreciseDecimal(),
@@ -410,16 +485,20 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
         (int callDelta, int putDelta) = _delta(d1);
 
         return
-        IAmericanBinaryOptions.PricesDeltaStdVega(
-            callPrice.preciseDecimalToDecimal(),
-            putPrice.preciseDecimalToDecimal(),
-            callDelta.preciseDecimalToDecimal(),
-            putDelta.preciseDecimalToDecimal(),
-            v
-        );
+            IAmericanBinaryOptions.PricesDeltaStdVega(
+                callPrice.preciseDecimalToDecimal(),
+                putPrice.preciseDecimalToDecimal(),
+                callDelta.preciseDecimalToDecimal(),
+                putDelta.preciseDecimalToDecimal(),
+                v
+            );
     }
 
-    function mockCalculation(uint coverage, uint duration, uint risk) external pure override returns (uint price) {
+    function mockCalculation(
+        uint coverage,
+        uint duration,
+        uint risk
+    ) external pure override returns (uint price) {
         return 1e18;
     }
 }

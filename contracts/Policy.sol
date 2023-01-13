@@ -2,12 +2,12 @@
 pragma solidity 0.8.9;
 
 // Libraries
-import "./Lib/SafeDecimalMath.sol";
+import './Lib/SafeDecimalMath.sol';
 
 // Inherited
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "./interfaces/IPolicy.sol";
-import "./interfaces/IEpochManage.sol";
+import '@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol';
+import './interfaces/IPolicy.sol';
+import './interfaces/IEpochManage.sol';
 
 /**
  * @title Policy
@@ -33,18 +33,28 @@ contract Policy is IPolicy, ERC721Enumerable {
 
     /**
      * @param _name Token collection name
-   * @param _symbol Token collection symbol
-   */
-    constructor(string memory _name, string memory _symbol) ERC721(_name, _symbol) {}
+     * @param _symbol Token collection symbol
+     */
+    constructor(
+        string memory _name,
+        string memory _symbol
+    ) ERC721(_name, _symbol) {}
 
     /**
      * @dev Initialize the contract.
      * @param _metaDefender MetaDefender address.
      * @param _protocol Protocol address.
      */
-    function init(address _metaDefender, address _protocol, IEpochManage _epochManage) external {
-        require(!initialized, "already initialized");
-        require(_metaDefender != address(0), "liquidityPool cannot be 0 address");
+    function init(
+        address _metaDefender,
+        address _protocol,
+        IEpochManage _epochManage
+    ) external {
+        require(!initialized, 'already initialized');
+        require(
+            _metaDefender != address(0),
+            'liquidityPool cannot be 0 address'
+        );
         metaDefender = _metaDefender;
         protocol = _protocol;
         epochManage = _epochManage;
@@ -53,10 +63,12 @@ contract Policy is IPolicy, ERC721Enumerable {
 
     /**
      * @dev Returns all the certificates own by a given address.
-   *
-   * @param beneficiary The policies of a certain beneficiary.
-   */
-    function getPolicies(address beneficiary) external view override returns (uint[] memory) {
+     *
+     * @param beneficiary The policies of a certain beneficiary.
+     */
+    function getPolicies(
+        address beneficiary
+    ) external view override returns (uint[] memory) {
         uint numCerts = balanceOf(beneficiary);
         uint[] memory ids = new uint[](numCerts);
 
@@ -69,37 +81,37 @@ contract Policy is IPolicy, ERC721Enumerable {
 
     /**
      * @notice Returns a policy's data.
-   *
-   * @param policyId The id of a certain policy.
-   */
-    function getPolicyInfo(uint policyId)
-    external
-    view
-    override
-    returns (IPolicy.PolicyInfo memory)
-    {
-        require(_policyInfo[policyId].enteredEpochIndex!= 0, "policy does not exist");
+     *
+     * @param policyId The id of a certain policy.
+     */
+    function getPolicyInfo(
+        uint policyId
+    ) external view override returns (IPolicy.PolicyInfo memory) {
+        require(
+            _policyInfo[policyId].enteredEpochIndex != 0,
+            'policy does not exist'
+        );
         return _policyInfo[policyId];
     }
 
     /**
      * @dev find out which address is this policyId belongs to.
-    *
-    * @param policyId The id of the policy.
-    */
+     *
+     * @param policyId The id of the policy.
+     */
     function belongsTo(uint policyId) external view returns (address) {
         return ownerOf(policyId);
     }
 
     /**
      * @dev Mints a new policy NFT and transfers it to `beneficiary`.
-   * @param beneficiary The address will benefit from the policy.
-   * @param coverage The amount of money that the policy covers.
-   * @param fee The amount of money that the policy buyer deposits to prevent forgetting cancel the policy at expiry
-   * @param enteredEpochIndex The epochIndex when the policy buyer buys the policy.
-   * @param duration The duration of the policy
-   * @param SPS the shadow still captured in the medalNFT.
-   */
+     * @param beneficiary The address will benefit from the policy.
+     * @param coverage The amount of money that the policy covers.
+     * @param fee The amount of money that the policy buyer deposits to prevent forgetting cancel the policy at expiry
+     * @param enteredEpochIndex The epochIndex when the policy buyer buys the policy.
+     * @param duration The duration of the policy
+     * @param SPS the shadow still captured in the medalNFT.
+     */
     function mint(
         address beneficiary,
         uint coverage,
@@ -108,64 +120,124 @@ contract Policy is IPolicy, ERC721Enumerable {
         uint duration,
         uint SPS,
         uint standardRisk
-    ) external override onlyMetaDefender() returns (uint) {
+    ) external override onlyMetaDefender returns (uint) {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
 
-        if (coverage < MIN_COVERAGE){
+        if (coverage < MIN_COVERAGE) {
             revert InsufficientCoverage();
         }
 
         totalPendingCoverage = totalPendingCoverage.add(coverage);
 
         uint policyId = nextId++;
-        _policyInfo[policyId] = PolicyInfo(beneficiary, coverage, fee, duration, standardRisk, enteredEpochIndex, SPS, false, false, false);
+        _policyInfo[policyId] = PolicyInfo(
+            beneficiary,
+            coverage,
+            fee,
+            duration,
+            standardRisk,
+            enteredEpochIndex,
+            SPS,
+            false,
+            false,
+            false
+        );
         _mint(beneficiary, policyId);
 
-        emit NewPolicyMinted(beneficiary, policyId, coverage, fee, duration, standardRisk, enteredEpochIndex, SPS, address(metaDefender));
+        emit NewPolicyMinted(
+            beneficiary,
+            policyId,
+            coverage,
+            fee,
+            duration,
+            standardRisk,
+            enteredEpochIndex,
+            SPS,
+            address(metaDefender)
+        );
         return policyId;
     }
 
     /**
      * @notice isCancelAvailable the to check if the policy can be cancelled now.
-   * @param policyId The id of the policy.
-   */
-    function isSettleAvailable(uint policyId) external view override returns (bool) {
-        IEpochManage.EpochInfo memory currentEpochInfo = epochManage.getCurrentEpochInfo();
-        IEpochManage.EpochInfo memory enteredEpochInfo = epochManage.getEpochInfo(_policyInfo[policyId].enteredEpochIndex);
-        require(enteredEpochInfo.epochId.add(_policyInfo[policyId].duration) < currentEpochInfo.epochId, "policy is not expired");
-        require(_policyInfo[policyId].enteredEpochIndex != 0, "policy does not exist");
-        require(_policyInfo[policyId].isSettled == false, "policy is already cancelled");
-        require(_policyInfo[policyId].isClaimApplying == false, "policy is applying for claim");
-        require(_policyInfo[policyId].isClaimed == false, "policy is already claimed");
+     * @param policyId The id of the policy.
+     */
+    function isSettleAvailable(
+        uint policyId
+    ) external view override returns (bool) {
+        IEpochManage.EpochInfo memory currentEpochInfo = epochManage
+            .getCurrentEpochInfo();
+        IEpochManage.EpochInfo memory enteredEpochInfo = epochManage
+            .getEpochInfo(_policyInfo[policyId].enteredEpochIndex);
+        require(
+            enteredEpochInfo.epochId.add(_policyInfo[policyId].duration) <
+                currentEpochInfo.epochId,
+            'policy is not expired'
+        );
+        require(
+            _policyInfo[policyId].enteredEpochIndex != 0,
+            'policy does not exist'
+        );
+        require(
+            _policyInfo[policyId].isSettled == false,
+            'policy is already cancelled'
+        );
+        require(
+            _policyInfo[policyId].isClaimApplying == false,
+            'policy is applying for claim'
+        );
+        require(
+            _policyInfo[policyId].isClaimed == false,
+            'policy is already claimed'
+        );
         return true;
     }
 
     /**
-    * @notice isCancelAvailable the to check if the policy can be cancelled now.
-   * @param policyId The id of the policy.
-   */
-    function isClaimAvailable(uint policyId) external view override returns (bool) {
-        require(_policyInfo[policyId].enteredEpochIndex != 0, "policy does not exist");
-        require(_policyInfo[policyId].isSettled == false, "policy is already cancelled");
-        require(_policyInfo[policyId].isClaimApplying == true, "policy is not applying for claim");
-        require(_policyInfo[policyId].isClaimed == false, "policy is already claimed");
+     * @notice isCancelAvailable the to check if the policy can be cancelled now.
+     * @param policyId The id of the policy.
+     */
+    function isClaimAvailable(
+        uint policyId
+    ) external view override returns (bool) {
+        require(
+            _policyInfo[policyId].enteredEpochIndex != 0,
+            'policy does not exist'
+        );
+        require(
+            _policyInfo[policyId].isSettled == false,
+            'policy is already cancelled'
+        );
+        require(
+            _policyInfo[policyId].isClaimApplying == true,
+            'policy is not applying for claim'
+        );
+        require(
+            _policyInfo[policyId].isClaimed == false,
+            'policy is already claimed'
+        );
         return true;
     }
-
 
     /**
      * @notice Burns the LiquidityCertificate.
-   *
-   * @param spender The account which is performing the burn.
-   * @param policyId The id of the policy.
-   */
-    function burn(address spender, uint policyId) external override onlyMetaDefender() {
+     *
+     * @param spender The account which is performing the burn.
+     * @param policyId The id of the policy.
+     */
+    function burn(
+        address spender,
+        uint policyId
+    ) external override onlyMetaDefender {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
-        require(_isApprovedOrOwner(spender, policyId), "attempted to burn nonexistent certificate, or not owner");
+        require(
+            _isApprovedOrOwner(spender, policyId),
+            'attempted to burn nonexistent certificate, or not owner'
+        );
         delete _policyInfo[policyId];
         _burn(policyId);
     }
@@ -177,10 +249,13 @@ contract Policy is IPolicy, ERC721Enumerable {
 
     /**
      * @dev Change the status of whether the policy has been claimed.
-    * @param policyId The id of the policy.
-    * @param status The status of whether the policy has been claimed.
-    */
-    function changeStatusIsClaimed(uint policyId, bool status) external override onlyMetaDefender() {
+     * @param policyId The id of the policy.
+     * @param status The status of whether the policy has been claimed.
+     */
+    function changeStatusIsClaimed(
+        uint policyId,
+        bool status
+    ) external override onlyMetaDefender {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
@@ -189,38 +264,59 @@ contract Policy is IPolicy, ERC721Enumerable {
 
     /**
      * @dev Change the status of whether the policy has been cancelled.
-    * @param policyId The id of the policy.
-    * @param status The status of whether the policy has been cancelled.
-    */
-    function changeStatusIsSettled(uint policyId, bool status) external override onlyMetaDefender() {
+     * @param policyId The id of the policy.
+     * @param status The status of whether the policy has been cancelled.
+     */
+    function changeStatusIsSettled(
+        uint policyId,
+        bool status
+    ) external override onlyMetaDefender {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
-        require(_policyInfo[policyId].enteredEpochIndex != 0, "policy does not exist");
-        _policyInfo[policyId].isSettled= status;
+        require(
+            _policyInfo[policyId].enteredEpochIndex != 0,
+            'policy does not exist'
+        );
+        _policyInfo[policyId].isSettled = status;
         // if the policy is settled with any reason(expire to settle or claim to settle), the totalCoverage will be reduced;
-        totalPendingCoverage = totalPendingCoverage.sub(_policyInfo[policyId].coverage);
+        totalPendingCoverage = totalPendingCoverage.sub(
+            _policyInfo[policyId].coverage
+        );
     }
 
     /**
      * @dev Change the status of whether the policy is under claim applying.
-    * @param policyId The id of the policy.
-    * @param status The status of whether the policy is under claim applying.
-    */
-    function changeStatusIsClaimApplying(uint policyId, bool status) external override onlyMetaDefender() {
+     * @param policyId The id of the policy.
+     * @param status The status of whether the policy is under claim applying.
+     */
+    function changeStatusIsClaimApplying(
+        uint policyId,
+        bool status
+    ) external override onlyMetaDefender {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
         }
         _policyInfo[policyId].isClaimApplying = status;
     }
 
-    modifier onlyMetaDefender virtual {
-        require(msg.sender == address(metaDefender), "Only MetaDefender");
+    modifier onlyMetaDefender() virtual {
+        require(msg.sender == address(metaDefender), 'Only MetaDefender');
         _;
     }
 
     error InsufficientPrivilege();
     error InsufficientCoverage();
 
-    event NewPolicyMinted(address beneficiary, uint policyId, uint coverage, uint fee, uint duration, uint standardRisk, uint enteredEpochIndex, uint SPS, address protocol);
+    event NewPolicyMinted(
+        address beneficiary,
+        uint policyId,
+        uint coverage,
+        uint fee,
+        uint duration,
+        uint standardRisk,
+        uint enteredEpochIndex,
+        uint SPS,
+        address protocol
+    );
 }

@@ -1,10 +1,9 @@
 //SPDX-License-Identifier: ISC
 pragma solidity 0.8.9;
 
-import "./ILiquidityCertificate.sol";
+import './ILiquidityCertificate.sol';
 
 interface IMetaDefender {
-
     struct GlobalInfo {
         uint accSPS;
         uint accRPS;
@@ -26,11 +25,17 @@ interface IMetaDefender {
 
     function validMiningProxyManage(address proxy, bool _isValid) external;
 
-    function buyPolicy(address beneficiary, uint coverage, uint duration) external;
+    function buyPolicy(
+        address beneficiary,
+        uint coverage,
+        uint duration
+    ) external;
 
     function claimRewards(uint certificateId) external;
 
-    function getSPSLockedByCertificateId(uint certificateId) external view returns(uint,uint);
+    function getSPSLockedByCertificateId(
+        uint certificateId
+    ) external view returns (uint, uint);
 
     function certificateProviderEntrance(uint _amount) external;
 
@@ -50,10 +55,13 @@ interface IMetaDefender {
 
     function withdrawAfterExit(uint medalId) external;
 
-    function getRealLiquidityByCertificateId(uint256 certificateId) external view returns(uint);
+    function getRealLiquidityByCertificateId(
+        uint256 certificateId
+    ) external view returns (uint);
 
-    function getLostLiquidityByCertificateId(uint256 certificateId) external view returns(uint);
+    function getLostLiquidityByCertificateId(
+        uint256 certificateId
+    ) external view returns (uint);
 
     function epochCheck() external;
-
 }

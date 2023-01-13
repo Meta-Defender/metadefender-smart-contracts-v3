@@ -2,7 +2,6 @@
 pragma solidity 0.8.9;
 
 interface IAmericanBinaryOptions {
-
     struct PricesDeltaStdVega {
         uint callPrice;
         uint putPrice;
@@ -11,7 +10,11 @@ interface IAmericanBinaryOptions {
         uint stdVega;
     }
 
-    function mockCalculation(uint coverage, uint duration, uint risk) external pure returns(uint premium);
+    function mockCalculation(
+        uint coverage,
+        uint duration,
+        uint risk
+    ) external pure returns (uint premium);
 
     function americanBinaryOptionPrices(
         uint timeToExpirySec,
