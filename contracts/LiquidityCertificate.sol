@@ -181,25 +181,18 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
      * @notice decreaseLiquidity. decrease the liquidity when user withdraws from the pool.
      *
      * @param certificateId The id of the LiquidityCertificate.
+     * @param isForce Whether the certificate is force withdrawn.
      */
     function decreaseLiquidity(
-        uint256 certificateId
+        uint256 certificateId,
+        bool isForce
     ) external override onlyMetaDefender {
-        require(
-            _isApprovedOrOwner(tx.origin, certificateId),
-            'attempted to expire nonexistent certificate, or not owner'
-        );
-        totalValidCertificateLiquidity = totalValidCertificateLiquidity.sub(
-            _certificateInfo[certificateId].liquidity
-        );
-        totalPendingCertificateLiquidity = totalPendingCertificateLiquidity.sub(
-            _certificateInfo[certificateId].liquidity
-        );
-    }
-
-    function decreaseLiquidityByJudger(
-        uint256 certificateId
-    ) external override onlyMetaDefender {
+        if (!isForce) {
+            require(
+                _isApprovedOrOwner(tx.origin, certificateId),
+                'attempted to expire nonexistent certificate, or not owner'
+            );
+        }
         totalValidCertificateLiquidity = totalValidCertificateLiquidity.sub(
             _certificateInfo[certificateId].liquidity
         );
@@ -216,21 +209,15 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
      */
     function expire(
         uint256 certificateId,
-        uint64 currentEpochIndex
+        uint64 currentEpochIndex,
+        bool isForce
     ) external override onlyMetaDefender {
-        require(
-            _isApprovedOrOwner(tx.origin, certificateId),
-            'attempted to expire nonexistent certificate, or not owner'
-        );
-        _certificateInfo[certificateId].exitedEpochIndex = currentEpochIndex;
-        _certificateInfo[certificateId].isValid = false;
-        emit Expired(certificateId);
-    }
-
-    function expireByJudger(
-        uint256 certificateId,
-        uint64 currentEpochIndex
-    ) external onlyMetaDefender {
+        if (!isForce) {
+            require(
+                _isApprovedOrOwner(tx.origin, certificateId),
+                'attempted to expire nonexistent certificate, or not owner'
+            );
+        }
         _certificateInfo[certificateId].exitedEpochIndex = currentEpochIndex;
         _certificateInfo[certificateId].isValid = false;
         emit Expired(certificateId);

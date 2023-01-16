@@ -49,16 +49,9 @@ interface ILiquidityCertificate {
         uint256 liquidity
     ) external returns (uint256);
 
-    function decreaseLiquidity(uint256 certificateId) external;
+    function decreaseLiquidity(uint256 certificateId, bool isForce) external;
 
-    function decreaseLiquidityByJudger(uint256 certificateId) external;
-
-    function expire(uint256 certificateId, uint64 currentEpochIndex) external;
-
-    function expireByJudger(
-        uint256 certificateId,
-        uint64 currentEpochIndex
-    ) external;
+    function expire(uint256 certificateId, uint64 currentEpochIndex, bool isForce) external;
 
     function belongsTo(uint256 certificateId) external view returns (address);
 }

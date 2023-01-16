@@ -197,10 +197,10 @@ describe('MetaDefender - integrated tests', async () => {
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderExit('0');
+                .certificateProviderExit('0', false);
             await contracts.metaDefender
                 .connect(provider2)
-                .certificateProviderExit('1');
+                .certificateProviderExit('1', false);
             await fastForward(86400);
             await contracts.metaDefender.settlePolicy('0');
             const tokenAfter1 = await contracts.test.quoteToken.balanceOf(
@@ -259,10 +259,10 @@ describe('MetaDefender - integrated tests', async () => {
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderExit('0');
+                .certificateProviderExit('0', false);
             await contracts.metaDefender
                 .connect(provider2)
-                .certificateProviderExit('1');
+                .certificateProviderExit('1', false);
             const tokenAfter1 = await contracts.test.quoteToken.balanceOf(
                 await provider1.getAddress(),
             );
@@ -316,10 +316,10 @@ describe('MetaDefender - integrated tests', async () => {
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderExit('0');
+                .certificateProviderExit('0', false);
             await contracts.metaDefender
                 .connect(provider2)
-                .certificateProviderExit('1');
+                .certificateProviderExit('1', false);
             await fastForward(86400);
             await contracts.metaDefender.settlePolicy('0');
             await contracts.metaDefender
