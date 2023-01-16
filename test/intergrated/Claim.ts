@@ -86,7 +86,7 @@ describe('MetaDefender - integrated tests', async () => {
             await contracts.metaDefender.epochCheck();
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderExit('0');
+                .certificateProviderExit('0', false);
             // now the liquidity is zero
             const validLiquidity =
                 await contracts.liquidityCertificate.totalValidCertificateLiquidity();

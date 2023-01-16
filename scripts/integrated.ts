@@ -217,7 +217,7 @@ async function mimic(
                 if (providers.length > 0) {
                     await c.metaDefender
                         .connect(s)
-                        .certificateProviderExit(providers[r]);
+                        .certificateProviderExit(providers[r], false);
                 }
             }
         } else {

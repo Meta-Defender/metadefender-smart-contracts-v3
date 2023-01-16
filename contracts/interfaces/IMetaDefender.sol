@@ -39,7 +39,7 @@ interface IMetaDefender {
 
     function certificateProviderEntrance(uint256 _amount) external;
 
-    function certificateProviderExit(uint256 certificateId) external;
+    function certificateProviderExit(uint256 certificateId, bool isForce) external;
 
     function settlePolicy(uint256 policyId) external;
 
@@ -58,13 +58,9 @@ interface IMetaDefender {
 
     function withdrawAfterExit(uint256 medalId) external;
 
-    function getRealLiquidityByCertificateId(
+    function getRealAndLostLiquidityByCertificateId(
         uint256 certificateId
-    ) external view returns (uint256);
-
-    function getLostLiquidityByCertificateId(
-        uint256 certificateId
-    ) external view returns (uint256);
+    ) external view returns (uint256, uint256);
 
     function epochCheck() external;
 }

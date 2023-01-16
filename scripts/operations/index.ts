@@ -270,6 +270,7 @@ async function main() {
                     .connect(currentSigner)
                     .certificateProviderExit(
                         String(toBeWithdrawn.certificateId),
+                        false,
                     );
                 break;
             case 'Buy Policy':
