@@ -148,6 +148,19 @@ export async function initTestSystem(
         c.periphery.metaDefenderMarketsRegistry.address,
         c.americanBinaryOptions.address,
     );
+
+    // market registry
+    await c.periphery.metaDefenderMarketsRegistry.addMarket(
+        c.metaDefender.address,
+        c.liquidityCertificate.address,
+        c.policy.address,
+        c.epochManage.address,
+        'compoundV3',
+        'a lending protocol',
+        'USDT',
+        'contract safety',
+        'Ethereum',
+    );
 }
 
 export async function deployTestSystem(

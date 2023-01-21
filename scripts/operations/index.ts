@@ -4,6 +4,8 @@ import { toBN } from '../util/web3utils';
 import inquirer from 'inquirer';
 import * as dotenv from 'dotenv';
 import chalk from 'chalk';
+import * as fs from 'fs-extra';
+import { DeployedContracts, Market } from '../deploy';
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -43,37 +45,55 @@ async function currentTime() {
 }
 
 async function main() {
-    dotenv.config();
+    const prompt = inquirer.createPromptModule();
+    let res: DeployedContracts = {} as DeployedContracts;
+    if (fs.existsSync('./.env.json')) {
+        res = JSON.parse(fs.readFileSync('./.env.json', 'utf8'));
+    } else {
+        throw new Error('No .env.json file found');
+    }
+    const markets = [];
+    let marketIndex = 0;
+    for (let i = 0; i < res.markets.length; i++) {
+        markets.push(res.markets[i].marketName);
+    }
+    const chooseMarkets = await prompt({
+        type: 'list',
+        name: 'marketName',
+        message: 'Which market you want to choose:)',
+        choices: markets,
+    });
+
+    for (let i = 0; i < res.markets.length; i++) {
+        if (res.markets[i].marketName == chooseMarkets.marketName) {
+            marketIndex = i;
+            break;
+        }
+    }
 
     const signers = await hre.ethers.getSigners();
     const _metaDefender = await hre.ethers.getContractFactory('MetaDefender');
     const metaDefender = await _metaDefender.attach(
-        String(process.env.MetaDefenderAddress),
+        res.markets[marketIndex].metaDefender,
     );
 
     const _liquidityCertificate = await hre.ethers.getContractFactory(
         'LiquidityCertificate',
     );
     const liquidityCertificate = await _liquidityCertificate.attach(
-        String(process.env.LiquidityCertificateAddress),
+        res.markets[marketIndex].liquidityCertificate,
     );
 
     const _policy = await hre.ethers.getContractFactory('Policy');
-    const policy = await _policy.attach(String(process.env.PolicyAddress));
+    const policy = await _policy.attach(res.markets[marketIndex].policy);
 
     const _quoteToken = await hre.ethers.getContractFactory('TestERC20');
-    const quoteToken = await _quoteToken.attach(
-        String(process.env.TestERC20Address),
-    );
+    const quoteToken = await _quoteToken.attach(res.testERC20);
 
     const _globalsViewer = await hre.ethers.getContractFactory('GlobalsViewer');
-    const globalsViewer = await _globalsViewer.attach(
-        String(process.env.GlobalsViewerAddress),
-    );
+    const globalsViewer = await _globalsViewer.attach(res.globalsViewer);
 
     let currentSigner = await signers[0];
-
-    const prompt = inquirer.createPromptModule();
     const choices = [
         'Provide Liquidity',
         'Liquidity Withdraw',
@@ -90,6 +110,7 @@ async function main() {
         'Approve',
         'My Address',
         'Choose Address',
+        'Add Market',
         'Exit',
     ];
 

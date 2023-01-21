@@ -1,22 +1,50 @@
 import * as fs from 'fs-extra';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { MockRiskReserve, TestERC20 } from '../typechain-types';
 import { toBN, ZERO_ADDRESS } from './util/web3utils';
+import { Contract } from 'ethers';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hre = require('hardhat');
 
-async function main() {
+export type DeployedContracts = {
+    globalsViewer: string;
+    metaDefenderMarketsRegistry: string;
+    testERC20: string;
+    americanBinaryOptions: string;
+    markets: Market[];
+};
+
+export type Market = {
+    marketName: string;
+    marketDescription: string;
+    marketPaymentToken: string;
+    marketProtectionType: string;
+    network: string;
+    metaDefender: string;
+    liquidityCertificate: string;
+    policy: string;
+    mockRiskReserve: string;
+    epochManage: string;
+};
+async function main(
+    marketName: string,
+    marketDescription: string,
+    marketPaymentToken: string,
+    marketProtectionType: string,
+    network: string,
+) {
+    let res: DeployedContracts;
+    if (fs.existsSync('./.env.json')) {
+        res = JSON.parse(fs.readFileSync('./.env.json', 'utf8'));
+    } else {
+        const markets: Market[] = [];
+        res = {} as DeployedContracts;
+        res.markets = markets;
+    }
     const Signers = await hre.ethers.getSigners();
     // deploy
-    fs.writeFileSync('./.env', '\n');
-
     const _MetaDefender = await hre.ethers.getContractFactory('MetaDefender');
     const MetaDefender = await _MetaDefender.deploy();
     console.log('successfully deployed MetaDefender: ' + MetaDefender.address);
-    fs.appendFileSync(
-        './.env',
-        'MetaDefenderAddress=' + '"' + MetaDefender.address + '"' + '\n',
-    );
 
     const _LiquidityCertificate = await hre.ethers.getContractFactory(
         'LiquidityCertificate',
@@ -29,23 +57,9 @@ async function main() {
         'successfully deployed LiquidityCertificate: ' +
             LiquidityCertificate.address,
     );
-    fs.appendFileSync(
-        './.env',
-        'LiquidityCertificateAddress=' +
-            '"' +
-            LiquidityCertificate.address +
-            '"' +
-            '\n',
-    );
-
     const _Policy = await hre.ethers.getContractFactory('Policy');
     const Policy = await _Policy.deploy('Policy', 'Policy');
     console.log('successfully deployed Policy: ' + Policy.address);
-    fs.appendFileSync(
-        './.env',
-        'PolicyAddress=' + '"' + Policy.address + '"' + '\n',
-    );
-
     const _MockRiskReserve = await hre.ethers.getContractFactory(
         'MockRiskReserve',
     );
@@ -53,65 +67,94 @@ async function main() {
     console.log(
         'successfully deployed MockRiskReserve: ' + MockRiskReserve.address,
     );
-    fs.appendFileSync(
-        './.env',
-        'MockRiskReserveAddress=' + '"' + MockRiskReserve.address + '"' + '\n',
-    );
-
     const _EpochManage = await hre.ethers.getContractFactory('EpochManage');
     const EpochManage = await _EpochManage.deploy();
     console.log('successfully deployed EpochManage: ' + EpochManage.address);
-    fs.appendFileSync(
-        './.env',
-        'EpochManageAddress=' + '"' + EpochManage.address + '"' + '\n',
-    );
-
     const _AmericanBinaryOptions = await hre.ethers.getContractFactory(
         'AmericanBinaryOptions',
     );
-    const AmericanBinaryOptions = await _AmericanBinaryOptions.deploy();
-    console.log(
-        'successfully deployed AmericanBinaryOption: ' +
-            AmericanBinaryOptions.address,
-    );
-    fs.appendFileSync(
-        './.env',
-        'AmericanBinaryOptionAddress=' +
-            '"' +
-            AmericanBinaryOptions.address +
-            '"' +
-            '\n',
-    );
-
     const _TestERC20 = await hre.ethers.getContractFactory('TestERC20');
-    const TestERC20 = await _TestERC20.deploy('TQA', 'TQA');
-    console.log('successfully deployed TestERC20: ' + TestERC20.address);
-    fs.appendFileSync(
-        './.env',
-        'TestERC20Address=' + '"' + TestERC20.address + '"' + '\n',
-    );
-
     // periphery contracts
     const _GlobalsViewer = await hre.ethers.getContractFactory('GlobalsViewer');
-    const GlobalsViewer = await _GlobalsViewer.deploy();
-    console.log(
-        'successfully deployed GlobalsViewer: ' + GlobalsViewer.address,
-    );
-    fs.appendFileSync(
-        './.env',
-        'GlobalsViewerAddress=' + '"' + GlobalsViewer.address + '"' + '\n',
-    );
-
     const _MetaDefenderMarketsRegistry = await hre.ethers.getContractFactory(
         'MetaDefenderMarketsRegistry',
     );
-    const MetaDefenderMarketsRegistry =
-        await _MetaDefenderMarketsRegistry.deploy();
-    console.log(
-        'successfully deployed MetaDefenderMarketsRegistry: ' +
-            MetaDefenderMarketsRegistry.address,
-    );
+    let MetaDefenderMarketsRegistry: Contract;
+    let GlobalsViewer: Contract;
+    let AmericanBinaryOptions: Contract;
+    let TestERC20: Contract;
 
+    let metaDefenderMarketsRegistryAddress: string;
+    let globalsViewerAddress: string;
+    let americanBinaryOptionsAddress: string;
+    let testERC20Address: string;
+
+    if (!res.metaDefenderMarketsRegistry) {
+        MetaDefenderMarketsRegistry =
+            await _MetaDefenderMarketsRegistry.deploy();
+        console.log(
+            'successfully deployed MetaDefenderMarketsRegistry: ' +
+                MetaDefenderMarketsRegistry.address,
+        );
+        GlobalsViewer = await _GlobalsViewer.deploy();
+
+        AmericanBinaryOptions = await _AmericanBinaryOptions.deploy();
+        console.log(
+            'successfully deployed AmericanBinaryOption: ' +
+                AmericanBinaryOptions.address,
+        );
+        console.log(
+            'successfully deployed GlobalsViewer: ' + GlobalsViewer.address,
+        );
+        await GlobalsViewer.init(
+            MetaDefenderMarketsRegistry.address,
+            AmericanBinaryOptions.address,
+        );
+        console.log('successfully init the GlobalsViewer contract');
+        TestERC20 = await _TestERC20.deploy('TQA', 'TQA');
+        console.log('successfully deployed TestERC20: ' + TestERC20.address);
+        metaDefenderMarketsRegistryAddress =
+            MetaDefenderMarketsRegistry.address;
+        globalsViewerAddress = GlobalsViewer.address;
+        americanBinaryOptionsAddress = AmericanBinaryOptions.address;
+        testERC20Address = TestERC20.address;
+    } else {
+        for (let i = 0; i < res.markets.length; i++) {
+            if (res.markets[i].marketName === marketName) {
+                console.log('market already exists');
+                return;
+            }
+        }
+        metaDefenderMarketsRegistryAddress = res.metaDefenderMarketsRegistry;
+        globalsViewerAddress = res.globalsViewer;
+        americanBinaryOptionsAddress = res.americanBinaryOptions;
+        testERC20Address = res.testERC20;
+        MetaDefenderMarketsRegistry = await _MetaDefenderMarketsRegistry.attach(
+            metaDefenderMarketsRegistryAddress,
+        );
+        GlobalsViewer = await _GlobalsViewer.attach(globalsViewerAddress);
+        AmericanBinaryOptions = await _AmericanBinaryOptions.attach(
+            americanBinaryOptionsAddress,
+        );
+        TestERC20 = await _TestERC20.attach(testERC20Address);
+    }
+    res.markets.push({
+        marketName: marketName,
+        marketDescription: marketDescription,
+        marketPaymentToken: marketPaymentToken,
+        marketProtectionType: marketProtectionType,
+        network: network,
+        metaDefender: String(MetaDefender.address),
+        liquidityCertificate: String(LiquidityCertificate.address),
+        policy: String(Policy.address),
+        mockRiskReserve: String(MockRiskReserve.address),
+        epochManage: String(EpochManage.address),
+    });
+    res['globalsViewer'] = globalsViewerAddress;
+    res['metaDefenderMarketsRegistry'] = metaDefenderMarketsRegistryAddress;
+    res['testERC20'] = testERC20Address;
+    res['americanBinaryOptions'] = americanBinaryOptionsAddress;
+    fs.writeFileSync('./.env.json', JSON.stringify(res, null, 2));
     // begin init the contracts
     // init the metaDefender contract
     await MetaDefender.init(
@@ -140,11 +183,6 @@ async function main() {
         Policy.address,
     );
     console.log('successfully init the EpochManage contract');
-    await GlobalsViewer.init(
-        MetaDefenderMarketsRegistry.address,
-        AmericanBinaryOptions.address,
-    );
-    console.log('successfully init the GlobalsViewer contract');
 
     console.log('registry in process...');
     await MetaDefenderMarketsRegistry.addMarket(
@@ -152,11 +190,16 @@ async function main() {
         LiquidityCertificate.address,
         Policy.address,
         EpochManage.address,
+        marketName,
+        marketDescription,
+        marketPaymentToken,
+        marketProtectionType,
+        network,
     );
     console.log('successfully registry the market');
 }
 
-main()
+main('compoundV6', 'a lending protocol', 'USDT', 'contract safety', 'ethereum')
     .then(() => process.exit(0))
     .catch((error) => {
         console.error(error);
