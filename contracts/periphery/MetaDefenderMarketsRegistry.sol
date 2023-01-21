@@ -15,14 +15,7 @@ contract MetaDefenderMarketsRegistry is Ownable, IMetaDefenderMarketsRegistry {
 
     EnumerableSet.AddressSet internal insuranceMarkets;
     mapping(address => MarketAddresses) public insuranceMarketsAddresses;
-
-    event MarketAdded(
-        address metaDefender,
-        address liquidityCertificate,
-        address policy,
-        address epochManage
-    );
-    event MarketRemoved(address metaDefender);
+    mapping(address => MarketMessages) public insuranceMarketsMessages;
 
     /**
      * @dev Method to register the addresses of a new deployments market
@@ -36,7 +29,12 @@ contract MetaDefenderMarketsRegistry is Ownable, IMetaDefenderMarketsRegistry {
         address metaDefender,
         address liquidityCertificate,
         address policy,
-        address epochManage
+        address epochManage,
+        string memory marketName,
+        string memory marketDescription,
+        string memory marketPaymentToken,
+        string memory marketProtectionType,
+        string memory network
     ) external onlyOwner {
         require(insuranceMarkets.add(metaDefender), 'market already present');
         insuranceMarketsAddresses[metaDefender] = MarketAddresses(
@@ -44,12 +42,23 @@ contract MetaDefenderMarketsRegistry is Ownable, IMetaDefenderMarketsRegistry {
             policy,
             epochManage
         );
-
+        insuranceMarketsMessages[metaDefender] = MarketMessages(
+            marketName,
+            marketDescription,
+            marketPaymentToken,
+            marketProtectionType,
+            network
+        );
         emit MarketAdded(
             metaDefender,
             liquidityCertificate,
             policy,
-            epochManage
+            epochManage,
+            marketName,
+            marketDescription,
+            marketPaymentToken,
+            marketProtectionType,
+            network
         );
     }
 
@@ -61,6 +70,7 @@ contract MetaDefenderMarketsRegistry is Ownable, IMetaDefenderMarketsRegistry {
     function removeMarket(address metaDefender) external onlyOwner {
         require(insuranceMarkets.remove(metaDefender), 'market not present');
         delete insuranceMarketsAddresses[metaDefender];
+        delete insuranceMarketsMessages[metaDefender];
 
         emit MarketRemoved(metaDefender);
     }
@@ -74,13 +84,17 @@ contract MetaDefenderMarketsRegistry is Ownable, IMetaDefenderMarketsRegistry {
         external
         view
         override
-        returns (address[] memory)
+        returns (address[] memory, string[] memory)
     {
-        address[] memory list = new address[](insuranceMarkets.length());
+        address[] memory addresses = new address[](insuranceMarkets.length());
         for (uint256 i = 0; i < insuranceMarkets.length(); i++) {
-            list[i] = insuranceMarkets.at(i);
+            addresses[i] = insuranceMarkets.at(i);
         }
-        return list;
+        string[] memory messages = new string[](insuranceMarkets.length());
+        for (uint256 i = 0; i < insuranceMarkets.length(); i++) {
+            messages[i] = insuranceMarketsMessages[insuranceMarkets.at(i)].marketName;
+        }
+        return (addresses, messages);
     }
 
     /**
@@ -89,17 +103,42 @@ contract MetaDefenderMarketsRegistry is Ownable, IMetaDefenderMarketsRegistry {
      * @param insuranceMarketList Array of metaDefender contract addresses
      * @return Array of struct containing the associated contract addresses
      */
-    function getInsuranceMarketsAddresses(
+    function getInsuranceMarketsAddressesAndMessages(
         address[] calldata insuranceMarketList
-    ) external view override returns (MarketAddresses[] memory) {
+    )
+        external
+        view
+        override
+        returns (MarketAddresses[] memory, MarketMessages[] memory)
+    {
         MarketAddresses[] memory marketAddresses = new MarketAddresses[](
+            insuranceMarketList.length
+        );
+        MarketMessages[] memory marketMessages = new MarketMessages[](
             insuranceMarketList.length
         );
         for (uint256 i = 0; i < insuranceMarketList.length; i++) {
             marketAddresses[i] = insuranceMarketsAddresses[
                 insuranceMarketList[i]
             ];
+            marketMessages[i] = insuranceMarketsMessages[
+                insuranceMarketList[i]
+            ];
         }
-        return marketAddresses;
+        return (marketAddresses, marketMessages);
     }
+
+    // events
+    event MarketAdded(
+        address metaDefender,
+        address liquidityCertificate,
+        address policy,
+        address epochManage,
+        string marketName,
+        string marketDescription,
+        string marketPaymentToken,
+        string marketProtectionType,
+        string network
+    );
+    event MarketRemoved(address metaDefender);
 }

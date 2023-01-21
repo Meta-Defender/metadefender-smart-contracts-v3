@@ -8,9 +8,17 @@ interface IMetaDefenderMarketsRegistry {
         address epochManage;
     }
 
-    function getInsuranceMarkets() external view returns (address[] memory);
+    struct MarketMessages {
+        string marketName;
+        string marketDescription;
+        string marketPaymentToken;
+        string protectionType;
+        string network;
+    }
 
-    function getInsuranceMarketsAddresses(
+    function getInsuranceMarkets() external view returns (address[] memory, string[] memory);
+
+    function getInsuranceMarketsAddressesAndMessages(
         address[] calldata
-    ) external view returns (MarketAddresses[] memory);
+    ) external view returns (MarketAddresses[] memory, MarketMessages[] memory);
 }
