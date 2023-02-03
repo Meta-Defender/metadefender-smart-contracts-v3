@@ -108,6 +108,7 @@ async function main() {
         'Time Travel',
         'Give Me Some Test Token',
         'Approve',
+        'Transfer',
         'My Address',
         'Choose Address',
         'Add Market',
@@ -123,6 +124,32 @@ async function main() {
         });
 
         switch (answers.operation) {
+            case 'Transfer':
+                {
+                    const transferQuery = await prompt([
+                        {
+                            type: 'input',
+                            name: 'amount',
+                            message: 'How much token do you want to transfer?',
+                        },
+                    ]);
+                    const signers = await hre.ethers.getSigners();
+                    const addresses = [];
+                    for (let i = 0; i < signers.length; i++) {
+                        addresses.push(await signers[i].getAddress());
+                    }
+                    const chooseAddress = await prompt({
+                        type: 'list',
+                        name: 'address',
+                        message: 'Which address you want to choose:)',
+                        choices: addresses,
+                    });
+                    await quoteToken.transfer(
+                        chooseAddress.address,
+                        toBN(transferQuery.amount),
+                    );
+                }
+                break;
             case 'Calculate Premium': {
                 const policyCoverageQuery = await prompt({
                     type: 'input',
