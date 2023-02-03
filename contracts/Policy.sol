@@ -155,7 +155,8 @@ contract Policy is IPolicy, ERC721Enumerable {
             standardRisk,
             enteredEpochIndex,
             SPS,
-            address(metaDefender)
+            address(metaDefender),
+            address(epochManage)
         );
         return policyId;
     }
@@ -324,6 +325,7 @@ contract Policy is IPolicy, ERC721Enumerable {
         uint256 standardRisk,
         uint256 enteredEpochIndex,
         uint256 SPS,
-        address protocol
+        address protocol,
+        address epochManage
     );
 }
