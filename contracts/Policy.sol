@@ -119,7 +119,8 @@ contract Policy is IPolicy, ERC721Enumerable {
         uint64 enteredEpochIndex,
         uint256 duration,
         uint256 SPS,
-        uint256 standardRisk
+        uint256 standardRisk,
+        uint256 timestamp
     ) external override onlyMetaDefender returns (uint256) {
         if (msg.sender != metaDefender) {
             revert InsufficientPrivilege();
@@ -136,6 +137,7 @@ contract Policy is IPolicy, ERC721Enumerable {
             beneficiary,
             coverage,
             fee,
+            timestamp,
             duration,
             standardRisk,
             enteredEpochIndex,
@@ -149,6 +151,7 @@ contract Policy is IPolicy, ERC721Enumerable {
         emit NewPolicyMinted(
             beneficiary,
             policyId,
+            timestamp,
             coverage,
             fee,
             duration,
@@ -168,13 +171,10 @@ contract Policy is IPolicy, ERC721Enumerable {
     function isSettleAvailable(
         uint256 policyId
     ) external view override returns (bool) {
-        IEpochManage.EpochInfo memory currentEpochInfo = epochManage
-            .getCurrentEpochInfo();
-        IEpochManage.EpochInfo memory enteredEpochInfo = epochManage
-            .getEpochInfo(_policyInfo[policyId].enteredEpochIndex);
         require(
-            enteredEpochInfo.epochId.add(_policyInfo[policyId].duration) <
-                currentEpochInfo.epochId,
+            _policyInfo[policyId].timestamp.add(
+                _policyInfo[policyId].duration * 1 days
+            ) < block.timestamp,
             'policy is not expired'
         );
         require(
@@ -319,6 +319,7 @@ contract Policy is IPolicy, ERC721Enumerable {
     event NewPolicyMinted(
         address beneficiary,
         uint256 policyId,
+        uint256 timestamp,
         uint256 coverage,
         uint256 fee,
         uint256 duration,

@@ -90,11 +90,20 @@ async function main() {
     const _quoteToken = await hre.ethers.getContractFactory('TestERC20');
     const quoteToken = await _quoteToken.attach(res.testERC20);
 
+    const _metaDefenderMarketsRegistry = await hre.ethers.getContractFactory(
+        'MetaDefenderMarketsRegistry',
+    );
+    const marketRegistry = await _metaDefenderMarketsRegistry.attach(
+        res.metaDefenderMarketsRegistry,
+    );
+
     const _globalsViewer = await hre.ethers.getContractFactory('GlobalsViewer');
     const globalsViewer = await _globalsViewer.attach(res.globalsViewer);
 
     let currentSigner = await signers[0];
     const choices = [
+        'Get Rewards',
+        'Claim Rewards',
         'Provide Liquidity',
         'Liquidity Withdraw',
         'Buy Policy',
@@ -112,6 +121,7 @@ async function main() {
         'My Address',
         'Choose Address',
         'Add Market',
+        'Remove Market',
         'Exit',
     ];
 
@@ -122,33 +132,117 @@ async function main() {
             message: 'What do you want to do?',
             choices,
         });
-
         switch (answers.operation) {
-            case 'Transfer':
-                {
-                    const transferQuery = await prompt([
-                        {
-                            type: 'input',
-                            name: 'amount',
-                            message: 'How much token do you want to transfer?',
-                        },
-                    ]);
-                    const signers = await hre.ethers.getSigners();
-                    const addresses = [];
-                    for (let i = 0; i < signers.length; i++) {
-                        addresses.push(await signers[i].getAddress());
+            case 'Remove Market':
+                const markets_available =
+                    await marketRegistry.getInsuranceMarkets();
+                const markets = await prompt({
+                    type: 'list',
+                    name: 'name',
+                    message: 'Which markets you want to remove:)',
+                    choices: markets_available[1],
+                });
+                for (let i = 0; i < markets_available[1].length; i++) {
+                    if (markets_available[1][i] == markets.name) {
+                        await marketRegistry.removeMarket(
+                            markets_available[0][i],
+                        );
+                        break;
                     }
-                    const chooseAddress = await prompt({
-                        type: 'list',
-                        name: 'address',
-                        message: 'Which address you want to choose:)',
-                        choices: addresses,
-                    });
-                    await quoteToken.transfer(
-                        chooseAddress.address,
-                        toBN(transferQuery.amount),
+                }
+                break;
+            case 'Get Rewards':
+                const availableCertificate_get_rewards = [];
+                const certificatesToWithdraw_get_rewards =
+                    await liquidityCertificate.getLiquidityProviders(
+                        await currentSigner.getAddress(),
+                    );
+                for (
+                    let i = 0;
+                    i < certificatesToWithdraw_get_rewards.length;
+                    i++
+                ) {
+                    const certificateToWithdraw =
+                        await liquidityCertificate.getCertificateInfo(
+                            certificatesToWithdraw_get_rewards[i],
+                        );
+                    if (certificateToWithdraw.isValid) {
+                        availableCertificate_get_rewards.push(
+                            String(certificatesToWithdraw_get_rewards[i]),
+                        );
+                    }
+                }
+                const toGet = await prompt({
+                    type: 'list',
+                    name: 'certificateId',
+                    message: 'Which certificate you want to get rewards:)',
+                    choices: availableCertificate_get_rewards,
+                });
+                const rewards_to_get = await metaDefender.getRewards(
+                    toGet.certificateId,
+                    false,
+                );
+                console.log('rewards is ', rewards_to_get);
+                break;
+            case 'Claim Rewards':
+                const availableCertificate_claim_rewards = [];
+                const certificatesToWithdraw_claim_rewards =
+                    await liquidityCertificate.getLiquidityProviders(
+                        await currentSigner.getAddress(),
+                    );
+                for (
+                    let i = 0;
+                    i < certificatesToWithdraw_claim_rewards.length;
+                    i++
+                ) {
+                    const certificateToWithdraw =
+                        await liquidityCertificate.getCertificateInfo(
+                            certificatesToWithdraw_claim_rewards[i],
+                        );
+                    if (certificateToWithdraw.isValid) {
+                        availableCertificate_claim_rewards.push(
+                            String(certificatesToWithdraw_claim_rewards[i]),
+                        );
+                    }
+                }
+                const toClaim = await prompt({
+                    type: 'list',
+                    name: 'certificateId',
+                    message: 'Which certificate you want to claim:)',
+                    choices: availableCertificate_claim_rewards,
+                });
+                const rewards = await metaDefender.getRewards(
+                    toClaim.certificateId,
+                    false,
+                );
+                console.log('rewards is ', rewards);
+                await metaDefender.claimRewards(toClaim.certificateId);
+                break;
+            case 'Transfer':
+                const transferQuery = await prompt([
+                    {
+                        type: 'input',
+                        name: 'amount',
+                        message: 'How much token do you want to transfer?',
+                    },
+                ]);
+                const signers_transfer = await hre.ethers.getSigners();
+                const addresses_transfer = [];
+                for (let i = 0; i < signers_transfer.length; i++) {
+                    addresses_transfer.push(
+                        await signers_transfer[i].getAddress(),
                     );
                 }
+                const chooseAddress_transfer = await prompt({
+                    type: 'list',
+                    name: 'address',
+                    message: 'Which address you want to choose:)',
+                    choices: addresses_transfer,
+                });
+                await quoteToken.transfer(
+                    chooseAddress_transfer.address,
+                    toBN(transferQuery.amount),
+                );
                 break;
             case 'Calculate Premium': {
                 const policyCoverageQuery = await prompt({
