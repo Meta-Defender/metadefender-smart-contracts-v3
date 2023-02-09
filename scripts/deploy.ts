@@ -199,7 +199,7 @@ async function main(
     console.log('successfully registry the market');
 }
 
-main('compoundV8', 'a lending protocol', 'USDT', 'contract safety', 'ethereum')
+main('compoundV10', 'a lending protocol', 'USDT', 'contract safety', 'ethereum')
     .then(() => process.exit(0))
     .catch((error) => {
         console.error(error);

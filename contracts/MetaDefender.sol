@@ -243,9 +243,9 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
             epochManage.currentEpochIndex(),
             duration,
             deltaSPS,
-            globalInfo.standardRisk
+            globalInfo.standardRisk,
+            block.timestamp
         );
-
         emit NewPolicyMinted(policyId);
     }
 
@@ -527,13 +527,10 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
                     .divideDecimal(policyInfo.standardRisk)
                     .multiplyDecimal(BASE_POINT)
             );
-            IEpochManage.EpochInfo memory epochInfo = epochManage.getEpochInfo(
-                policyInfo.enteredEpochIndex
-            );
             if (
-                epochManage.getCurrentEpochInfo().epochId.sub(
-                    epochInfo.epochId
-                ) <= BUFFER
+                policyInfo.timestamp.add(policyInfo.duration * 1 days).add(
+                    BUFFER * 1 days
+                ) >= block.timestamp
             ) {
                 // to make sure the policyHolder himself settle.
                 require(

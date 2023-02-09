@@ -942,10 +942,8 @@ describe('MetaDefender - uint tests', async () => {
                 .connect(coverBuyer1)
                 .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
             await fastForward(86400 * 366);
-            expect(
-                await contracts.metaDefender
-                    .connect(coverBuyer2)
-                    .settlePolicy('0'),
+            await expect(
+                contracts.metaDefender.connect(coverBuyer2).settlePolicy('0'),
             ).to.be.revertedWith(
                 'Only policy holder can settle the policy in 3 days',
             );

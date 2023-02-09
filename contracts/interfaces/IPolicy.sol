@@ -6,6 +6,7 @@ interface IPolicy {
         address beneficiary;
         uint256 coverage;
         uint256 fee;
+        uint256 timestamp;
         uint256 duration;
         uint256 standardRisk;
         uint64 enteredEpochIndex;
@@ -42,7 +43,8 @@ interface IPolicy {
         uint64 enteredEpochIndex,
         uint256 duration,
         uint256 SPS,
-        uint256 standardRisk
+        uint256 standardRisk,
+        uint256 timestamp
     ) external returns (uint256);
 
     function burn(address spender, uint256 certificateId) external;

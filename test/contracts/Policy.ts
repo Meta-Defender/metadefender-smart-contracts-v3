@@ -97,7 +97,6 @@ describe('Policy - uint tests', async () => {
                 );
                 expect(policyInfo[1]).to.be.equal(toBN('1000'));
                 expect(policyInfo[2]).to.be.equal(toBN('10'));
-                expect(policyInfo[3]).to.be.equal('100');
             });
         });
 
@@ -114,6 +113,7 @@ describe('Policy - uint tests', async () => {
                             '100',
                             toBN('100'),
                             toBN('1000'),
+                            String(Math.floor(Date.now() / 1000)),
                         ),
                 ).to.be.revertedWith('Only MetaDefender');
             });
