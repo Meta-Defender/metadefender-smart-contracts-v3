@@ -7,7 +7,7 @@ import 'hardhat/console.sol';
 import './Lib/SafeDecimalMath.sol';
 
 // Inherited
-import '@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol';
 import './interfaces/ILiquidityCertificate.sol';
 
 /**
@@ -16,7 +16,7 @@ import './interfaces/ILiquidityCertificate.sol';
  * @dev An ERC721 token which represents a share of the LiquidityPool.
  * It is minted when users provide, and burned when users withdraw.
  */
-contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
+contract LiquidityCertificate is ILiquidityCertificate, ERC721EnumerableUpgradeable{
     using SafeMath for uint256;
     using SafeDecimalMath for uint256;
 
@@ -29,23 +29,14 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
     address public override protocol;
     uint256 public override totalValidCertificateLiquidity;
     uint256 public override totalPendingCertificateLiquidity;
-    bool internal initialized = false;
-
-    /**
-     * @param _name Token collection name
-     * @param _symbol Token collection symbol
-     */
-    constructor(
-        string memory _name,
-        string memory _symbol
-    ) ERC721(_name, _symbol) {}
+    bool internal initialized;
 
     /**
      * @dev Initialize the contract.
      * @param _metaDefender MetaDefender address.
      * @param _protocol Protocol address.
      */
-    function init(address _metaDefender, address _protocol) external {
+    function init(address _metaDefender, address _protocol, string memory _name, string memory _symbol) initializer external {
         require(
             _metaDefender != address(0),
             'liquidityPool cannot be 0 address'
@@ -53,6 +44,7 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721Enumerable {
         require(!initialized, 'already initialized');
         metaDefender = _metaDefender;
         protocol = _protocol;
+        __ERC721_init(_name, _symbol);
         initialized = true;
     }
 

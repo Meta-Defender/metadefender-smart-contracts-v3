@@ -8,7 +8,9 @@ import 'hardhat/console.sol';
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
+import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
 
 // interfaces
 import './interfaces/IMetaDefender.sol';
@@ -23,7 +25,7 @@ import './interfaces/IEpochManage.sol';
 import './interfaces/IAmericanBinaryOptions.sol';
 import './interfaces/IMetaDefender.sol';
 
-contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
+contract MetaDefender is IMetaDefender, ReentrancyGuardUpgradeable, OwnableUpgradeable{
     using SafeMath for uint256;
     using SafeMath for uint64;
     using SafeDecimalMath for uint256;
@@ -41,7 +43,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     IEpochManage internal epochManage;
     IAmericanBinaryOptions internal americanBinaryOptions;
 
-    bool public initialized = false;
+    bool private initialized;
     address public judger;
     address public official;
     address public protocol;
@@ -58,9 +60,6 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     uint256 public providerCount;
     // index the providers who exit the market
     uint256 public medalCount;
-
-    /// @dev Counter for reentrancy guard.
-    uint256 internal counter = 1;
 
     constructor() {}
 
@@ -255,7 +254,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      */
     function certificateProviderEntrance(
         uint256 amount
-    ) external override reentrancyGuard checkNewEpoch {
+    ) external override nonReentrant checkNewEpoch {
         aUSD.transferFrom(msg.sender, address(this), amount);
         providerCount = liquidityCertificate.mint(
             epochManage.currentEpochIndex(),
@@ -271,7 +270,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     function certificateProviderExit(
         uint256 certificateId,
         bool isForce
-    ) external override reentrancyGuard checkNewEpoch {
+    ) external override nonReentrant checkNewEpoch {
         if (isForce) {
             if (msg.sender != judger) {
                 revert InsufficientPrivilege();
@@ -462,7 +461,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      */
     function claimRewards(
         uint256 certificateId
-    ) external override reentrancyGuard checkNewEpoch {
+    ) external override nonReentrant checkNewEpoch {
         if (msg.sender != (liquidityCertificate.belongsTo(certificateId))) {
             revert InsufficientPrivilege();
         }
@@ -485,7 +484,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
      */
     function withdrawAfterExit(
         uint256 certificateId
-    ) external override reentrancyGuard checkNewEpoch {
+    ) external override nonReentrant checkNewEpoch {
         ILiquidityCertificate.CertificateInfo
             memory certificateInfo = liquidityCertificate.getCertificateInfo(
                 certificateId
@@ -678,17 +677,6 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
 
     function epochCheck() external override checkNewEpoch {}
 
-    modifier reentrancyGuard() virtual {
-        counter = counter.add(1);
-        // counter adds 1 to the existing 1 so becomes 2
-        uint256 guard = counter;
-        // assigns 2 to the "guard" variable
-        _;
-        if (guard != counter) {
-            revert ReentrancyGuardDetected();
-        }
-    }
-
     modifier checkNewEpoch() virtual {
         epochManage.checkAndCreateNewEpochAndUpdateLiquidity();
         _;
@@ -743,7 +731,6 @@ contract MetaDefender is IMetaDefender, ReentrancyGuard, Ownable {
     error ClaimUnderProcessing(uint256 id);
     error ClaimNotUnderProcessing(uint256 id);
     error InvalidMiningProxy(address proxy);
-    error ReentrancyGuardDetected();
     error InvalidAddress(address addr);
     error CertificateNotSignalWithdraw();
     error CertificateNotExit();

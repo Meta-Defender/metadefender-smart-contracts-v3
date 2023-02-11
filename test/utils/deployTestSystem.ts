@@ -1,5 +1,7 @@
 import { Signer } from 'ethers';
-import { ethers } from 'hardhat';
+import hre, { ethers } from 'hardhat';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { upgrades } = require('hardhat');
 import { toBN, ZERO_ADDRESS } from '../../scripts/util/web3utils';
 import {
     MetaDefender,
@@ -35,35 +37,38 @@ export async function deployTestContracts(
     // Deploy mocked contracts
 
     // Deploy real contracts
-    const metaDefender = (await (
-        await ethers.getContractFactory('MetaDefender')
-    )
-        .connect(deployer)
-        .deploy()) as MetaDefender;
+    const _metaDefender = await ethers.getContractFactory('MetaDefender');
+    const metaDefender = (await upgrades.deployProxy(
+        _metaDefender,
+        [],
+    )) as MetaDefender;
 
-    const liquidityCertificate = (await (
-        await ethers.getContractFactory('LiquidityCertificate')
-    )
-        .connect(deployer)
-        .deploy('liquidityCertificate', 'LC')) as LiquidityCertificate;
+    const _liquidityCertificate = await ethers.getContractFactory(
+        'LiquidityCertificate',
+    );
+    const liquidityCertificate = (await upgrades.deployProxy(
+        _liquidityCertificate,
+        [],
+    )) as LiquidityCertificate;
 
-    const policy = (await (await ethers.getContractFactory('Policy'))
-        .connect(deployer)
-        .deploy('policy', 'Policy')) as Policy;
+    const _policy = await ethers.getContractFactory('Policy');
+    const policy = (await upgrades.deployProxy(_policy, [])) as Policy;
 
-    const mockRiskReserve = (await (
-        await ethers.getContractFactory('MockRiskReserve')
-    )
-        .connect(deployer)
-        .deploy()) as MockRiskReserve;
+    const _mockRiskReserve = await ethers.getContractFactory('MockRiskReserve');
+    const mockRiskReserve = (await upgrades.deployProxy(
+        _mockRiskReserve,
+        [],
+    )) as MockRiskReserve;
 
     const quoteToken = (await (await ethers.getContractFactory('TestERC20'))
         .connect(deployer)
         .deploy('TQA', 'TQA')) as TestERC20;
 
-    const epochManage = (await (await ethers.getContractFactory('EpochManage'))
-        .connect(deployer)
-        .deploy()) as EpochManage;
+    const _epochManage = await ethers.getContractFactory('EpochManage');
+    const epochManage = (await upgrades.deployProxy(
+        _epochManage,
+        [],
+    )) as EpochManage;
 
     const americanBinaryOptions = (await (
         await ethers.getContractFactory('AmericanBinaryOptions')
@@ -124,12 +129,16 @@ export async function initTestSystem(
     await c.liquidityCertificate.init(
         c.metaDefender.address,
         overrides.protocol || ZERO_ADDRESS,
+        'LiquidityCertificate',
+        'LC',
     );
 
     await c.policy.init(
         c.metaDefender.address,
         overrides.protocol || ZERO_ADDRESS,
         c.epochManage.address,
+        'Policy',
+        'POL',
     );
 
     await c.mockRiskReserve.init(

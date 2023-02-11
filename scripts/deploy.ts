@@ -4,6 +4,8 @@ import { toBN, ZERO_ADDRESS } from './util/web3utils';
 import { Contract } from 'ethers';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hre = require('hardhat');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { ethers, upgrades } = require('hardhat');
 
 export type DeployedContracts = {
     globalsViewer: string;
@@ -43,32 +45,31 @@ async function main(
     const Signers = await hre.ethers.getSigners();
     // deploy
     const _MetaDefender = await hre.ethers.getContractFactory('MetaDefender');
-    const MetaDefender = await _MetaDefender.deploy();
+    const MetaDefender = await upgrades.deployProxy(_MetaDefender, []);
     console.log('successfully deployed MetaDefender: ' + MetaDefender.address);
-
     const _LiquidityCertificate = await hre.ethers.getContractFactory(
         'LiquidityCertificate',
     );
-    const LiquidityCertificate = await _LiquidityCertificate.deploy(
-        'liquidityCertificate',
-        'LC',
+    const LiquidityCertificate = await upgrades.deployProxy(
+        _LiquidityCertificate,
+        [],
     );
     console.log(
         'successfully deployed LiquidityCertificate: ' +
             LiquidityCertificate.address,
     );
     const _Policy = await hre.ethers.getContractFactory('Policy');
-    const Policy = await _Policy.deploy('Policy', 'Policy');
+    const Policy = await upgrades.deployProxy(_Policy, []);
     console.log('successfully deployed Policy: ' + Policy.address);
     const _MockRiskReserve = await hre.ethers.getContractFactory(
         'MockRiskReserve',
     );
-    const MockRiskReserve = await _MockRiskReserve.deploy();
+    const MockRiskReserve = await upgrades.deployProxy(_MockRiskReserve, []);
     console.log(
         'successfully deployed MockRiskReserve: ' + MockRiskReserve.address,
     );
     const _EpochManage = await hre.ethers.getContractFactory('EpochManage');
-    const EpochManage = await _EpochManage.deploy();
+    const EpochManage = await upgrades.deployProxy(_EpochManage, []);
     console.log('successfully deployed EpochManage: ' + EpochManage.address);
     const _AmericanBinaryOptions = await hre.ethers.getContractFactory(
         'AmericanBinaryOptions',
@@ -97,7 +98,6 @@ async function main(
                 MetaDefenderMarketsRegistry.address,
         );
         GlobalsViewer = await _GlobalsViewer.deploy();
-
         AmericanBinaryOptions = await _AmericanBinaryOptions.deploy();
         console.log(
             'successfully deployed AmericanBinaryOption: ' +
@@ -171,9 +171,20 @@ async function main(
         toBN('100'),
     );
     console.log('successfully init the MetaDefender contract');
-    await LiquidityCertificate.init(MetaDefender.address, ZERO_ADDRESS);
+    await LiquidityCertificate.init(
+        MetaDefender.address,
+        ZERO_ADDRESS,
+        'LiquidityCertificate',
+        'LC',
+    );
     console.log('successfully init the LiquidityCertificate contract');
-    await Policy.init(MetaDefender.address, ZERO_ADDRESS, EpochManage.address);
+    await Policy.init(
+        MetaDefender.address,
+        ZERO_ADDRESS,
+        EpochManage.address,
+        'Policy',
+        'POL',
+    );
     console.log('successfully init the Policy contract');
     await MockRiskReserve.init(MetaDefender.address, TestERC20.address);
     console.log('successfully init the MockRiskReserve contract');
@@ -199,7 +210,7 @@ async function main(
     console.log('successfully registry the market');
 }
 
-main('compoundV10', 'a lending protocol', 'USDT', 'contract safety', 'ethereum')
+main('compoundV13', 'a lending protocol', 'USDT', 'contract safety', 'ethereum')
     .then(() => process.exit(0))
     .catch((error) => {
         console.error(error);

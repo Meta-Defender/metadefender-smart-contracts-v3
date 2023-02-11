@@ -38,8 +38,12 @@ describe('Policy - uint tests', async () => {
                     contracts.metaDefender.address,
                     ZERO_ADDRESS,
                     contracts.epochManage.address,
+                    'Policy',
+                    'POL',
                 ),
-            ).to.be.revertedWith('already initialized');
+            ).to.be.revertedWith(
+                'Initializable: contract is already initialized',
+            );
         });
     });
 
