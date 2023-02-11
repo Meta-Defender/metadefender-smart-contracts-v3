@@ -6,6 +6,9 @@ import * as dotenv from 'dotenv';
 import chalk from 'chalk';
 import * as fs from 'fs-extra';
 import { DeployedContracts, Market } from '../deploy';
+import { Signer } from 'ethers';
+import { LiquidityCertificate } from '../../typechain-types';
+import { address } from 'hardhat/internal/core/config/config-validation';
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -42,6 +45,37 @@ async function fastForward(seconds: number) {
 async function currentTime() {
     const { timestamp } = await ethers.provider.getBlock('latest');
     return timestamp;
+}
+
+async function availableAddresses() {
+    const signers = await hre.ethers.getSigners();
+    const addresses = [];
+    for (let i = 0; i < signers.length; i++) {
+        addresses.push(await signers[i].getAddress());
+    }
+    return addresses;
+}
+
+async function getCurrentSignerAvailableCertificates(
+    liquidityCertificate: LiquidityCertificate,
+    currentSigner: Signer,
+) {
+    const currentSignerAvailableCertificates = [];
+    const allSignerCertificates =
+        await liquidityCertificate.getLiquidityProviders(
+            await currentSigner.getAddress(),
+        );
+    for (let i = 0; i < allSignerCertificates.length; i++) {
+        const certificateInfo = await liquidityCertificate.getCertificateInfo(
+            allSignerCertificates[i],
+        );
+        if (certificateInfo.isValid) {
+            currentSignerAvailableCertificates.push(
+                String(allSignerCertificates[i]),
+            );
+        }
+    }
+    return currentSignerAvailableCertificates;
 }
 
 async function main() {
@@ -125,6 +159,8 @@ async function main() {
         'Exit',
     ];
 
+    const markets_available = await marketRegistry.getInsuranceMarkets();
+
     while (true) {
         const answers = await prompt({
             type: 'list',
@@ -133,9 +169,10 @@ async function main() {
             choices,
         });
         switch (answers.operation) {
+            case 'Query Market Addresses':
+                console.log(markets_available);
+                break;
             case 'Remove Market':
-                const markets_available =
-                    await marketRegistry.getInsuranceMarkets();
                 const markets = await prompt({
                     type: 'list',
                     name: 'name',
@@ -151,72 +188,37 @@ async function main() {
                     }
                 }
                 break;
-            case 'Get Rewards':
-                const availableCertificate_get_rewards = [];
-                const certificatesToWithdraw_get_rewards =
-                    await liquidityCertificate.getLiquidityProviders(
-                        await currentSigner.getAddress(),
+            case 'Claim Rewards':
+                const csac_claim_rewards =
+                    await getCurrentSignerAvailableCertificates(
+                        liquidityCertificate,
+                        currentSigner,
                     );
-                for (
-                    let i = 0;
-                    i < certificatesToWithdraw_get_rewards.length;
-                    i++
-                ) {
-                    const certificateToWithdraw =
-                        await liquidityCertificate.getCertificateInfo(
-                            certificatesToWithdraw_get_rewards[i],
-                        );
-                    if (certificateToWithdraw.isValid) {
-                        availableCertificate_get_rewards.push(
-                            String(certificatesToWithdraw_get_rewards[i]),
-                        );
-                    }
-                }
-                const toGet = await prompt({
+                const claim_rewards = await prompt({
+                    type: 'list',
+                    name: 'certificateId',
+                    message: 'Which certificate you want to claim rewards:)',
+                    choices: csac_claim_rewards,
+                });
+                await metaDefender.claimRewards(claim_rewards.certificateId);
+                break;
+            case 'Get Rewards':
+                const csac_get_rewards =
+                    await getCurrentSignerAvailableCertificates(
+                        liquidityCertificate,
+                        currentSigner,
+                    );
+                const get_rewards = await prompt({
                     type: 'list',
                     name: 'certificateId',
                     message: 'Which certificate you want to get rewards:)',
-                    choices: availableCertificate_get_rewards,
-                });
-                const rewards_to_get = await metaDefender.getRewards(
-                    toGet.certificateId,
-                    false,
-                );
-                console.log('rewards is ', rewards_to_get);
-                break;
-            case 'Claim Rewards':
-                const availableCertificate_claim_rewards = [];
-                const certificatesToWithdraw_claim_rewards =
-                    await liquidityCertificate.getLiquidityProviders(
-                        await currentSigner.getAddress(),
-                    );
-                for (
-                    let i = 0;
-                    i < certificatesToWithdraw_claim_rewards.length;
-                    i++
-                ) {
-                    const certificateToWithdraw =
-                        await liquidityCertificate.getCertificateInfo(
-                            certificatesToWithdraw_claim_rewards[i],
-                        );
-                    if (certificateToWithdraw.isValid) {
-                        availableCertificate_claim_rewards.push(
-                            String(certificatesToWithdraw_claim_rewards[i]),
-                        );
-                    }
-                }
-                const toClaim = await prompt({
-                    type: 'list',
-                    name: 'certificateId',
-                    message: 'Which certificate you want to claim:)',
-                    choices: availableCertificate_claim_rewards,
+                    choices: csac_get_rewards,
                 });
                 const rewards = await metaDefender.getRewards(
-                    toClaim.certificateId,
+                    get_rewards.certificateId,
                     false,
                 );
                 console.log('rewards is ', rewards);
-                await metaDefender.claimRewards(toClaim.certificateId);
                 break;
             case 'Transfer':
                 const transferQuery = await prompt([
@@ -226,13 +228,7 @@ async function main() {
                         message: 'How much token do you want to transfer?',
                     },
                 ]);
-                const signers_transfer = await hre.ethers.getSigners();
-                const addresses_transfer = [];
-                for (let i = 0; i < signers_transfer.length; i++) {
-                    addresses_transfer.push(
-                        await signers_transfer[i].getAddress(),
-                    );
-                }
+                const addresses_transfer = availableAddresses();
                 const chooseAddress_transfer = await prompt({
                     type: 'list',
                     name: 'address',
@@ -283,14 +279,8 @@ async function main() {
                     message: 'Which address you want to choose:)',
                     choices: addresses,
                 });
-                for (let i = 0; i < signers.length; i++) {
-                    if (
-                        chooseAddress.address ===
-                        (await signers[i].getAddress())
-                    ) {
-                        currentSigner = signers[i];
-                    }
-                }
+                currentSigner =
+                    signers[addresses.indexOf(chooseAddress.address)];
                 break;
             case 'My Address':
                 console.log(chalk.green(await currentSigner.getAddress()));
@@ -386,32 +376,21 @@ async function main() {
                 console.log('current time is ' + (await currentTime()));
                 break;
             case 'Liquidity Withdraw':
-                const availableCertificate = [];
-                const certificatesToWithdraw =
-                    await liquidityCertificate.getLiquidityProviders(
-                        await currentSigner.getAddress(),
+                const csac_withdraw =
+                    await getCurrentSignerAvailableCertificates(
+                        liquidityCertificate,
+                        currentSigner,
                     );
-                for (let i = 0; i < certificatesToWithdraw.length; i++) {
-                    const certificateToWithdraw =
-                        await liquidityCertificate.getCertificateInfo(
-                            certificatesToWithdraw[i],
-                        );
-                    if (certificateToWithdraw.isValid) {
-                        availableCertificate.push(
-                            String(certificatesToWithdraw[i]),
-                        );
-                    }
-                }
-                const toBeWithdrawn = await prompt({
+                const withdraw = await prompt({
                     type: 'list',
                     name: 'certificateId',
                     message: 'Which certificate you want to withdraw:)',
-                    choices: availableCertificate,
+                    choices: csac_withdraw,
                 });
                 await metaDefender
                     .connect(currentSigner)
                     .certificateProviderExit(
-                        String(toBeWithdrawn.certificateId),
+                        String(withdraw.certificateId),
                         false,
                     );
                 break;

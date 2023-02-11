@@ -12,7 +12,7 @@ import "../Test-helpers/ITestERC20.sol";
 
 contract MockRiskReserve is IMockRiskReserve {
 
-    bool initialized = false;
+    bool internal initialized;
     ITestERC20 internal aUSD;
     IMetaDefender internal metaDefender;
 

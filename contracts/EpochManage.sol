@@ -22,7 +22,7 @@ contract EpochManage is IEpochManage {
     using SafeDecimalMath for uint256;
 
     uint64 public override currentEpochIndex;
-    bool public initialized = false;
+    bool public initialized;
 
     ILiquidityCertificate internal liquidityCertificate;
     IPolicy internal policy;
