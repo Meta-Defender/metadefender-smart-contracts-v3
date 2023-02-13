@@ -44,33 +44,64 @@ async function main(
     }
     const Signers = await hre.ethers.getSigners();
     // deploy
+    // now set to proxy contracts are:
+    // MetaDefender, LiquidityCertificate, Policy, MockRiskReserve, EpochManage
     const _MetaDefender = await hre.ethers.getContractFactory('MetaDefender');
-    const MetaDefender = await upgrades.deployProxy(_MetaDefender, []);
-    console.log('successfully deployed MetaDefender: ' + MetaDefender.address);
+    const MetaDefender = await upgrades.deployProxy(_MetaDefender, [], {
+        useDeployedImplementation: false,
+    });
+    console.log(
+        'successfully deployed MetaDefender: ' +
+            MetaDefender.address +
+            ' ' +
+            MetaDefender.deployTransaction.hash,
+    );
     const _LiquidityCertificate = await hre.ethers.getContractFactory(
         'LiquidityCertificate',
     );
     const LiquidityCertificate = await upgrades.deployProxy(
         _LiquidityCertificate,
         [],
+        { useDeployedImplementation: false },
     );
     console.log(
         'successfully deployed LiquidityCertificate: ' +
-            LiquidityCertificate.address,
+            LiquidityCertificate.address +
+            ' ' +
+            LiquidityCertificate.deployTransaction.hash,
     );
     const _Policy = await hre.ethers.getContractFactory('Policy');
-    const Policy = await upgrades.deployProxy(_Policy, []);
-    console.log('successfully deployed Policy: ' + Policy.address);
+    const Policy = await upgrades.deployProxy(_Policy, [], {
+        useDeployedImplementation: false,
+    });
+    console.log(
+        'successfully deployed Policy: ' +
+            Policy.address +
+            ' ' +
+            Policy.deployTransaction.hash,
+    );
     const _MockRiskReserve = await hre.ethers.getContractFactory(
         'MockRiskReserve',
     );
-    const MockRiskReserve = await upgrades.deployProxy(_MockRiskReserve, []);
+    const MockRiskReserve = await upgrades.deployProxy(_MockRiskReserve, [], {
+        useDeployedImplementation: false,
+    });
     console.log(
-        'successfully deployed MockRiskReserve: ' + MockRiskReserve.address,
+        'successfully deployed MockRiskReserve: ' +
+            MockRiskReserve.address +
+            ' ' +
+            MockRiskReserve.deployTransaction.hash,
     );
     const _EpochManage = await hre.ethers.getContractFactory('EpochManage');
-    const EpochManage = await upgrades.deployProxy(_EpochManage, []);
-    console.log('successfully deployed EpochManage: ' + EpochManage.address);
+    const EpochManage = await upgrades.deployProxy(_EpochManage, [], {
+        useDeployedImplementation: false,
+    });
+    console.log(
+        'successfully deployed EpochManage: ' +
+            EpochManage.address +
+            ' ' +
+            EpochManage.deployTransaction.hash,
+    );
     const _AmericanBinaryOptions = await hre.ethers.getContractFactory(
         'AmericanBinaryOptions',
     );
@@ -210,7 +241,7 @@ async function main(
     console.log('successfully registry the market');
 }
 
-main('compoundV13', 'a lending protocol', 'USDT', 'contract safety', 'ethereum')
+main('compoundV15', 'a lending protocol', 'USDT', 'contract safety', 'ethereum')
     .then(() => process.exit(0))
     .catch((error) => {
         console.error(error);
