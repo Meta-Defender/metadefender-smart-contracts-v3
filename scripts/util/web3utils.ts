@@ -1,6 +1,10 @@
 import { Result } from '@ethersproject/abi';
-import { BigNumber, ContractReceipt, ethers } from 'ethers';
+import { BigNumber, ContractReceipt } from 'ethers';
+import { ethers } from 'hardhat';
 
+const {
+    calcEthereumTransactionParams,
+} = require('@acala-network/eth-providers');
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 export const MOCK_PROXY_ADDRESS = '0x0000000000000000000000000000000000000001';
 export const MOCK_MINING_ADDRESS = '0x0000000000000000000000000000000000000001';
@@ -18,6 +22,29 @@ export const TradeType = {
     LONG_PUT: 2,
     SHORT_PUT: 3,
 };
+
+export type AcalaTxParams = {
+    txGasPrice: BigNumber;
+    txGasLimit: BigNumber;
+};
+
+export async function txParams(): Promise<AcalaTxParams> {
+    const txFeePerGas = '199999946752';
+    const storageByteDeposit = '100000000000000';
+    const blockNumber = await ethers.provider.getBlockNumber();
+
+    const ethParams = calcEthereumTransactionParams({
+        gasLimit: '21000000',
+        validUntil: (blockNumber + 100).toString(),
+        storageLimit: '64001',
+        txFeePerGas,
+        storageByteDeposit,
+    });
+    return {
+        txGasPrice: ethParams.txGasPrice,
+        txGasLimit: ethParams.txGasLimit,
+    };
+}
 
 // allow for decimals to be passed in up to 9dp of precision
 export function toBN(val: string) {
