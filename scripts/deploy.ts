@@ -1,6 +1,6 @@
 import * as fs from 'fs-extra';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { toBN, ZERO_ADDRESS } from './util/web3utils';
+import { toBN, txParams, ZERO_ADDRESS } from './util/web3utils';
 import { Contract } from 'ethers';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hre = require('hardhat');
@@ -43,12 +43,16 @@ async function main(
         res.markets = markets;
     }
     const Signers = await hre.ethers.getSigners();
+    // in acala testnet, we should get the txparams first
+    const tp = await txParams();
     // deploy
     // now set to proxy contracts are:
     // MetaDefender, LiquidityCertificate, Policy, MockRiskReserve, EpochManage
     const _MetaDefender = await hre.ethers.getContractFactory('MetaDefender');
     const MetaDefender = await upgrades.deployProxy(_MetaDefender, [], {
         useDeployedImplementation: false,
+        gasPrice: tp.txGasPrice,
+        gasLimit: tp.txGasLimit,
     });
     console.log(
         'successfully deployed MetaDefender: ' +

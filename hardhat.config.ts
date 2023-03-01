@@ -15,6 +15,15 @@ const config: HardhatUserConfig = {
         },
     },
     networks: {
+        mandala: {
+            url: 'http://127.0.0.1:8545',
+            accounts: {
+                mnemonic:
+                    'fox sight canyon orphan hotel grow hedgehog build bless august weather swarm',
+                path: "m/44'/60'/0'/0",
+            },
+            chainId: 595,
+        },
         mumbai: {
             url: 'https://polygon-mumbai.g.alchemy.com/v2/XwvHq5PMWDVxAakHt5wdOQWedUdED9C5',
             accounts: [
