@@ -4,19 +4,19 @@ pragma solidity 0.8.9;
 // Libraries
 import './Lib/SafeDecimalMath.sol';
 
-import 'hardhat/console.sol';
-
 // Inherited
 import './interfaces/IEpochManage.sol';
 import './interfaces/IMetaDefender.sol';
 import './interfaces/ILiquidityCertificate.sol';
 import './interfaces/IPolicy.sol';
 
-// console
+// oz
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
 
 /// @title Epoch
 /// @notice Contains functions for managing epoch processes and relevant calculations
-contract EpochManage is IEpochManage {
+contract EpochManage is IEpochManage, Initializable{
     using SafeMath for uint256;
     using SafeMath for uint64;
     using SafeDecimalMath for uint256;
@@ -38,7 +38,7 @@ contract EpochManage is IEpochManage {
         IMetaDefender _metaDefender,
         ILiquidityCertificate _liquidityCertificate,
         IPolicy _policy
-    ) external {
+    ) external initializer {
         require(!initialized, 'already initialized');
         require(
             address(_metaDefender) != address(0),

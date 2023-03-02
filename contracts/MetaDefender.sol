@@ -13,19 +13,21 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
 
 // interfaces
-import './interfaces/IMetaDefender.sol';
 import './interfaces/IMockRiskReserve.sol';
 import './interfaces/ILiquidityCertificate.sol';
 import './interfaces/IPolicy.sol';
 import './interfaces/IEpochManage.sol';
-
-import './Lib/SafeDecimalMath.sol';
-import './interfaces/IEpochManage.sol';
-import './interfaces/IEpochManage.sol';
 import './interfaces/IAmericanBinaryOptions.sol';
 import './interfaces/IMetaDefender.sol';
 
-contract MetaDefender is IMetaDefender, ReentrancyGuardUpgradeable, OwnableUpgradeable{
+// Libs
+import './Lib/SafeDecimalMath.sol';
+
+contract MetaDefender is
+    IMetaDefender,
+    ReentrancyGuardUpgradeable,
+    OwnableUpgradeable
+{
     using SafeMath for uint256;
     using SafeMath for uint64;
     using SafeDecimalMath for uint256;
@@ -95,7 +97,7 @@ contract MetaDefender is IMetaDefender, ReentrancyGuardUpgradeable, OwnableUpgra
         uint256 _initialRisk,
         uint256 _teamReserveRate,
         uint256 _standardRisk
-    ) external {
+    ) external initializer {
         if (initialized) {
             revert ContractAlreadyInitialized();
         }

@@ -16,7 +16,10 @@ interface IMetaDefenderMarketsRegistry {
         string network;
     }
 
-    function getInsuranceMarkets() external view returns (address[] memory, string[] memory);
+    function getInsuranceMarkets()
+        external
+        view
+        returns (address[] memory, string[] memory);
 
     function getInsuranceMarketsAddressesAndMessages(
         address[] calldata

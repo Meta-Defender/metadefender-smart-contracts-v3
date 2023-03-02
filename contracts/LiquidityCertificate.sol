@@ -1,13 +1,13 @@
 //SPDX-License-Identifier: ISC
 pragma solidity 0.8.9;
 
-import 'hardhat/console.sol';
-
 // Libraries
 import './Lib/SafeDecimalMath.sol';
 
-// Inherited
+// oz
 import '@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol';
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
 import './interfaces/ILiquidityCertificate.sol';
 
 /**
@@ -16,7 +16,10 @@ import './interfaces/ILiquidityCertificate.sol';
  * @dev An ERC721 token which represents a share of the LiquidityPool.
  * It is minted when users provide, and burned when users withdraw.
  */
-contract LiquidityCertificate is ILiquidityCertificate, ERC721EnumerableUpgradeable{
+contract LiquidityCertificate is
+    ILiquidityCertificate,
+    ERC721EnumerableUpgradeable
+{
     using SafeMath for uint256;
     using SafeDecimalMath for uint256;
 
@@ -36,7 +39,12 @@ contract LiquidityCertificate is ILiquidityCertificate, ERC721EnumerableUpgradea
      * @param _metaDefender MetaDefender address.
      * @param _protocol Protocol address.
      */
-    function init(address _metaDefender, address _protocol, string memory _name, string memory _symbol) initializer external {
+    function init(
+        address _metaDefender,
+        address _protocol,
+        string memory _name,
+        string memory _symbol
+    ) external initializer {
         require(
             _metaDefender != address(0),
             'liquidityPool cannot be 0 address'
