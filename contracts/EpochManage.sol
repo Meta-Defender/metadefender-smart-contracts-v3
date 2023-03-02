@@ -39,7 +39,6 @@ contract EpochManage is IEpochManage, Initializable{
         ILiquidityCertificate _liquidityCertificate,
         IPolicy _policy
     ) external initializer {
-        require(!initialized, 'already initialized');
         require(
             address(_metaDefender) != address(0),
             'liquidityPool cannot be 0 address'
