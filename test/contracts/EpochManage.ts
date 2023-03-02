@@ -34,7 +34,9 @@ describe('EpochManage - uint tests', async () => {
                     contracts.liquidityCertificate.address,
                     contracts.policy.address,
                 ),
-            ).to.be.revertedWith('already initialized');
+            ).to.be.revertedWith(
+                'Initializable: contract is already initialized',
+            );
         });
     });
 

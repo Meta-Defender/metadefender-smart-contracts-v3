@@ -59,9 +59,8 @@ describe('MetaDefender - uint tests', async () => {
                     toBN('0.0'),
                     toBN('100'),
                 ),
-            ).to.be.revertedWithCustomError(
-                contracts.metaDefender,
-                'ContractAlreadyInitialized',
+            ).to.be.revertedWith(
+                'Initializable: contract is already initialized',
             );
         });
     });

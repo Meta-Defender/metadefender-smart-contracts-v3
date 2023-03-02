@@ -98,9 +98,6 @@ contract MetaDefender is
         uint256 _teamReserveRate,
         uint256 _standardRisk
     ) external initializer {
-        if (initialized) {
-            revert ContractAlreadyInitialized();
-        }
         aUSD = _aUSD;
         judger = _judger;
         official = _official;
@@ -714,7 +711,6 @@ contract MetaDefender is
      * @notice errors
      */
 
-    error ContractAlreadyInitialized();
     error InsufficientPrivilege();
     error InsufficientUsableCapital();
     error InsufficientLiquidity(uint256 id);
