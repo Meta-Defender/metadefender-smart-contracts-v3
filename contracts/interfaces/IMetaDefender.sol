@@ -39,7 +39,10 @@ interface IMetaDefender {
 
     function certificateProviderEntrance(uint256 _amount) external;
 
-    function certificateProviderExit(uint256 certificateId, bool isForce) external;
+    function certificateProviderExit(
+        uint256 certificateId,
+        bool isForce
+    ) external;
 
     function settlePolicy(uint256 policyId) external;
 

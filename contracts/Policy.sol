@@ -15,7 +15,7 @@ import './interfaces/IEpochManage.sol';
  * @dev An ERC721 token which represents a policy.
  * It is minted when users buy the cover.
  */
-contract Policy is IPolicy, ERC721EnumerableUpgradeable{
+contract Policy is IPolicy, ERC721EnumerableUpgradeable {
     using SafeMath for uint256;
     using SafeDecimalMath for uint256;
 
@@ -42,7 +42,7 @@ contract Policy is IPolicy, ERC721EnumerableUpgradeable{
         IEpochManage _epochManage,
         string memory _name,
         string memory _symbol
-    ) initializer external {
+    ) external initializer {
         require(!initialized, 'already initialized');
         require(
             _metaDefender != address(0),

@@ -1877,6 +1877,13 @@
   dependencies:
     "antlr4ts" "^0.5.0-alpha.4"
 
+"@solidity-parser/parser@^0.15.0":
+  "integrity" "sha512-5UFJJTzWi1hgFk6aGCZ5rxG2DJkCJOzJ74qg7UkWSNCDSigW+CJLoYUb5bLiKrtI34Nr9rpFSUNHfkqtlL+N/w=="
+  "resolved" "https://registry.npmjs.org/@solidity-parser/parser/-/parser-0.15.0.tgz"
+  "version" "0.15.0"
+  dependencies:
+    "antlr4ts" "^0.5.0-alpha.4"
+
 "@substrate/connect-extension-protocol@^1.0.1":
   "integrity" "sha512-161JhCC1csjH3GE5mPLEd7HbWtwNSPJBg3p1Ksz9SFlTzj/bgEwudiRN2y5i0MoLGCIJRYKyKGMxVnd29PzNjg=="
   "resolved" "https://registry.npmjs.org/@substrate/connect-extension-protocol/-/connect-extension-protocol-1.0.1.tgz"
@@ -8388,10 +8395,19 @@
   dependencies:
     "fast-diff" "^1.1.2"
 
-"prettier@^2.3.1", "prettier@^2.7.1", "prettier@>=2.0.0":
-  "integrity" "sha512-ujppO+MkdPqoVINuDFDRLClm7D78qbDt0/NR+wp5FqEZOoTNAjPHWj17QRhu7geIHJfcNhRk1XVQmF8Bp3ye+g=="
-  "resolved" "https://registry.npmmirror.com/prettier/-/prettier-2.7.1.tgz"
-  "version" "2.7.1"
+"prettier-plugin-solidity@^1.1.2":
+  "integrity" "sha512-KC5oNbFJfyBaFiO0kl56J6AXnDmr9tUlBV1iqo864x4KQrKYKaBZvW9jhT2oC0NHoNp7/GoMJNxqL8pp8k7C/g=="
+  "resolved" "https://registry.npmjs.org/prettier-plugin-solidity/-/prettier-plugin-solidity-1.1.2.tgz"
+  "version" "1.1.2"
+  dependencies:
+    "@solidity-parser/parser" "^0.15.0"
+    "semver" "^7.3.8"
+    "solidity-comments-extractor" "^0.0.7"
+
+"prettier@^2.3.1", "prettier@^2.8.4", "prettier@>=2.0.0", "prettier@>=2.3.0 || >=3.0.0-alpha.0":
+  "integrity" "sha512-vIS4Rlc2FNh0BySk3Wkd6xmwxB0FpOndW5fisM5H8hsZSxU2VWVB5CWIkIjWvrHjIhxk2g3bfMKM87zNTrZddw=="
+  "resolved" "https://registry.npmjs.org/prettier/-/prettier-2.8.4.tgz"
+  "version" "2.8.4"
 
 "process-nextick-args@~2.0.0":
   "integrity" "sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag=="
@@ -9080,6 +9096,13 @@
   dependencies:
     "lru-cache" "^6.0.0"
 
+"semver@^7.3.8":
+  "integrity" "sha512-NB1ctGL5rlHrPJtFDVIVzTyQylMLu9N9VICA6HSFJo8MCGVTMW6gfpicwKmmK/dAjTOrqu5l63JJOpDSrAis3A=="
+  "resolved" "https://registry.npmjs.org/semver/-/semver-7.3.8.tgz"
+  "version" "7.3.8"
+  dependencies:
+    "lru-cache" "^6.0.0"
+
 "semver@2 || 3 || 4 || 5":
   "integrity" "sha512-sauaDf/PZdVgrLTNYHRtpXa1iRiKcaebiKQ1BJdpQlWH2lCvexQdX55snPFyK7QzpudqbCI0qXFfOasHdyNDGQ=="
   "resolved" "https://registry.npmjs.org/semver/-/semver-5.7.1.tgz"
@@ -9300,6 +9323,11 @@
   "integrity" "sha512-N6uqfaDulVZqjpjru+KvMLjV89M3hesyr/1/t8nkjohRagFSDmDxZvb9viKV98pdwpMzs61Nt2JAApgh0fkL0g=="
   "resolved" "https://registry.npmjs.org/solidity-ast/-/solidity-ast-0.4.45.tgz"
   "version" "0.4.45"
+
+"solidity-comments-extractor@^0.0.7":
+  "integrity" "sha512-wciNMLg/Irp8OKGrh3S2tfvZiZ0NEyILfcRCXCD4mp7SgK/i9gzLfhY2hY7VMCQJ3kH9UB9BzNdibIVMchzyYw=="
+  "resolved" "https://registry.npmjs.org/solidity-comments-extractor/-/solidity-comments-extractor-0.0.7.tgz"
+  "version" "0.0.7"
 
 "solidity-coverage@^0.8.1", "solidity-coverage@^0.8.2":
   "integrity" "sha512-cv2bWb7lOXPE9/SSleDO6czkFiMHgP4NXPj+iW9W7iEKLBk7Cj0AGBiNmGX3V1totl9wjPrT0gHmABZKZt65rQ=="

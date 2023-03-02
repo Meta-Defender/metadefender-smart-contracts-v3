@@ -1,11 +1,11 @@
 import * as fs from 'fs-extra';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { toBN, txParams, ZERO_ADDRESS } from './util/web3utils';
+import { AcalaTxParams, toBN, txParams, ZERO_ADDRESS } from './util/web3utils';
 import { Contract } from 'ethers';
+import { providerOverrides } from './util/overrideProvider';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hre = require('hardhat');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { ethers, upgrades } = require('hardhat');
+const { upgrades } = require('hardhat');
 
 export type DeployedContracts = {
     globalsViewer: string;
@@ -42,17 +42,21 @@ async function main(
         res = {} as DeployedContracts;
         res.markets = markets;
     }
-    const Signers = await hre.ethers.getSigners();
+    const signers = await hre.ethers.getSigners();
     // in acala testnet, we should get the txparams first
-    const tp = await txParams();
+    if (hre.network.name === 'mandala') {
+        const res = await providerOverrides();
+        signers[0] = res.signers[0];
+    }
     // deploy
     // now set to proxy contracts are:
     // MetaDefender, LiquidityCertificate, Policy, MockRiskReserve, EpochManage
-    const _MetaDefender = await hre.ethers.getContractFactory('MetaDefender');
+    const _MetaDefender = await hre.ethers.getContractFactory(
+        'MetaDefender',
+        signers[0],
+    );
     const MetaDefender = await upgrades.deployProxy(_MetaDefender, [], {
         useDeployedImplementation: false,
-        gasPrice: tp.txGasPrice,
-        gasLimit: tp.txGasLimit,
     });
     console.log(
         'successfully deployed MetaDefender: ' +
@@ -62,11 +66,14 @@ async function main(
     );
     const _LiquidityCertificate = await hre.ethers.getContractFactory(
         'LiquidityCertificate',
+        signers[0],
     );
     const LiquidityCertificate = await upgrades.deployProxy(
         _LiquidityCertificate,
         [],
-        { useDeployedImplementation: false },
+        {
+            useDeployedImplementation: false,
+        },
     );
     console.log(
         'successfully deployed LiquidityCertificate: ' +
@@ -74,7 +81,7 @@ async function main(
             ' ' +
             LiquidityCertificate.deployTransaction.hash,
     );
-    const _Policy = await hre.ethers.getContractFactory('Policy');
+    const _Policy = await hre.ethers.getContractFactory('Policy', signers[0]);
     const Policy = await upgrades.deployProxy(_Policy, [], {
         useDeployedImplementation: false,
     });
@@ -86,6 +93,7 @@ async function main(
     );
     const _MockRiskReserve = await hre.ethers.getContractFactory(
         'MockRiskReserve',
+        signers[0],
     );
     const MockRiskReserve = await upgrades.deployProxy(_MockRiskReserve, [], {
         useDeployedImplementation: false,
@@ -96,7 +104,10 @@ async function main(
             ' ' +
             MockRiskReserve.deployTransaction.hash,
     );
-    const _EpochManage = await hre.ethers.getContractFactory('EpochManage');
+    const _EpochManage = await hre.ethers.getContractFactory(
+        'EpochManage',
+        signers[0],
+    );
     const EpochManage = await upgrades.deployProxy(_EpochManage, [], {
         useDeployedImplementation: false,
     });
@@ -108,12 +119,20 @@ async function main(
     );
     const _AmericanBinaryOptions = await hre.ethers.getContractFactory(
         'AmericanBinaryOptions',
+        signers[0],
     );
-    const _TestERC20 = await hre.ethers.getContractFactory('TestERC20');
+    const _TestERC20 = await hre.ethers.getContractFactory(
+        'TestERC20',
+        signers[0],
+    );
     // periphery contracts
-    const _GlobalsViewer = await hre.ethers.getContractFactory('GlobalsViewer');
+    const _GlobalsViewer = await hre.ethers.getContractFactory(
+        'GlobalsViewer',
+        signers[0],
+    );
     const _MetaDefenderMarketsRegistry = await hre.ethers.getContractFactory(
         'MetaDefenderMarketsRegistry',
+        signers[0],
     );
     let MetaDefenderMarketsRegistry: Contract;
     let GlobalsViewer: Contract;
@@ -194,8 +213,8 @@ async function main(
     // init the metaDefender contract
     await MetaDefender.init(
         TestERC20.address,
-        Signers[0].getAddress(),
-        Signers[0].getAddress(),
+        signers[0].getAddress(),
+        signers[0].getAddress(),
         MockRiskReserve.address,
         LiquidityCertificate.address,
         Policy.address,
@@ -245,7 +264,7 @@ async function main(
     console.log('successfully registry the market');
 }
 
-main('compoundV15', 'a lending protocol', 'USDT', 'contract safety', 'ethereum')
+main('compoundV17', 'A Lending Protocol', 'USDT', 'Contract Safety', 'Ethereum')
     .then(() => process.exit(0))
     .catch((error) => {
         console.error(error);

@@ -1,0 +1,288 @@
+{
+  "manifestVersion": "3.2",
+  "proxies": [],
+  "impls": {
+    "161df4dcee1872e2b8e0a74c9aa4b17e1ab0c000ec0913b1c821c18b4ef7422a": {
+      "address": "0x691556d73DB696A9f3508c2D35f0494026583e1D",
+      "txHash": "0xa174e241786ef6904325297047ad2de488de79a453f66a96c07d0d263b0bfedb",
+      "layout": {
+        "solcVersion": "0.8.9",
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "_status",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_uint256",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:38"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:80"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "globalInfo",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_struct(GlobalInfo)12714_storage",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:35"
+          },
+          {
+            "label": "aUSD",
+            "offset": 0,
+            "slot": "157",
+            "type": "t_contract(IERC20)4575",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:37"
+          },
+          {
+            "label": "validMiningProxy",
+            "offset": 0,
+            "slot": "158",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:39"
+          },
+          {
+            "label": "liquidityCertificate",
+            "offset": 0,
+            "slot": "159",
+            "type": "t_contract(ILiquidityCertificate)12698",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:42"
+          },
+          {
+            "label": "policy",
+            "offset": 0,
+            "slot": "160",
+            "type": "t_contract(IPolicy)13033",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:43"
+          },
+          {
+            "label": "mockRiskReserve",
+            "offset": 0,
+            "slot": "161",
+            "type": "t_contract(IMockRiskReserve)12893",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:44"
+          },
+          {
+            "label": "epochManage",
+            "offset": 0,
+            "slot": "162",
+            "type": "t_contract(IEpochManage)12585",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:45"
+          },
+          {
+            "label": "americanBinaryOptions",
+            "offset": 0,
+            "slot": "163",
+            "type": "t_contract(IAmericanBinaryOptions)12523",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:46"
+          },
+          {
+            "label": "initialized",
+            "offset": 20,
+            "slot": "163",
+            "type": "t_bool",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:48"
+          },
+          {
+            "label": "judger",
+            "offset": 0,
+            "slot": "164",
+            "type": "t_address",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:49"
+          },
+          {
+            "label": "official",
+            "offset": 0,
+            "slot": "165",
+            "type": "t_address",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:50"
+          },
+          {
+            "label": "protocol",
+            "offset": 0,
+            "slot": "166",
+            "type": "t_address",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:51"
+          },
+          {
+            "label": "teamReserveRate",
+            "offset": 0,
+            "slot": "167",
+            "type": "t_uint256",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:52"
+          },
+          {
+            "label": "providerCount",
+            "offset": 0,
+            "slot": "168",
+            "type": "t_uint256",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:62"
+          },
+          {
+            "label": "medalCount",
+            "offset": 0,
+            "slot": "169",
+            "type": "t_uint256",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:64"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(IAmericanBinaryOptions)12523": {
+            "label": "contract IAmericanBinaryOptions",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IERC20)4575": {
+            "label": "contract IERC20",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IEpochManage)12585": {
+            "label": "contract IEpochManage",
+            "numberOfBytes": "20"
+          },
+          "t_contract(ILiquidityCertificate)12698": {
+            "label": "contract ILiquidityCertificate",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IMockRiskReserve)12893": {
+            "label": "contract IMockRiskReserve",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IPolicy)13033": {
+            "label": "contract IPolicy",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(GlobalInfo)12714_storage": {
+            "label": "struct IMetaDefender.GlobalInfo",
+            "members": [
+              {
+                "label": "accSPS",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "accRPS",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "accRealSPS",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "risk",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "reward4Team",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "standardRisk",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              }
+            ],
+            "numberOfBytes": "192"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    }
+  }
+}

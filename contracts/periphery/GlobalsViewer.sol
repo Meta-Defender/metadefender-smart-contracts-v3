@@ -89,13 +89,15 @@ contract GlobalsViewer {
     }
 
     function getGlobals() public view returns (GlobalsView[] memory) {
-        (address[] memory markets,) = metaDefenderMarketsRegistry
+        (address[] memory markets, ) = metaDefenderMarketsRegistry
             .getInsuranceMarkets();
         (
             IMetaDefenderMarketsRegistry.MarketAddresses[]
                 memory marketAddresses,
 
-        ) = metaDefenderMarketsRegistry.getInsuranceMarketsAddressesAndMessages(markets);
+        ) = metaDefenderMarketsRegistry.getInsuranceMarketsAddressesAndMessages(
+                markets
+            );
         uint256 totalValidCertificateLiquidityInAll = 0;
         uint256 totalPendingCertificateLiquidityInAll = 0;
         uint256 totalCoverageInAll = 0;

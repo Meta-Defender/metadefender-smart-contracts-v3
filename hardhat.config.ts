@@ -10,11 +10,14 @@ const config: HardhatUserConfig = {
         settings: {
             optimizer: {
                 enabled: true,
-                runs: 200,
+                runs: 2000,
             },
         },
     },
     networks: {
+        hardhat: {
+            allowUnlimitedContractSize: true,
+        },
         mandala: {
             url: 'http://127.0.0.1:8545',
             accounts: {
@@ -22,6 +25,7 @@ const config: HardhatUserConfig = {
                     'fox sight canyon orphan hotel grow hedgehog build bless august weather swarm',
                 path: "m/44'/60'/0'/0",
             },
+            allowUnlimitedContractSize: true,
             chainId: 595,
         },
         mumbai: {

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import "../AmericanBinaryOptions.sol";
+import '../AmericanBinaryOptions.sol';
 
 contract TestAmericanBinaryOptions is AmericanBinaryOptions {
     using SafeDecimalMath for uint256;
@@ -36,7 +36,9 @@ contract TestAmericanBinaryOptions is AmericanBinaryOptions {
         return stdNormalCDF(x).preciseDecimalToDecimal();
     }
 
-    function annualise_pub(uint256 secs) external pure returns (uint256 yearFraction) {
+    function annualise_pub(
+        uint256 secs
+    ) external pure returns (uint256 yearFraction) {
         return annualise(secs).preciseDecimalToDecimal();
     }
 

@@ -92,7 +92,8 @@ contract MetaDefenderMarketsRegistry is Ownable, IMetaDefenderMarketsRegistry {
         }
         string[] memory messages = new string[](insuranceMarkets.length());
         for (uint256 i = 0; i < insuranceMarkets.length(); i++) {
-            messages[i] = insuranceMarketsMessages[insuranceMarkets.at(i)].marketName;
+            messages[i] = insuranceMarketsMessages[insuranceMarkets.at(i)]
+                .marketName;
         }
         return (addresses, messages);
     }
