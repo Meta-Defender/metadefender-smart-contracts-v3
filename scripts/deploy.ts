@@ -1,6 +1,6 @@
 import * as fs from 'fs-extra';
 import { AcalaTxParams, toBN, txParams, ZERO_ADDRESS } from './util/web3utils';
-import { Contract } from 'ethers';
+import { Contract, Signer } from 'ethers';
 import { providerOverrides } from './util/overrideProvider';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hre = require('hardhat');
@@ -35,6 +35,7 @@ async function main(
     network: string,
 ) {
     let res: DeployedContracts;
+    let signers: Signer[] = [];
     if (fs.existsSync('./.env.json')) {
         res = JSON.parse(fs.readFileSync('./.env.json', 'utf8'));
     } else {
@@ -42,12 +43,20 @@ async function main(
         res = {} as DeployedContracts;
         res.markets = markets;
     }
-    const signers = await hre.ethers.getSigners();
-    // in acala testnet, we should get the txparams first
-    if (hre.network.name === 'mandala') {
+    if (
+        String(hre.network.name) != 'mandala' &&
+        String(hre.network.name) != 'mandala_localhost'
+    ) {
+        console.log('NOT MANDALA');
+        console.log(hre.network.name);
+        signers = await hre.ethers.getSigners();
+    } else {
+        console.log('MANDALA');
         const res = await providerOverrides();
-        signers[0] = res.signers[0];
+        const signer = res.signers[1];
+        signers.push(signer);
     }
+    // in acala testnet, we should get the txparams first
     // deploy
     // now set to proxy contracts are:
     // MetaDefender, LiquidityCertificate, Policy, MockRiskReserve, EpochManage
@@ -264,7 +273,7 @@ async function main(
     console.log('successfully registry the market');
 }
 
-main('compoundV17', 'A Lending Protocol', 'USDT', 'Contract Safety', 'Ethereum')
+main('Test_Stable_Coins_', 'Stable Coin', 'USDT', 'DePeg', 'Acala')
     .then(() => process.exit(0))
     .catch((error) => {
         console.error(error);

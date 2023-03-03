@@ -8,7 +8,10 @@ export type overrideProvider = {
 };
 
 export async function providerOverrides(): Promise<overrideProvider> {
-    const ENDPOINT_URL = process.env.ENDPOINT_URL || 'ws://localhost:9944';
+    //localhost:9944 for local test
+    const ENDPOINT_URL =
+        process.env.ENDPOINT_URL || 'wss://mandala-rpc.aca-staging.network/ws';
+    // const ENDPOINT_URL = process.env.ENDPOINT_URL || 'ws://localhost:9944';
     const MNEMONIC =
         process.env.MNEMONIC ||
         'fox sight canyon orphan hotel grow hedgehog build bless august weather swarm';
@@ -27,7 +30,7 @@ export async function providerOverrides(): Promise<overrideProvider> {
         ethers.Wallet.fromMnemonic(MNEMONIC).connect(provider);
 
     const signer: Signer = new ethers.Wallet(
-        'ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
+        '7e8444e3b47e706d2190801a32c568edeaeab2fe16e9dafdb774a6fdc5a211b8',
         provider,
     );
 
