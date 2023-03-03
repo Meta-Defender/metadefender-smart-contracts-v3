@@ -16,12 +16,16 @@
     "typescript": "^4.9.5"
   },
   "scripts": {
-    "operation-mumbai":"hardhat run scripts/operations/index.ts --network mumbai",
     "prettier": "prettier --write 'contracts/**/*.sol'",
     "deploy": "hardhat run scripts/deploy.ts",
-    "deploy-mandala": "hardhat run scripts/deploy.ts --network mandala",
     "deploy-mumbai": "hardhat run scripts/deploy.ts --network mumbai",
-    "deploy-mandala:pubDev": "hardhat run scripts/deploy.js --network mandalaPubDev"
+    "operation-mumbai":"hardhat run scripts/operations/index.ts --network mumbai",
+    "deploy-mandala-localhost": "hardhat run scripts/deploy.ts --network mandala_localhost",
+    "operation-mandala-localhost": "hardhat run scripts/operations/index.ts --network mandala_localhost",
+    "deploy-mandala": "hardhat run scripts/deploy.ts --network mandala",
+    "operation-mandala": "hardhat run scripts/operations/index.ts --network mandala",
+    "deploy-mandala:pubDev": "hardhat run scripts/deploy.js --network mandalaPubDev",
+    "operation-mandala:pubDev": "hardhat run scripts/operations/index.ts --network mandalaPubDev"
   },
   "dependencies": {
     "@extra-math/erf": "^1.1.18",
