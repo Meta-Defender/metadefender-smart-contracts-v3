@@ -36,8 +36,13 @@ async function main(
 ) {
     let res: DeployedContracts;
     let signers: Signer[] = [];
-    if (fs.existsSync('./.env.json')) {
-        res = JSON.parse(fs.readFileSync('./.env.json', 'utf8'));
+    if (fs.existsSync('./.env.' + String(hre.network.name) + '.json')) {
+        res = JSON.parse(
+            fs.readFileSync(
+                './.env.' + String(hre.network.name) + '.json',
+                'utf8',
+            ),
+        );
     } else {
         const markets: Market[] = [];
         res = {} as DeployedContracts;
@@ -217,7 +222,10 @@ async function main(
     res['metaDefenderMarketsRegistry'] = metaDefenderMarketsRegistryAddress;
     res['testERC20'] = testERC20Address;
     res['americanBinaryOptions'] = americanBinaryOptionsAddress;
-    fs.writeFileSync('./.env.json', JSON.stringify(res, null, 2));
+    fs.writeFileSync(
+        './.env.' + String(hre.network.name) + '.json',
+        JSON.stringify(res, null, 2),
+    );
     // begin init the contracts
     // init the metaDefender contract
     await MetaDefender.init(
@@ -273,7 +281,7 @@ async function main(
     console.log('successfully registry the market');
 }
 
-main('Test_Stable_Coins_', 'Stable Coin', 'USDT', 'DePeg', 'Acala')
+main('Test_Lending_Pool_', 'Lending Pool', 'USDT', 'Contract Safety', 'Acala')
     .then(() => process.exit(0))
     .catch((error) => {
         console.error(error);
