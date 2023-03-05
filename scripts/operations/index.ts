@@ -81,8 +81,13 @@ async function getCurrentSignerAvailableCertificates(
 async function main() {
     const prompt = inquirer.createPromptModule();
     let res: DeployedContracts = {} as DeployedContracts;
-    if (fs.existsSync('./.env.json')) {
-        res = JSON.parse(fs.readFileSync('./.env.json', 'utf8'));
+    if (fs.existsSync('./.env.' + String(hre.network.name) + '.json')) {
+        res = JSON.parse(
+            fs.readFileSync(
+                './.env.' + String(hre.network.name) + '.json',
+                'utf8',
+            ),
+        );
     } else {
         throw new Error('No .env.json file found');
     }
@@ -344,15 +349,16 @@ async function main() {
                 }
                 break;
             case 'Give Me Some Test Token':
-                const res = await quoteToken
+                const faucet = await quoteToken
                     .connect(currentSigner)
                     .mint(await currentSigner.getAddress(), toBN('10000'));
-                console.log(res.hash);
+                console.log(faucet.hash);
                 break;
             case 'Approve':
-                await quoteToken
+                const approval = await quoteToken
                     .connect(currentSigner)
                     .approve(metaDefender.address, toBN('99999999'));
+                console.log(approval.hash);
                 break;
             case 'Provide Liquidity':
                 const provideLiquidity = await prompt({
