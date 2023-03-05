@@ -52,14 +52,17 @@ async function main(
         String(hre.network.name) != 'mandala' &&
         String(hre.network.name) != 'mandala_localhost'
     ) {
-        console.log('NOT MANDALA');
-        console.log(hre.network.name);
+        console.log('detected network' + hre.network.name);
         signers = await hre.ethers.getSigners();
     } else {
-        console.log('MANDALA');
-        const res = await providerOverrides();
-        const signer = res.signers[1];
-        signers.push(signer);
+        const res = await providerOverrides(String(hre.network.name));
+        if (hre.network.name == 'mandala_localhost') {
+            console.log('detected network mandala localhost');
+            signers.push(res.signers[0]);
+        } else {
+            console.log('detected network mandala');
+            signers.push(res.signers[1]);
+        }
     }
     // in acala testnet, we should get the txparams first
     // deploy
@@ -281,7 +284,7 @@ async function main(
     console.log('successfully registry the market');
 }
 
-main('Test_Lending_Pool_', 'Lending Pool', 'USDT', 'Contract Safety', 'Acala')
+main('Test_Lending_Pool_', 'Lending_Pool', 'USDT', 'Contract Safety', 'Acala')
     .then(() => process.exit(0))
     .catch((error) => {
         console.error(error);

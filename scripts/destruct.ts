@@ -11,7 +11,7 @@ async function main(marketName: string) {
             String(hre.network.name) == 'mandala' ||
             String(hre.network.name) == 'mandala_localhost'
         ) {
-            const res = await providerOverrides();
+            const res = await providerOverrides(String(hre.network.name));
             for (const market of deployedContracts.markets) {
                 if (market.marketName == marketName) {
                     await res.provider.api.tx.evm.selfdestruct(

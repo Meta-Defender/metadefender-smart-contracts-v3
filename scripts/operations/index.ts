@@ -5,10 +5,10 @@ import inquirer from 'inquirer';
 import * as dotenv from 'dotenv';
 import chalk from 'chalk';
 import * as fs from 'fs-extra';
-import { DeployedContracts, Market } from '../deploy';
+import { DeployedContracts } from '../deploy';
 import { Signer } from 'ethers';
 import { LiquidityCertificate } from '../../typechain-types';
-import { address } from 'hardhat/internal/core/config/config-validation';
+import { calculateGasLimitAndGasPrice } from '../util/overrideProvider';
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -110,6 +110,11 @@ async function main() {
         }
     }
 
+    const gasLimitAndGasPrice =
+        hre.network.name ==
+        ('mandala' || hre.network.name == 'mandala_localhost')
+            ? await calculateGasLimitAndGasPrice()
+            : {};
     const signers = await hre.ethers.getSigners();
     const _metaDefender = await hre.ethers.getContractFactory('MetaDefender');
     const metaDefender = await _metaDefender.attach(
@@ -188,6 +193,7 @@ async function main() {
                     if (markets_available[1][i] == markets.name) {
                         await marketRegistry.removeMarket(
                             markets_available[0][i],
+                            gasLimitAndGasPrice,
                         );
                         break;
                     }
@@ -205,7 +211,10 @@ async function main() {
                     message: 'Which certificate you want to claim rewards:)',
                     choices: csac_claim_rewards,
                 });
-                await metaDefender.claimRewards(claim_rewards.certificateId);
+                await metaDefender.claimRewards(
+                    claim_rewards.certificateId,
+                    gasLimitAndGasPrice,
+                );
                 break;
             case 'Get Rewards':
                 const csac_get_rewards =
@@ -243,6 +252,7 @@ async function main() {
                 await quoteToken.transfer(
                     chooseAddress_transfer.address,
                     toBN(transferQuery.amount),
+                    gasLimitAndGasPrice,
                 );
                 break;
             case 'Calculate Premium': {
@@ -371,6 +381,7 @@ async function main() {
                         .connect(currentSigner)
                         .certificateProviderEntrance(
                             String(toBN(provideLiquidity.amount)),
+                            gasLimitAndGasPrice,
                         );
                 } else {
                     throw new Error('invalid number');
@@ -398,6 +409,7 @@ async function main() {
                     .certificateProviderExit(
                         String(withdraw.certificateId),
                         false,
+                        gasLimitAndGasPrice,
                     );
                 break;
             case 'Buy Policy':
@@ -421,6 +433,7 @@ async function main() {
                             await currentSigner.getAddress(),
                             toBN(String(policyCoverage.coverage)),
                             String(policyDuration.duration),
+                            gasLimitAndGasPrice,
                         );
                 }
                 break;

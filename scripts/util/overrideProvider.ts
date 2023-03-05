@@ -1,17 +1,46 @@
-import { EvmRpcProvider } from '@acala-network/eth-providers';
-import { Signer } from 'ethers';
+import {
+    calcEthereumTransactionParams,
+    EvmRpcProvider,
+} from '@acala-network/eth-providers';
+import { Overrides, Signer } from 'ethers';
+import { gasConstantDependencies } from 'mathjs';
 const { ethers } = require('hardhat');
 
-export type overrideProvider = {
+export type OverrideProvider = {
     provider: EvmRpcProvider;
     signers: Signer[];
 };
 
-export async function providerOverrides(): Promise<overrideProvider> {
-    //localhost:9944 for local test
-    const ENDPOINT_URL =
-        process.env.ENDPOINT_URL || 'wss://mandala-rpc.aca-staging.network/ws';
-    // const ENDPOINT_URL = process.env.ENDPOINT_URL || 'ws://localhost:9944';
+export async function calculateGasLimitAndGasPrice(): Promise<Overrides> {
+    const txFeePerGas = '199999946752';
+    const storageByteDeposit = '100000000000000'; // for Mandala/Karura
+    // const storageByteDeposit = '300000000000000';   // for Acala
+
+    const ethParams = calcEthereumTransactionParams({
+        gasLimit: 21000000,
+        validUntil: 2000000, // or hardcode a very big number
+        storageLimit: 64001,
+        txFeePerGas,
+        storageByteDeposit,
+    });
+
+    return {
+        gasLimit: ethParams.txGasLimit.toNumber(),
+        gasPrice: ethParams.txGasPrice.toNumber(),
+    };
+}
+
+export async function providerOverrides(
+    networkName: string,
+): Promise<OverrideProvider> {
+    let ENDPOINT_URL: string;
+    if (networkName == 'mandala_localhost') {
+        ENDPOINT_URL = process.env.ENDPOINT_URL || 'ws://localhost:9944';
+    } else {
+        ENDPOINT_URL =
+            process.env.ENDPOINT_URL ||
+            'wss://mandala-rpc.aca-staging.network/ws';
+    }
     const MNEMONIC =
         process.env.MNEMONIC ||
         'fox sight canyon orphan hotel grow hedgehog build bless august weather swarm';
