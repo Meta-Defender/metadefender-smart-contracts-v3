@@ -1,0 +1,45 @@
+type LiquidityCertificate @entity {
+  # account address
+  id: ID!
+  protocol: String!
+  owner: String!
+  certificateId: BigInt!
+  enteredEpochIndex: BigInt!
+  exitedEpochIndex: BigInt!
+  rewardDebtEpochIndex: BigInt!
+  liquidity: BigInt!
+  SPSLocked: BigInt!
+  isValid: Boolean!
+}
+
+type Market @entity {
+  id: ID!
+  protocol: String!
+  liquidityCertificate: String!
+  policy: String!
+  epochManage: String!
+  marketName: String!
+  marketDescription: String!
+  marketPaymentToken: String!
+  marketProtectionType: String!
+  network: String!
+  isValid: Boolean!
+}
+
+type Policy @entity {
+  id: ID!
+  protocol: String!
+  epochManage: String!
+  beneficiary: String!
+  policyId: BigInt!
+  coverage: BigInt!
+  fee: BigInt!
+  timestamp: BigInt!
+  duration: BigInt!
+  standardRisk: BigInt!
+  enteredEpochIndex: BigInt!
+  SPS: BigInt!
+  isClaimed: Boolean!
+  isClaimApplying: Boolean!
+  isSettled: Boolean!
+}

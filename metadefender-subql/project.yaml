@@ -1,0 +1,94 @@
+specVersion: 1.0.0
+name: metadefender-subql
+version: 1.0.0
+runner:
+  node:
+    name: "@subql/node"
+    version: "*"
+  query:
+    name: "@subql/query"
+    version: "*"
+description: metadefender-subql for mandala
+repository: "https://github.com/subquery/acala-evm-starter"
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: substrate/AcalaEvm
+    startBlock: 852000
+    processor:
+      file: "./node_modules/@subql/contract-processors/dist/acalaEvm.js"
+      options:
+        abi: MetaDefenderMarketRegistry
+        address: "0x6C31eDE7E7cfdc6e3f5505A00C4AB3207243fC5A"
+    assets:
+        MetaDefenderMarketRegistry:
+            file: ../artifacts/contracts/MetaDefenderMarketRegistry.sol/MetaDefenderMarketRegistry.json
+    mapping:
+      file: "./src/mappings/handleMarkets.ts"
+      handlers:
+        - handler: handleMarketAdded
+          kind: substrate/AcalaEvmEvent
+          filter:
+            topics:
+              - MarketAdded(address,address,address,address,string,string,string,string,string)
+
+templates:
+  - name: Policy
+    kind: substrate/AcalaEvm
+    processor:
+      file: "./node_modules/@subql/contract-processors/dist/acalaEvm.js"
+      options:
+        abi: Policy
+    assets:
+      Policy:
+        file: ../artifacts/contracts/Policy.sol/Policy.json
+    mapping:
+      file: "./src/mappings/handleNFTs.ts"
+      handlers:
+        - handler: handlePolicyClaimed
+          kind: substrate/AcalaEvmEvent
+          filter:
+            topics:
+              - PolicyClaimed(uint256,bool)
+        - handler: handlePolicySettled
+          kind: substrate/AcalaEvmEvent
+          filter:
+            topics:
+              - PolicySettled(uint256,bool)
+        - handler: handlePolicyUnderClaimApplying
+          kind: substrate/AcalaEvmEvent
+          filter:
+            topics:
+              - PolicyUnderClaimApplying(uint256,bool)
+        - handler: handleNewPolicyMinted
+          kind: substrate/AcalaEvmEvent
+          filter:
+            topics:
+              - NewPolicyMinted(address,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address,address)
+  - name: LiquidityCertificate
+    kind: substrate/AcalaEvm
+    processor:
+      file: "./node_modules/@subql/contract-processors/dist/acalaEvm.js"
+      options:
+        abi: LiquidityCertificate
+    assets:
+      LiquidityCertificate:
+        file: ../artifacts/contracts/LiquidityCertificate.sol/LiquidityCertificate.json
+    mapping:
+      file: "./src/maps/handleNFTs.ts"
+      handlers:
+        - handler: handleTransfer
+          kind: substrate/AcalaEvmEvent
+          filter:
+            topics:
+              - Transfer(address,address,uint256)
+        - handler: handleLPExpired
+          kind: substrate/AcalaEvmEvent
+          filter:
+            topics:
+              - Expired(uint256)
+        - handler: handleNewLPMinted
+          kind: substrate/AcalaEvmEvent
+          filter:
+            topics:
+              - NewLPMinted(address,uint256,uint256,uint256,address)
