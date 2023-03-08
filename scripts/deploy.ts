@@ -8,6 +8,7 @@ const hre = require('hardhat');
 const { upgrades } = require('hardhat');
 
 export type DeployedContracts = {
+    network: string;
     globalsViewer: string;
     metaDefenderMarketsRegistry: string;
     testERC20: string;
@@ -36,10 +37,14 @@ async function main(
 ) {
     let res: DeployedContracts;
     let signers: Signer[] = [];
-    if (fs.existsSync('./.env.' + String(hre.network.name) + '.json')) {
+    if (
+        fs.existsSync(
+            './deployments/.env.' + String(hre.network.name) + '.json',
+        )
+    ) {
         res = JSON.parse(
             fs.readFileSync(
-                './.env.' + String(hre.network.name) + '.json',
+                './deployments/.env.' + String(hre.network.name) + '.json',
                 'utf8',
             ),
         );
@@ -184,6 +189,11 @@ async function main(
         console.log('successfully init the GlobalsViewer contract');
         TestERC20 = await _TestERC20.deploy('TQA', 'TQA');
         console.log('successfully deployed TestERC20: ' + TestERC20.address);
+        // mint 10M tokens for the owner
+        await TestERC20.mint(
+            await signers[0].getAddress(),
+            '10000000000000000000000000',
+        );
         metaDefenderMarketsRegistryAddress =
             MetaDefenderMarketsRegistry.address;
         globalsViewerAddress = GlobalsViewer.address;
@@ -221,12 +231,13 @@ async function main(
         mockRiskReserve: String(MockRiskReserve.address),
         epochManage: String(EpochManage.address),
     });
+    res['network'] = hre.network.name;
     res['globalsViewer'] = globalsViewerAddress;
     res['metaDefenderMarketsRegistry'] = metaDefenderMarketsRegistryAddress;
     res['testERC20'] = testERC20Address;
     res['americanBinaryOptions'] = americanBinaryOptionsAddress;
     fs.writeFileSync(
-        './.env.' + String(hre.network.name) + '.json',
+        './deployments/.env.' + String(hre.network.name) + '.json',
         JSON.stringify(res, null, 2),
     );
     // begin init the contracts
@@ -242,7 +253,7 @@ async function main(
         EpochManage.address,
         toBN('0.10'),
         toBN('0.00'),
-        toBN('100'),
+        toBN('5000'),
     );
     console.log('successfully init the MetaDefender contract');
     await LiquidityCertificate.init(
@@ -284,7 +295,13 @@ async function main(
     console.log('successfully registry the market');
 }
 
-main('Test_Lending_Pool_', 'Lending_Pool', 'USDT', 'Contract Safety', 'Acala')
+main(
+    'Test_Stable_Coin_Pool_',
+    'Stable_Coin_Pool',
+    'USDT',
+    'DePeg Safety',
+    'Arbitrum',
+)
     .then(() => process.exit(0))
     .catch((error) => {
         console.error(error);

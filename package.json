@@ -21,6 +21,8 @@
     "deploy": "hardhat run scripts/deploy.ts",
     "deploy-mumbai": "hardhat run scripts/deploy.ts --network mumbai",
     "operation-mumbai": "hardhat run scripts/operations/index.ts --network mumbai",
+    "deploy-arbitrum-goerli": "hardhat run scripts/deploy.ts --network arbitrum_goerli",
+    "operation-arbitrum-goerli": "hardhat run scripts/operations/index.ts --network arbitrum_goerli",
     "deploy-mandala-localhost": "hardhat run scripts/deploy.ts --network mandala_localhost",
     "operation-mandala-localhost": "hardhat run scripts/operations/index.ts --network mandala_localhost",
     "deploy-mandala": "hardhat run scripts/deploy.ts --network mandala",

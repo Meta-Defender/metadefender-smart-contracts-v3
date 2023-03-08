@@ -81,10 +81,14 @@ async function getCurrentSignerAvailableCertificates(
 async function main() {
     const prompt = inquirer.createPromptModule();
     let res: DeployedContracts = {} as DeployedContracts;
-    if (fs.existsSync('./.env.' + String(hre.network.name) + '.json')) {
+    if (
+        fs.existsSync(
+            './deployments/.env.' + String(hre.network.name) + '.json',
+        )
+    ) {
         res = JSON.parse(
             fs.readFileSync(
-                './.env.' + String(hre.network.name) + '.json',
+                './deployments/.env.' + String(hre.network.name) + '.json',
                 'utf8',
             ),
         );

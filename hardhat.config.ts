@@ -18,6 +18,16 @@ const config: HardhatUserConfig = {
         hardhat: {
             allowUnlimitedContractSize: true,
         },
+        arbitrum_goerli: {
+            url: 'https://arb-goerli.g.alchemy.com/v2/hegn8vBG_khxu0tXv8jXP_NUmRCUvJUb',
+            accounts: [
+                // JUST FOR TESTING, DO NOT USE IN PRODUCTION
+                '7e8444e3b47e706d2190801a32c568edeaeab2fe16e9dafdb774a6fdc5a211b8',
+                '7093e4c110c56ec578ff6b3247d5975f1e5819397c42a745ef01bda903cebe61',
+            ],
+            allowUnlimitedContractSize: true,
+            chainId: 421613,
+        },
         mandala_localhost: {
             url: 'http://127.0.0.1:8545',
             accounts: {
