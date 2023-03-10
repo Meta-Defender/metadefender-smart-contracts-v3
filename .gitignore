@@ -7,6 +7,7 @@ typechain
 typechain-types
 data
 .openzeppelin
+deployments
 
 #Hardhat files
 cache
