@@ -212,14 +212,18 @@ contract MetaDefender is
             premium = 0;
         }
         // team reward. mocked in 5e16.
-        uint256 reward4Team = uint256(premium).multiplyDecimal(teamReserveRate);
+        uint256 reward4Team = uint256(premium)
+            .multiplyDecimal(coverage)
+            .multiplyDecimal(teamReserveRate);
         globalInfo.reward4Team = globalInfo.reward4Team.add(reward4Team);
         // fee = 10e18 which is 10 usdt.
         // the user will pay premium + reward4Team + fee
         aUSD.transferFrom(
             msg.sender,
             address(this),
-            uint256(premium).add(FEE).add(reward4Team)
+            (uint256(premium).multiplyDecimal(coverage)).add(FEE).add(
+                reward4Team
+            )
         );
 
         // update globals

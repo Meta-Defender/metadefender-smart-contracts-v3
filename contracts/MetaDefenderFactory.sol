@@ -97,8 +97,8 @@ contract MetaDefenderFactory is Ownable {
                 marketSet.metaDefender,
                 address(0),
                 marketSet.mockRiskReserve,
-                strConcat(_marketMessage.marketName,'Policy'),
-                strConcat(_marketMessage.marketSymbol,'P')
+                strConcat(_marketMessage.marketName, 'Policy'),
+                strConcat(_marketMessage.marketSymbol, 'P')
             )
         );
         ERC1967Proxy mockRiskReserve = new ERC1967Proxy(
@@ -115,17 +115,22 @@ contract MetaDefenderFactory is Ownable {
                 EpochManage(address(0)).init.selector,
                 marketSet.metaDefender,
                 marketSet.liquidityCertificate,
-                   marketSet.policy
+                marketSet.policy
             )
         );
         emit MetaDefenderProxyDeployed(address(proxyMetaDefender));
-        emit LiquidityCertificateProxyDeployed(address(proxyLiquidityCertificate));
+        emit LiquidityCertificateProxyDeployed(
+            address(proxyLiquidityCertificate)
+        );
         emit PolicyProxyDeployed(address(proxyPolicy));
         emit MockRiskReserveProxyDeployed(address(proxyPolicy));
         emit EpochManageProxyDeployed(address(proxyPolicy));
     }
 
-    function strConcat(string memory _a, string memory _b) public pure returns (string memory){
+    function strConcat(
+        string memory _a,
+        string memory _b
+    ) public pure returns (string memory) {
         bytes memory _ba = bytes(_a);
         bytes memory _bb = bytes(_b);
         string memory ret = new string(_ba.length + _bb.length);

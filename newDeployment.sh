@@ -7,5 +7,6 @@ fi
 yarn deploy:"$1"
 # deploy the GRAPH
 cd ./metadefender-subgraph || exit
+yarn codegen
 yarn prepare:"$1"
 yarn deploy-host:"$1"

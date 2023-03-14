@@ -45,7 +45,7 @@ describe('GlobalViewers - uint tests', async () => {
                 '180',
                 contracts.metaDefender.address,
             );
-            expect(res[0]).to.be.equal('698771327552756951');
+            expect(res[0]).to.be.equal('6987713275527569510000');
             expect(res[1]).to.be.equal(toBN('10'));
             expect(res[2]).to.be.equal(toBN('1.1'));
         });

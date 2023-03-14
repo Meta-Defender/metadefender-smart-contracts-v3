@@ -6,7 +6,7 @@ import './Lib/SafeDecimalMath.sol';
 
 // oz
 import '@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol';
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 
 import './interfaces/ILiquidityCertificate.sol';
 

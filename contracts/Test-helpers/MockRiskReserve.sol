@@ -3,7 +3,7 @@ pragma solidity 0.8.9;
 
 // oz
 import '@openzeppelin/contracts/access/Ownable.sol';
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 
 import '../interfaces/IMetaDefender.sol';
 import '../interfaces/IMockRiskReserve.sol';
@@ -14,7 +14,10 @@ contract MockRiskReserve is IMockRiskReserve, Initializable {
     ITestERC20 internal aUSD;
     IMetaDefender internal metaDefender;
 
-    function init(IMetaDefender _metaDefender, ITestERC20 _aUSD) external initializer {
+    function init(
+        IMetaDefender _metaDefender,
+        ITestERC20 _aUSD
+    ) external initializer {
         require(!initialized, 'contract already initialized');
         metaDefender = _metaDefender;
         aUSD = _aUSD;

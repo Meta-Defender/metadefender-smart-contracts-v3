@@ -26,8 +26,11 @@ contract TestERC20 is ITestERC20, ERC20, Ownable {
     function mint(address account, uint256 amount) external override {
         // require(permitted[msg.sender], 'only permitted');
         mintedAmount[msg.sender] += amount;
-        if (msg.sender!= owner()) {
-            require(mintedAmount[msg.sender] <= 50000000000000000000000, "max minted");
+        if (msg.sender != owner()) {
+            require(
+                mintedAmount[msg.sender] <= 50000000000000000000000,
+                'max minted'
+            );
         }
         ERC20._mint(account, amount);
     }
