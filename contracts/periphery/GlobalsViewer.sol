@@ -85,7 +85,12 @@ contract GlobalsViewer {
         if (premium < 0) {
             premium = 0;
         }
-        return TradeInsuranceView(uint256(premium), 10e18, newRisk);
+        return
+            TradeInsuranceView(
+                uint256(premium).multiplyDecimal(coverage),
+                10e18,
+                newRisk
+            );
     }
 
     function getGlobals() public view returns (GlobalsView[] memory) {

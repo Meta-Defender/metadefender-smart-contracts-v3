@@ -244,8 +244,8 @@ describe('MetaDefender - uint tests', async () => {
                     await coverBuyer1.getAddress(),
                 ),
             ).to.approximately(
-                toBN(String(20000 - 10 - premium)),
-                toBN(String((20000 - 10 - premium) * 0.001)),
+                toBN(String(20000 - 10 - premium * 1000)),
+                toBN(String((20000 - 10 - premium * 1000) * 0.001)),
             );
         });
     });
@@ -737,8 +737,8 @@ describe('MetaDefender - uint tests', async () => {
                     await coverBuyer1.getAddress(),
                 ),
             ).to.approximately(
-                toBN(String(21000 - premium)),
-                toBN(String((21000 - premium) * 0.001)),
+                toBN(String(21000 - 10 - premium * 1000)),
+                toBN(String((21000 - 10 - premium * 1000) * 0.001)),
             );
             expect(
                 await contracts.test.quoteToken.balanceOf(
@@ -780,8 +780,8 @@ describe('MetaDefender - uint tests', async () => {
                     await coverBuyer1.getAddress(),
                 ),
             ).to.be.approximately(
-                toBN(String(21000 - premium)),
-                toBN(String((21000 - premium) * 0.001)),
+                toBN(String(21000 - 10 - premium * 1000)),
+                toBN(String((21000 - 10 - premium * 1000) * 0.001)),
             );
             expect(
                 await contracts.test.quoteToken.balanceOf(
@@ -794,8 +794,8 @@ describe('MetaDefender - uint tests', async () => {
                     contracts.metaDefender.address,
                 ),
             ).to.approximately(
-                toBN(String(10000 + premium)),
-                toBN(String((10000 + premium) * 0.001)),
+                toBN(String(10000 + 1000 * premium)),
+                toBN(String((10000 + 1000 * premium) * 0.001)),
             );
             // in this case the accSPS will remain the same.
             const globalInfoAfter =
@@ -999,8 +999,8 @@ describe('MetaDefender - uint tests', async () => {
                     await coverBuyer1.getAddress(),
                 ),
             ).to.approximately(
-                toBN(String(20000 - premium)),
-                toBN(String((20000 - premium) * 0.001)),
+                toBN(String(20000 - 10 - 1000 * premium)),
+                toBN(String((20000 - 10 - 1000 * premium) * 0.001)),
             );
         });
         it('will successfully cancel the policy after one day by another', async () => {

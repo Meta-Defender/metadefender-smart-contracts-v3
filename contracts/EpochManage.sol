@@ -11,12 +11,11 @@ import './interfaces/ILiquidityCertificate.sol';
 import './interfaces/IPolicy.sol';
 
 // oz
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 
 /// @title Epoch
 /// @notice Contains functions for managing epoch processes and relevant calculations
-contract EpochManage is IEpochManage, Initializable{
+contract EpochManage is IEpochManage, Initializable {
     using SafeMath for uint256;
     using SafeMath for uint64;
     using SafeDecimalMath for uint256;
