@@ -109,12 +109,12 @@ describe('MetaDefender - integrated tests', async () => {
                 freeRate,
             );
             expect(tokenAfter1.sub(tokenBefore1)).to.approximately(
-                toBN(String(premium1 + premium2 * 0.2)),
-                toBN(String((premium1 + premium2 * 0.2) * 0.001)),
+                toBN(String(premium1 * 1000 + premium2 * 1000 * 0.2)),
+                toBN(String((premium1 * 1000 + premium2 * 1000 * 0.2) * 0.001)),
             );
             expect(tokenAfter2.sub(tokenBefore2)).to.approximately(
-                toBN(String(premium2 * 0.8)),
-                toBN(String(premium2 * 0.8 * 0.001)),
+                toBN(String(premium2 * 1000 * 0.8)),
+                toBN(String(premium2 * 1000 * 0.8 * 0.001)),
             );
         });
         it('should get the shadow correctly', async () => {
@@ -227,18 +227,24 @@ describe('MetaDefender - integrated tests', async () => {
             );
             expect(tokenAfter1.sub(tokenBefore1)).to.approximately(
                 toBN(
-                    String((10000 - 1000) * 0.997 + premium1 + 0.2 * premium2),
+                    String(
+                        (10000 - 1000) * 0.997 +
+                            premium1 * 1000 +
+                            0.2 * 1000 * premium2,
+                    ),
                 ),
                 toBN(
                     String(
-                        ((10000 - 1000) * 0.997 + premium1 + 0.2 * premium2) *
+                        ((10000 - 1000) * 0.997 +
+                            premium1 * 1000 +
+                            0.2 * 1000 * premium2) *
                             0.001,
                     ),
                 ),
             );
             expect(tokenAfter2.sub(tokenBefore2)).to.approximately(
-                toBN(String(40000 * 0.997 + 0.8 * premium2)),
-                toBN(String((40000 * 0.997 + 0.8 * premium2) * 0.001)),
+                toBN(String(40000 * 0.997 + 0.8 * 1000 * premium2)),
+                toBN(String((40000 * 0.997 + 0.8 * 1000 * premium2) * 0.001)),
             );
         });
         it('should withdraw correctly, scenario3: s1,w1,w2', async () => {
@@ -286,14 +292,23 @@ describe('MetaDefender - integrated tests', async () => {
                 freeRate,
             );
             expect(tokenAfter1.sub(tokenBefore1)).to.approximately(
-                toBN(String(10000 * 0.997 + premium1 + 0.2 * premium2)),
                 toBN(
-                    String((10000 * 0.997 + premium1 + 0.2 * premium2) * 0.001),
+                    String(
+                        10000 * 0.997 + premium1 * 1000 + 0.2 * 1000 * premium2,
+                    ),
+                ),
+                toBN(
+                    String(
+                        (10000 * 0.997 +
+                            premium1 * 1000 +
+                            0.2 * 1000 * premium2) *
+                            0.001,
+                    ),
                 ),
             );
             expect(tokenAfter2.sub(tokenBefore2)).to.approximately(
-                toBN(String(40000 * 0.997 + 0.8 * premium2)),
-                toBN(String((40000 * 0.997 + 0.8 * premium2) * 0.001)),
+                toBN(String(40000 * 0.997 + 0.8 * premium2 * 1000)),
+                toBN(String((40000 * 0.997 + 0.8 * premium2 * 1000) * 0.001)),
             );
         });
     });
@@ -351,14 +366,23 @@ describe('MetaDefender - integrated tests', async () => {
                 freeRate,
             );
             expect(tokenAfter1.sub(tokenBefore1)).to.approximately(
-                toBN(String(10000 * 0.997 + premium1 + 0.2 * premium2)),
                 toBN(
-                    String((10000 * 0.997 + premium1 + 0.2 * premium2) * 0.001),
+                    String(
+                        10000 * 0.997 + premium1 * 1000 + 0.2 * 1000 * premium2,
+                    ),
+                ),
+                toBN(
+                    String(
+                        (10000 * 0.997 +
+                            premium1 * 1000 +
+                            0.2 * 1000 * premium2) *
+                            0.001,
+                    ),
                 ),
             );
             expect(tokenAfter2.sub(tokenBefore2)).to.approximately(
-                toBN(String(40000 * 0.997 + 0.8 * premium2)),
-                toBN(String((40000 * 0.997 + 0.8 * premium2) * 0.001)),
+                toBN(String(40000 * 0.997 + 0.8 * premium2 * 1000)),
+                toBN(String((40000 * 0.997 + 0.8 * premium2 * 1000) * 0.001)),
             );
         });
     });

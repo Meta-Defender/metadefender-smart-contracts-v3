@@ -227,7 +227,7 @@ contract MetaDefender is
         );
 
         // update globals
-        uint256 deltaRPS = uint256(premium).divideDecimal(
+        uint256 deltaRPS = (uint256(premium).multiplyDecimal(coverage)).divideDecimal(
             liquidityCertificate.totalValidCertificateLiquidity()
         );
         uint256 deltaSPS = coverage.divideDecimal(
