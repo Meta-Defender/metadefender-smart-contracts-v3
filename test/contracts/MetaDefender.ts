@@ -327,7 +327,7 @@ describe('MetaDefender - uint tests', async () => {
                     await provider1.getAddress(),
                 ),
             ).to.approximately(
-                toBN(String(18970 + premium)),
+                toBN(String(18970 + premium * 1000)),
                 toBN(String((18970 + premium) * 0.0001)),
             );
             await fastForward(86400 * 365);
@@ -360,7 +360,7 @@ describe('MetaDefender - uint tests', async () => {
                 await contracts.test.quoteToken.balanceOf(
                     await provider1.getAddress(),
                 ),
-            ).to.approximately(toBN('18973'), toBN('1'));
+            ).to.approximately(toBN('18999'), toBN('1'));
         });
     });
 
@@ -399,6 +399,30 @@ describe('MetaDefender - uint tests', async () => {
                 .certificateProviderExit('0', false);
             const rewards = await contracts.metaDefender.getRewards('0', false);
             expect(rewards).to.be.equal(toBN('0'));
+        });
+        it('will get the correct rewards', async () => {
+            await seedTestSystem(deployer, contracts, 20000, [
+                provider1,
+                coverBuyer1,
+            ]);
+            await contracts.metaDefender
+                .connect(provider1)
+                .certificateProviderEntrance(toBN('11000'));
+            await fastForward(86400);
+            await contracts.metaDefender.epochCheck();
+            await contracts.metaDefender
+                .connect(coverBuyer1)
+                .buyPolicy(await coverBuyer1.getAddress(), toBN('1000'), '365');
+            const balanceAfter = await contracts.test.quoteToken.balanceOf(
+                await coverBuyer1.getAddress(),
+            );
+            await fastForward(86400);
+            await contracts.metaDefender.epochCheck();
+            const rewards = await contracts.metaDefender.getRewards('0', false);
+            expect(balanceAfter.add(rewards)).to.approximately(
+                toBN('19990'),
+                toBN('1'),
+            );
         });
     });
 
@@ -453,7 +477,7 @@ describe('MetaDefender - uint tests', async () => {
                     await provider1.getAddress(),
                 ),
             ).to.approximately(
-                toBN(String(9000 + premium)),
+                toBN(String(9000 + premium * 1000)),
                 toBN(String((9000 + premium) * 0.0001)),
             );
         });
@@ -897,13 +921,13 @@ describe('MetaDefender - uint tests', async () => {
             );
             //fee = 10000 * 0.003 = 30;  20000 - 11000 + 10000 - 30 + premium = 18970 + premium
             expect(tokenBefore).to.be.approximately(
-                toBN(String(18970 + premium)),
-                toBN(String((18970 + premium) * 0.001)),
+                toBN(String(18970 + premium * 1000)),
+                toBN(String((18970 + premium * 1000) * 0.001)),
             );
             // 1000 * 0.997 = 997
             expect(tokenAfter).to.be.approximately(
-                toBN(String(19967 + premium)),
-                toBN(String((19967 + premium) * 0.001)),
+                toBN(String(19967 + premium * 1000)),
+                toBN(String((19967 + premium * 1000) * 0.001)),
             );
         });
     });
