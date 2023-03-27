@@ -609,6 +609,9 @@ contract MetaDefender is
         if (policyInfo.isClaimed == true) {
             revert PolicyAlreadyClaimed(policyId);
         }
+        if (policyInfo.isSettled == true) {
+            revert PolicyAlreadySettled(policyId);
+        }
         if (policyInfo.beneficiary != msg.sender) {
             revert SenderNotBeneficiary(policyInfo.beneficiary, msg.sender);
         }
@@ -730,6 +733,7 @@ contract MetaDefender is
     error PolicyAlreadyStale(uint256 id);
     error SenderNotBeneficiary(address sender, address beneficiary);
     error PolicyAlreadyClaimed(uint256 id);
+    error PolicyAlreadySettled(uint256 id);
     error ClaimUnderProcessing(uint256 id);
     error ClaimNotUnderProcessing(uint256 id);
     error InvalidMiningProxy(address proxy);

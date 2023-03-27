@@ -439,6 +439,81 @@
       "address": "0xaDEb30136228a6d717F8174A2900D1B7B8432eae",
       "txHash": "0x33b7710dfb9c733747c603ba340d9954d5ff38134a5d5bc577ceff2e277c887d",
       "kind": "transparent"
+    },
+    {
+      "address": "0x6220e5d431C513839f44aAe54b349DE2cf14bb8b",
+      "txHash": "0x4075966429df5e1bf00f18b18e83539eace0ecb57a41085898e1d70904877622",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x8cEc039E407DCcD43DFdA9fe7De8Ed07a1F1d6D2",
+      "txHash": "0x3771856d1592d7a6a5c74a5a9aad3c93155c7a6c4a7f0c85b2ec0a1484053cfb",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xEfF91e376A452Fb20f1B270577dAbeA0B2384cB1",
+      "txHash": "0x39108c83d7d4e005f1639472afd9111b1c7b198255d0201498d45a944c482f8d",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x6FA6bA16bd97A2f93066E283FF6496fDC4a0f8c1",
+      "txHash": "0x4115d489ab57e5f095bcd68f9d11d1ca789b81d89709904ba584361da49d3049",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xe44b63cAecc2A61f60F983433019b1160e105a0F",
+      "txHash": "0x0875d2d391cb857b8dcd66a27bc2d292b46855abcd87412139883aac07fa4b21",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x90dB292495deCde9ed4ba3f8F45297c0BDDE2922",
+      "txHash": "0xdb11e750d8e3e03577630674973c1409aacdb624d38b6a23b3144a7153dcf3e9",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x491b79f7D31D090831dd2aB552904736b4e46B1d",
+      "txHash": "0x0927965942e493f208d86a838f4a16ec93050ddd448fdba9e9a5f91d36630530",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x5cFC520986317A7a58994216fc7990BF6A85a59B",
+      "txHash": "0xf7a28094a4a82e23e19275c7b45bc29e13488c7edcbeec956a90afe9ffb6f3f4",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xB867E99Bdd4608F8d335215F11E6c7155C6004a8",
+      "txHash": "0x13dd309b50b5fc2388d7ce811ea26c1ff35dd0d63406fb0577a7f5f9ea582ed1",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xB2FbbCb3ccEdC1ee096d07723912bEB9F61469fF",
+      "txHash": "0xde19f15d21c92d57a645d8908d5f2678693baf462e91938df8fb99fce8a2fcbe",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x14c70e641eb90941FA27da00F735A884e910205f",
+      "txHash": "0xdd3205c41b3f9aee4baf4954592aa2119ae2798edb7e43a6486ca34c529d678d",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x174C29881C87bDf6f633BB169EDDd4e94E820f74",
+      "txHash": "0x769dee1a38ce10061b46bd5eb9e0edcddd92c875da4a660c9d24a2dd06f8b7d2",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xB317A3F28652c0FBcdceE1E32E25DeBC79D7b1D9",
+      "txHash": "0x9a7ee76545048361e0aadac20afe9ac4bcdcb70f910ee8a418f077c0a2e0d7e2",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xB7155d6488a849eC5eC137c2ef176281A50e1BCf",
+      "txHash": "0x8ba7415bd230345d3d3689e421ce37d7d65b1948063f4c43b0d0a9215da4a34b",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x753EA7cff750f78f3ef6F1199CA04bcE4f3FE0bc",
+      "txHash": "0xc71ef3480f93aa0d9686034ffe7593807c7f78297e0dafeb8cb570869e3897b1",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -1820,6 +1895,288 @@
             "numberOfBytes": "32"
           },
           "t_struct(GlobalInfo)9858_storage": {
+            "label": "struct IMetaDefender.GlobalInfo",
+            "members": [
+              {
+                "label": "accSPS",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "accRPS",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "accRealSPS",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "risk",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "reward4Team",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "standardRisk",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              }
+            ],
+            "numberOfBytes": "192"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "63cec455027f67c38210c5961db478d53936446e26c44601f1c991acc63720ce": {
+      "address": "0x98bBDE069C8099A3ab702F3690458e6666DE124a",
+      "txHash": "0xf89f091bb138190447a0ac16632072d50ae4a245365d430472caa9a5fbd8896b",
+      "layout": {
+        "solcVersion": "0.8.9",
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "_status",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_uint256",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:38"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:80"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "globalInfo",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_struct(GlobalInfo)9125_storage",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:35"
+          },
+          {
+            "label": "aUSD",
+            "offset": 0,
+            "slot": "157",
+            "type": "t_contract(IERC20)3989",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:37"
+          },
+          {
+            "label": "validMiningProxy",
+            "offset": 0,
+            "slot": "158",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:39"
+          },
+          {
+            "label": "liquidityCertificate",
+            "offset": 0,
+            "slot": "159",
+            "type": "t_contract(ILiquidityCertificate)9109",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:42"
+          },
+          {
+            "label": "policy",
+            "offset": 0,
+            "slot": "160",
+            "type": "t_contract(IPolicy)9400",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:43"
+          },
+          {
+            "label": "mockRiskReserve",
+            "offset": 0,
+            "slot": "161",
+            "type": "t_contract(IMockRiskReserve)9260",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:44"
+          },
+          {
+            "label": "epochManage",
+            "offset": 0,
+            "slot": "162",
+            "type": "t_contract(IEpochManage)8996",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:45"
+          },
+          {
+            "label": "americanBinaryOptions",
+            "offset": 0,
+            "slot": "163",
+            "type": "t_contract(IAmericanBinaryOptions)8934",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:46"
+          },
+          {
+            "label": "initialized",
+            "offset": 20,
+            "slot": "163",
+            "type": "t_bool",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:48"
+          },
+          {
+            "label": "judger",
+            "offset": 0,
+            "slot": "164",
+            "type": "t_address",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:49"
+          },
+          {
+            "label": "official",
+            "offset": 0,
+            "slot": "165",
+            "type": "t_address",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:50"
+          },
+          {
+            "label": "protocol",
+            "offset": 0,
+            "slot": "166",
+            "type": "t_address",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:51"
+          },
+          {
+            "label": "teamReserveRate",
+            "offset": 0,
+            "slot": "167",
+            "type": "t_uint256",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:52"
+          },
+          {
+            "label": "providerCount",
+            "offset": 0,
+            "slot": "168",
+            "type": "t_uint256",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:62"
+          },
+          {
+            "label": "medalCount",
+            "offset": 0,
+            "slot": "169",
+            "type": "t_uint256",
+            "contract": "MetaDefender",
+            "src": "contracts/MetaDefender.sol:64"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(IAmericanBinaryOptions)8934": {
+            "label": "contract IAmericanBinaryOptions",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IERC20)3989": {
+            "label": "contract IERC20",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IEpochManage)8996": {
+            "label": "contract IEpochManage",
+            "numberOfBytes": "20"
+          },
+          "t_contract(ILiquidityCertificate)9109": {
+            "label": "contract ILiquidityCertificate",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IMockRiskReserve)9260": {
+            "label": "contract IMockRiskReserve",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IPolicy)9400": {
+            "label": "contract IPolicy",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(GlobalInfo)9125_storage": {
             "label": "struct IMetaDefender.GlobalInfo",
             "members": [
               {

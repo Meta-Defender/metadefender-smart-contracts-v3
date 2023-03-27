@@ -296,7 +296,7 @@ async function main(
 }
 
 main(
-    'Test_StableCoin2_Pool',
+    'Test_StableCoin1_Pool',
     'Stable_Coin_Pool',
     'USDT',
     'DePeg Safety',
