@@ -10,6 +10,10 @@ interface IEpochManage {
         uint256 accSPS;
     }
 
+    function isWithdrawDay() external view returns (bool);
+
+    function nextWithdrawDay() external view returns (uint);
+
     function currentEpochIndex() external view returns (uint64);
 
     function updateCrossShadow(

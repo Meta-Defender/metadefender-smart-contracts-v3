@@ -193,6 +193,9 @@ contract MetaDefender is
         uint256 coverage,
         uint256 duration
     ) external override nonReentrant checkNewEpoch {
+        if (epochManage.isWithdrawDay()) {
+            revert WithdrawDay();
+        }
         if (coverage > 100 * globalInfo.standardRisk) {
             revert CoverageTooLarge(coverage);
         }
@@ -274,6 +277,9 @@ contract MetaDefender is
         uint256 certificateId,
         bool isForce
     ) external override nonReentrant checkNewEpoch {
+        if (!epochManage.isWithdrawDay()){
+            revert NotWithdrawDay();
+        }
         if (isForce) {
             if (msg.sender != judger) {
                 revert InsufficientPrivilege();
@@ -718,6 +724,8 @@ contract MetaDefender is
      * @notice errors
      */
 
+    error NotWithdrawDay();
+    error WithdrawDay();
     error InsufficientPrivilege();
     error InsufficientUsableCapital();
     error InsufficientLiquidity(uint256 id);

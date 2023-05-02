@@ -83,6 +83,22 @@ contract EpochManage is IEpochManage, Initializable {
     }
 
     /**
+     @dev get the withdrawDay
+     */
+    function isWithdrawDay() external view override returns(bool) {
+        uint currentEpoch = getCurrentEpoch();
+        return currentEpoch % 7 == 0;
+    }
+
+    /**
+     @dev get the next withdrawDay
+     */
+    function nextWithdrawDay() external view override returns(uint) {
+        uint currentEpoch = getCurrentEpoch();
+        return ((currentEpoch / 7 + 1 ) * 7).mul(1 days);
+    }
+
+    /**
      * @dev get epochInfo by epochIndex
      * @param epochIndex the index of the epoch.
      */
