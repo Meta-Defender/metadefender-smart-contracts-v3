@@ -23,7 +23,7 @@ interface IMetaDefender {
 
     function teamClaim() external;
 
-    function validMiningProxyManage(address proxy, bool _isValid) external;
+    //function validMiningProxyManage(address proxy, bool _isValid) external;
 
     function buyPolicy(
         address beneficiary,
@@ -44,20 +44,20 @@ interface IMetaDefender {
         bool isForce
     ) external;
 
-    function settlePolicy(uint256 policyId) external;
+    //function settlePolicy(uint256 policyId) external;
 
     function policyClaimApply(uint256 _id) external;
 
-    function refuseApply(uint256 _id) external;
+    //function refuseApply(uint256 _id) external;
 
     function getRewards(
         uint256 certificateId,
         bool isExit
     ) external view returns (uint256);
 
-    function approveApply(uint256 _id) external;
+    //function approveApply(uint256 _id) external;
 
-    function mine(uint256 _amount, address _to) external;
+    //function mine(uint256 _amount, address _to) external;
 
     function withdrawAfterExit(uint256 medalId) external;
 

@@ -9,10 +9,15 @@ interface IEpochManage {
         uint256 accRPS;
         uint256 accSPS;
     }
+    
+    function daysAboveStrikePrice() external view returns(uint);
+    function startTime() external view returns(uint);
+    function contractPeriod() external view returns(uint);
+    function optionTradeableDuration() external view returns(uint);
 
     function isWithdrawDay() external view returns (bool);
 
-    function nextWithdrawDay() external view returns (uint);
+    //function nextWithdrawDay() external view returns (uint);
 
     function currentEpochIndex() external view returns (uint64);
 

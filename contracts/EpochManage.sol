@@ -9,6 +9,8 @@ import './interfaces/IEpochManage.sol';
 import './interfaces/IMetaDefender.sol';
 import './interfaces/ILiquidityCertificate.sol';
 import './interfaces/IPolicy.sol';
+import './interfaces/IOracle.sol';
+import './interfaces/IDEX.sol';
 
 // oz
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
@@ -28,7 +30,7 @@ contract EpochManage is IEpochManage, Initializable {
     uint64 public override currentEpochIndex;
     bool public initialized;
 
-    bool internal strikePricesetted;
+    bool internal strikePriceSetted;
 
     //current option start time. one option for one month,
     //buy policy and underwrite is available during the first 10 days
@@ -38,14 +40,18 @@ contract EpochManage is IEpochManage, Initializable {
     uint public contractPeriod = 30*86400;
 
     uint public strikePrice;
-    address public oracle; // off chain oracle built by ourself
+    address public oracleOperator; // off chain oracle built by ourself
     uint public daysAboveStrikePrice;//if >=7 execise
     mapping(uint => bool) public isAboveStike;
-
-
+    
+    address internal aca = address(0x0000000000000000000100000000000000000000);
+    address internal aseed = address(0x0000000000000000000100000000000000000001);
+    
     ILiquidityCertificate internal liquidityCertificate;
     IPolicy internal policy;
     IMetaDefender internal metaDefender;
+    IOracle internal oralce;
+    IDEX internal dex;
     mapping(uint64 => EpochInfo) internal _epochInfo;
 
     /**
@@ -57,7 +63,9 @@ contract EpochManage is IEpochManage, Initializable {
         IMetaDefender _metaDefender,
         ILiquidityCertificate _liquidityCertificate,
         IPolicy _policy,
-        address _oracle
+        IOracle _oracle,
+        IDEX _dex,
+        address _oracleOperator
     ) external initializer {
         require(
             address(_metaDefender) != address(0),
@@ -66,13 +74,15 @@ contract EpochManage is IEpochManage, Initializable {
         metaDefender = _metaDefender;
         liquidityCertificate = _liquidityCertificate;
         policy = _policy;
+        oralce = _oracle;
+        dex = _dex;
         startTime = block.timestamp;//init start time
         initialized = true;
-        oracle = _oracle
+        oracleOperator = _oracleOperator;
     }
 
     function feedPrice() external {
-        require(msg.sender == oracle && isWithdrawDay()); //start hosting price change after the first 10 days
+        require(msg.sender == oracleOperator && isWithdrawDay()); //start hosting price change after the first 10 days
         if(daysAboveStrikePrice >= 8){ // 7 days above strike price,then execisable, no need to feed anymore
             return;
         }
@@ -91,14 +101,26 @@ contract EpochManage is IEpochManage, Initializable {
     
     //set strike price after first 10 days passed
     function setStrikePrice(uint _price) external {
-        require(msg.sender == oracle && strikePriceSetted == false && isWithdrawDay());
-        strikePricesetted = true;
+        require(msg.sender == oracleOperator && strikePriceSetted == false && isWithdrawDay());
+        strikePriceSetted = true;
         strikePrice = _price;
     }
 
-    function getAseedPrice() external view returns(uint){
+    function getAseedPrice() public view returns(uint){
         // aseed price feed logic
-        return 1;
+        address[] memory path1; //= [aseed,aca];
+        path1[0] = aseed;
+        path1[1] = aca;
+        address[] memory path2; //= [aca,aseed];
+        path2[0] = aca;
+        path2[1] = aseed;
+        uint aseed2aca1 = dex.getSwapTargetAmount(path1, 10**12);
+        uint aseed2aca2 = dex.getSwapSupplyAmount(path2, 10**12);
+        uint aseed2aca = aseed2aca1.add(aseed2aca2).div(2);
+
+        uint acaPrice = oralce.getPrice(aca);
+        uint aseedPrice = aseed2aca.mul(acaPrice).div(10**12);
+        return aseedPrice;
     }
 
     /**
@@ -139,7 +161,7 @@ contract EpochManage is IEpochManage, Initializable {
      @dev get the withdrawDay
      */
      // withdraw is allowed after 10 tradable days
-    function isWithdrawDay() external view override returns(bool) {
+    function isWithdrawDay() public view override returns(bool) {
         uint startEpoch = (startTime.sub(startTime % 1 days)).div(1 days);
         uint currentEpoch = getCurrentEpoch();
         //return currentEpoch % 7 == 0;

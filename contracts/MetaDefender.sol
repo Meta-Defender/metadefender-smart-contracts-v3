@@ -542,10 +542,7 @@ contract MetaDefender is
         aUSD.transfer(msg.sender, withdrawal.sub(fee));
     }
 
-    /**
-     * @dev settle the policy by a policy id
-     * @param policyId the Id of policy.
-     */
+
      // in asseed option, no need to settle policy
      // if ended with unstrike,every policy becomes useless,thus every LC can be withdrawn completely
      // at that time just set all shadow to 0
@@ -700,11 +697,7 @@ contract MetaDefender is
         policy.changeStatusIsClaimed(policyId, true);
     }
 
-    /**
-     * @dev the refusal of the policy apply.
-     *
-     * @param policyId the policy id
-     */
+
      // no official refuse in aseed option
     // function refuseApply(uint256 policyId) external override {
     //     if (msg.sender != judger) {
@@ -717,11 +710,7 @@ contract MetaDefender is
     //     policy.changeStatusIsClaimApplying(policyId, false);
     // }
 
-    /**
-     * @dev the approval of the policy apply.
-     *
-     * @param policyId the policy id
-     */
+
      //no official approve in aseed option,some inner feature moved to claim apply function
     // function approveApply(uint256 policyId) external override {
     //     if (msg.sender != judger) {
@@ -743,12 +732,7 @@ contract MetaDefender is
     //     policy.changeStatusIsClaimed(policyId, true);
     // }
 
-    /**
-     * @dev mine with available capital.
-     *
-     * @param _to the proxy address
-     * @param _amount the amount of ausd to be used for mining.
-     */
+
      // no mine function in aseed option currently
     // function mine(uint256 _amount, address _to) external override {
     //     if (msg.sender != judger) {
