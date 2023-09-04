@@ -54,6 +54,10 @@ contract EpochManage is IEpochManage, Initializable {
     IOracle internal oracle;
     IDEX internal dex;
     mapping(uint64 => EpochInfo) internal _epochInfo;
+    uint internal lastPriceFeedTime;
+    uint internal lastPriceUpdateTime;
+    uint[] internal priceList = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    uint internal nextPriceUpdateIndex;
 
     /**
      * @dev Initialize the contract.
@@ -83,14 +87,50 @@ contract EpochManage is IEpochManage, Initializable {
     }
 
     /**
-     * @dev feed the price of aseed every epoch
+     * @dev feed the price every hour
      */
-    function feedPrice() external {
-        require(msg.sender == oracleOperator && isWithdrawDay()); //start hosting price change after the first 10 days
+    function updatePriceList() external {
+        require(msg.sender == oracleOperator && isWithdrawDay());
+        require(block.timestamp.sub(lastPriceUpdateTime) >= 3600);
         if (daysAboveStrikePrice >= 8) {
             return;
         }
-        if (getAseedPrice() >= strikePrice) {
+        uint currentPrice = getAseedPrice();
+
+        if (nextPriceUpdateIndex == 12) {
+            priceList[0] = currentPrice;
+            lastPriceUpdateTime = block.timestamp;
+            nextPriceUpdateIndex = 1;
+        } else {
+            priceList[nextPriceUpdateIndex] = currentPrice;
+            lastPriceUpdateTime = block.timestamp;
+            nextPriceUpdateIndex++;
+        }
+    }
+
+    function _getAveragePrice() internal view returns (uint) {
+        uint sum;
+        for (uint i = 0; i < priceList.length; i++) {
+            sum.add(priceList[i]);
+        }
+        return sum.div(12);
+    }
+
+    //feed price to see whether strike or not every 12h
+    function feedPrice() external {
+        require(msg.sender == oracleOperator && isWithdrawDay()); //start hosting price change after the first 10 days
+        require(
+            block.timestamp.sub(lastPriceFeedTime) >= 12 * 3600 &&
+                priceList[11] != 0
+        ); //feed only 1 time every 12 hours&&12 slots all fulfilled
+
+        if (daysAboveStrikePrice > 7) {
+            return;
+        }
+
+        lastPriceFeedTime = block.timestamp;
+        uint avp = _getAveragePrice();
+        if (avp >= strikePrice) {
             if (isAboveStrike[getCurrentEpoch()] == true) {
                 return;
             } else {
@@ -99,14 +139,11 @@ contract EpochManage is IEpochManage, Initializable {
             }
         } else {
             isAboveStrike[getCurrentEpoch()] = false;
-            daysAboveStrikePrice = 0;
+            daysAboveStrikePrice = 0; //once below strike price, restart
         }
     }
 
-    /**
-     * @dev set the price of strike
-     * @param _price the price of strike
-     */
+    //set strike price after first 10 days passed
     function setStrikePrice(uint _price) external {
         require(
             msg.sender == oracleOperator &&
@@ -118,16 +155,16 @@ contract EpochManage is IEpochManage, Initializable {
     }
 
     function getAseedPrice() public view returns (uint) {
-        address[] memory path1;
+        // aseed price feed logic
+        address[] memory path1; //= [aseed,aca];
         path1[0] = aseed;
         path1[1] = aca;
-        address[] memory path2;
+        address[] memory path2; //= [aca,aseed];
         path2[0] = aca;
         path2[1] = aseed;
         uint aseed2aca1 = dex.getSwapTargetAmount(path1, 10 ** 12);
         uint aseed2aca2 = dex.getSwapSupplyAmount(path2, 10 ** 12);
-        // aseedaca =  (aseed2aca1 + aseed2aca2) / 2
-        uint aseed2aca = (aseed2aca1.add(aseed2aca2)).div(2);
+        uint aseed2aca = aseed2aca1.add(aseed2aca2).div(2);
 
         uint acaPrice = oracle.getPrice(aca);
         uint aseedPrice = aseed2aca.mul(acaPrice).div(10 ** 12);

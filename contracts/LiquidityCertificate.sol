@@ -182,7 +182,9 @@ contract LiquidityCertificate is
      *
      * @param certificateId The id of the LiquidityCertificate.
      */
-    function decreaseLiquidity(uint256 certificateId) external override onlyMetaDefender {
+    function decreaseLiquidity(
+        uint256 certificateId
+    ) external override onlyMetaDefender {
         totalValidCertificateLiquidity = totalValidCertificateLiquidity.sub(
             _certificateInfo[certificateId].liquidity
         );
