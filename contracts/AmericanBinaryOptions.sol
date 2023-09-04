@@ -497,12 +497,4 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
                 v
             );
     }
-
-    function mockCalculation(
-        uint256 coverage,
-        uint256 duration,
-        uint256 risk
-    ) external pure override returns (uint256 price) {
-        return 1e18;
-    }
 }

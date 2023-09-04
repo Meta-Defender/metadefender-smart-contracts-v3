@@ -39,25 +39,14 @@ interface IMetaDefender {
 
     function certificateProviderEntrance(uint256 _amount) external;
 
-    function certificateProviderExit(
-        uint256 certificateId,
-        bool isForce
-    ) external;
-
-    //function settlePolicy(uint256 policyId) external;
+    function certificateProviderExit(uint256 certificateId) external;
 
     function policyClaimApply(uint256 _id) external;
-
-    //function refuseApply(uint256 _id) external;
 
     function getRewards(
         uint256 certificateId,
         bool isExit
     ) external view returns (uint256);
-
-    //function approveApply(uint256 _id) external;
-
-    //function mine(uint256 _amount, address _to) external;
 
     function withdrawAfterExit(uint256 medalId) external;
 

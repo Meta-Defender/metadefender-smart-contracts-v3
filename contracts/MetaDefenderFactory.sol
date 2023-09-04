@@ -5,10 +5,10 @@ import './MetaDefender.sol';
 import './LiquidityCertificate.sol';
 import './Policy.sol';
 import './EpochManage.sol';
-import './Test-helpers/MockRiskReserve.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol';
+import "./Test-helpers/ITestERC20.sol";
 
 contract MetaDefenderFactory is Ownable {
     ITestERC20 internal quoteToken;
@@ -18,7 +18,6 @@ contract MetaDefenderFactory is Ownable {
         MetaDefender metaDefender;
         LiquidityCertificate liquidityCertificate;
         Policy policy;
-        MockRiskReserve mockRiskReserve;
         EpochManage epochManage;
     }
 
@@ -38,13 +37,11 @@ contract MetaDefenderFactory is Ownable {
         MetaDefender metaDefender = new MetaDefender();
         LiquidityCertificate liquidityCertificate = new LiquidityCertificate();
         Policy policy = new Policy();
-        MockRiskReserve mockRiskReserve = new MockRiskReserve();
         EpochManage epochManage = new EpochManage();
         MarketSet memory marketSet = MarketSet(
             metaDefender,
             liquidityCertificate,
             policy,
-            mockRiskReserve,
             epochManage
         );
 
@@ -70,7 +67,6 @@ contract MetaDefenderFactory is Ownable {
                 _quoteToken,
                 owner(),
                 owner(),
-                marketSet.mockRiskReserve,
                 marketSet.liquidityCertificate,
                 marketSet.policy,
                 _americanBinaryOptions,
@@ -96,19 +92,11 @@ contract MetaDefenderFactory is Ownable {
                 Policy(address(0)).init.selector,
                 marketSet.metaDefender,
                 address(0),
-                marketSet.mockRiskReserve,
                 strConcat(_marketMessage.marketName, 'Policy'),
                 strConcat(_marketMessage.marketSymbol, 'P')
             )
         );
-        ERC1967Proxy mockRiskReserve = new ERC1967Proxy(
-            address(marketSet.mockRiskReserve),
-            abi.encodeWithSelector(
-                MockRiskReserve(address(0)).init.selector,
-                marketSet.metaDefender,
-                _quoteToken
-            )
-        );
+
         ERC1967Proxy proxyEpochManage = new ERC1967Proxy(
             address(marketSet.epochManage),
             abi.encodeWithSelector(

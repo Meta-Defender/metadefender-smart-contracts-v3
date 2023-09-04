@@ -10,12 +10,6 @@ interface IAmericanBinaryOptions {
         uint256 stdVega;
     }
 
-    function mockCalculation(
-        uint256 coverage,
-        uint256 duration,
-        uint256 risk
-    ) external pure returns (uint256 premium);
-
     function americanBinaryOptionPrices(
         uint256 timeToExpirySec,
         uint256 volatilityDecimal,

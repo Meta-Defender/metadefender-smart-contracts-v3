@@ -13,7 +13,6 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
 
 // interfaces
-import './interfaces/IMockRiskReserve.sol';
 import './interfaces/ILiquidityCertificate.sol';
 import './interfaces/IPolicy.sol';
 import './interfaces/IEpochManage.sol';
@@ -41,7 +40,6 @@ contract MetaDefender is
     // interfaces
     ILiquidityCertificate internal liquidityCertificate;
     IPolicy internal policy;
-    IMockRiskReserve internal mockRiskReserve;
     IEpochManage internal epochManage;
     IAmericanBinaryOptions internal americanBinaryOptions;
 
@@ -81,7 +79,6 @@ contract MetaDefender is
      * @param _aUSD the IERC20 instance of AcalaUSD
      * @param _judger the address of judger
      * @param _official the address of official
-     * @param _mockRiskReserve the address of risk reserve pool
      * @param _epochManage the address of epoch manage contract
      */
     function init(
@@ -89,8 +86,6 @@ contract MetaDefender is
         IERC20 _aUSD,
         address _judger,
         address _official,
-        // riskReserve
-        IMockRiskReserve _mockRiskReserve,
         // NFT LPs and policy NFT
         ILiquidityCertificate _liquidityCertificate,
         IPolicy _policy,
@@ -106,7 +101,6 @@ contract MetaDefender is
         aUSD = _aUSD;
         judger = _judger;
         official = _official;
-        mockRiskReserve = _mockRiskReserve;
         liquidityCertificate = _liquidityCertificate;
         policy = _policy;
         epochManage = _epochManage;
@@ -198,21 +192,24 @@ contract MetaDefender is
         uint256 duration
     ) external override nonReentrant checkNewEpoch {
         //only for aseed options. 30 days fixed
-        if(duration != 30){
+        if (duration != 30) {
             revert invalidAseedOptionPeriod();
         }
-        if(epochManage.daysAboveStrikePrice()>=7){
-            revert priceStiked();// if already striked,no purchase
+        if (epochManage.daysAboveStrikePrice() >= 7) {
+            revert priceStrike();
         }
 
         if (epochManage.isWithdrawDay()) {
-            revert WithdrawDay(); //including 10days after start time in epoch manage
+            revert WithdrawDay();
         }
         if (coverage > 100 * globalInfo.standardRisk) {
             revert CoverageTooLarge(coverage);
         }
         //total coverage should be lower than total liquidity
-        if(totalCoverage.add(coverage)>liquidityCertificate.totalValidCertificateLiquidity()){
+        if (
+            totalCoverage.add(coverage) >
+            liquidityCertificate.totalValidCertificateLiquidity()
+        ) {
             revert totalCoverageExceed();
         }
         //update total coverage
@@ -233,9 +230,11 @@ contract MetaDefender is
         if (premium < 0) {
             premium = 0;
         }
-        //15% base rate
+        // 15% base rate
         uint256 basePayment = coverage.mul(15).div(100);
-        uint256 totalPayment = uint256(premium).multiplyDecimal(coverage).add(basePayment);
+        uint256 totalPayment = uint256(premium).multiplyDecimal(coverage).add(
+            basePayment
+        );
         // team reward. mocked in 5e16.
         uint256 reward4Team = totalPayment.multiplyDecimal(teamReserveRate);
 
@@ -245,9 +244,7 @@ contract MetaDefender is
         aUSD.transferFrom(
             msg.sender,
             address(this),
-            totalPayment.add(FEE).add(
-                reward4Team
-            )
+            totalPayment.add(FEE).add(reward4Team)
         );
 
         // update globals
@@ -279,7 +276,6 @@ contract MetaDefender is
      * @dev provider enters and provide the capitals
      * @param amount the amount of ausd to be provided
      */
-     //in aseed option only the first 9 days allow liquidity entrance
     function certificateProviderEntrance(
         uint256 amount
     ) external override nonReentrant checkNewEpoch {
@@ -287,9 +283,11 @@ contract MetaDefender is
         // as the liquidity entered at day N will only be useful at day N+1
         // so forbid liquidity to enter after the 9th day
         uint currentEpoch = epochManage.getCurrentEpoch();
-        uint startEpoch = (epochManage.startTime().sub(epochManage.startTime() % 1 days)).div(1 days);
-        if(currentEpoch.sub(startEpoch) >= 9){
-            revert optionTradeableDurationPassed();
+        uint startEpoch = (
+            epochManage.startTime().sub(epochManage.startTime() % 1 days)
+        ).div(1 days);
+        if (currentEpoch.sub(startEpoch) >= 9) {
+            revert optionTradeDurationPassed();
         }
         aUSD.transferFrom(msg.sender, address(this), amount);
         providerCount = liquidityCertificate.mint(
@@ -303,32 +301,14 @@ contract MetaDefender is
      * @dev providerExit retrieve the rewards for the providers in the pool
      * @param certificateId the certificateId
      */
-     //liquidity exit is only allowed after the first 10 days
-     //suppose, if someone calls this function just after the 10th day 24:00
-     //which is before official mannually check, an "exit" might be at the same epoch with a "buy"
-     //but no more "buy" can be called after the 10th day ends, so no incresement in accsps,thus no trouble brought to medals
-     //modifier check new epoch deleted.
     function certificateProviderExit(
-        uint256 certificateId,
-        bool isForce
-    ) external override nonReentrant  {
-        if (!epochManage.isWithdrawDay()){
+        uint256 certificateId
+    ) external override nonReentrant {
+        if (!epochManage.isWithdrawDay()) {
             revert NotWithdrawDay();
         }
-        if (isForce) {
-            if (msg.sender != judger) {
-                revert InsufficientPrivilege();
-            }
-            (uint256 realLiquidity, ) = getRealAndLostLiquidityByCertificateId(
-                certificateId
-            );
-            if (realLiquidity > 0) {
-                revert ShouldNotDelete();
-            }
-        } else {
-            if (msg.sender != liquidityCertificate.belongsTo(certificateId)) {
-                revert InsufficientPrivilege();
-            }
+        if (msg.sender != liquidityCertificate.belongsTo(certificateId)) {
+            revert InsufficientPrivilege();
         }
         ILiquidityCertificate.CertificateInfo
             memory certificateInfo = liquidityCertificate.getCertificateInfo(
@@ -343,24 +323,15 @@ contract MetaDefender is
             certificateId
         );
 
-        liquidityCertificate.decreaseLiquidity(certificateId, isForce);
+        liquidityCertificate.decreaseLiquidity(certificateId);
         liquidityCertificate.updateSPSLocked(certificateId, SPSLocked);
         uint256 rewards = getRewards(certificateId, true);
-        liquidityCertificate.expire(certificateId, currentEpochIndex, isForce);
-        // transfer
-        if (isForce) {
-            if (rewards > 0) {
-                aUSD.transfer(
-                    liquidityCertificate.belongsTo(certificateId),
-                    rewards
-                );
-            }
-        } else {
-            uint256 fee = withdrawal.multiplyDecimal(WITHDRAWAL_FEE_RATE);
-            globalInfo.reward4Team = globalInfo.reward4Team.add(fee);
-            if (withdrawal.add(rewards) > 0) {
-                aUSD.transfer(msg.sender, withdrawal.add(rewards).sub(fee));
-            }
+        liquidityCertificate.expire(certificateId, currentEpochIndex);
+
+        uint256 fee = withdrawal.multiplyDecimal(WITHDRAWAL_FEE_RATE);
+        globalInfo.reward4Team = globalInfo.reward4Team.add(fee);
+        if (withdrawal.add(rewards) > 0) {
+            aUSD.transfer(msg.sender, withdrawal.add(rewards).sub(fee));
         }
         emit ProviderExit(msg.sender);
     }
@@ -373,6 +344,7 @@ contract MetaDefender is
         uint256 certificateId
     ) public view override returns (uint256, uint256) {
         // lockedSPS = (accSPSLeft - accSPSProvide) - (withdrawEpoch.crossSPS - provideEpoch.crossSPS) - enteredEpoch.crossSPSClaimed
+        // = (accSPSLeft - crossAccSPSLeft) - (accSPSProvide - crossAccSPSProvide)
         ILiquidityCertificate.CertificateInfo
             memory certificateInfo = liquidityCertificate.getCertificateInfo(
                 certificateId
@@ -399,7 +371,11 @@ contract MetaDefender is
         //if it is sure the options would never be able to exercise
         //which means 30 days passed by less than 7 days above strike price in epoch manage
         //make spslocked to 0 directly
-        if(block.timestamp >= epochManage.startTime() + epochManage.contractPeriod() && epochManage.daysAboveStrikePrice()<7){
+        if (
+            block.timestamp >=
+            epochManage.startTime() + epochManage.contractPeriod() &&
+            epochManage.daysAboveStrikePrice() < 7
+        ) {
             SPSLocked = 0;
         }
 
@@ -519,10 +495,9 @@ contract MetaDefender is
      * @dev withdrawAfterExit retrieve the rewards for the providers in the pool
      * @param certificateId The medalId.
      */
-     //modifier check new epoch deleted
     function withdrawAfterExit(
         uint256 certificateId
-    ) external override nonReentrant  {
+    ) external override nonReentrant {
         ILiquidityCertificate.CertificateInfo
             memory certificateInfo = liquidityCertificate.getCertificateInfo(
                 certificateId
@@ -542,104 +517,17 @@ contract MetaDefender is
         aUSD.transfer(msg.sender, withdrawal.sub(fee));
     }
 
-
-     // in asseed option, no need to settle policy
-     // if ended with unstrike,every policy becomes useless,thus every LC can be withdrawn completely
-     // at that time just set all shadow to 0
-     // if ended with strike, which means "claim", of course no settle
-    // function settlePolicy(uint256 policyId) external override checkNewEpoch {
-    //     IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
-    //     if (policy.isSettleAvailable(policyId)) {
-    //         policy.changeStatusIsSettled(policyId, true);
-    //         epochManage.updateCrossShadow(
-    //             policyInfo.SPS,
-    //             policyInfo.enteredEpochIndex,
-    //             false
-    //         );
-    //         // change the SPS.
-    //         globalInfo.accSPS = globalInfo.accSPS.sub(policyInfo.SPS);
-    //         // reduce the risk.
-    //         globalInfo.risk = globalInfo.risk.sub(
-    //             policyInfo
-    //                 .coverage
-    //                 .divideDecimal(policyInfo.standardRisk)
-    //                 .multiplyDecimal(BASE_POINT)
-    //         );
-    //         if (
-    //             policyInfo.timestamp.add(policyInfo.duration * 1 days).add(
-    //                 BUFFER * 1 days
-    //             ) >= block.timestamp
-    //         ) {
-    //             // to make sure the policyHolder himself settle.
-    //             require(
-    //                 msg.sender == policyInfo.beneficiary,
-    //                 'Only policy holder can settle the policy in 3 days'
-    //             );
-    //             aUSD.transfer(policyInfo.beneficiary, policyInfo.fee);
-    //         } else {
-    //             aUSD.transfer(msg.sender, policyInfo.fee);
-    //         }
-    //     }
-    //     emit PolicyCancelled(policyId);
-    // }
-
-    /**
-     * @dev claim the policy by a policy id
-     * @param policyId the Id of policy.
-     * @param isReserve whether the reserve is enough to pay the claim.
-     */
-     // as no reserve in aseed option now, the seconde param is always false now
-     // so a rewritten version added below
-    function claimPolicy(
-        uint256 policyId,
-        bool isReserve
-    ) internal  {
+    function claimPolicy(uint256 policyId) internal {
         IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
         if (policy.isClaimAvailable(policyId)) {
             policy.changeStatusIsSettled(policyId, true);
 
-            if (isReserve) {
-                epochManage.updateCrossShadow(
-                    policyInfo.SPS,
-                    policyInfo.enteredEpochIndex,
-                    false
-                );
-                // we will change the SPS.
-                globalInfo.accSPS = globalInfo.accSPS.sub(policyInfo.SPS);
-                // in claiming, we will not reduce the risk exposure.
-            } else {
-                globalInfo.accRealSPS = globalInfo.accRealSPS.add(
-                    policyInfo.SPS
-                );
-                epochManage.updateCrossShadow(
-                    policyInfo.SPS,
-                    policyInfo.enteredEpochIndex,
-                    true
-                );
-            }
-
-            aUSD.transfer(policyInfo.beneficiary, policyInfo.fee);
-            emit PolicyClaimed(policyId);
-        } else {
-            revert NotClaimAvailable();
-        }
-    }
-
-    function claimPolicy(
-        uint256 policyId
-    ) internal {
-        IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
-        if (policy.isClaimAvailable(policyId)) {
-            policy.changeStatusIsSettled(policyId, true);
-
-                globalInfo.accRealSPS = globalInfo.accRealSPS.add(
-                    policyInfo.SPS
-                );
-                epochManage.updateCrossShadow(
-                    policyInfo.SPS,
-                    policyInfo.enteredEpochIndex,
-                    true
-                );
+            globalInfo.accRealSPS = globalInfo.accRealSPS.add(policyInfo.SPS);
+            epochManage.updateCrossShadow(
+                policyInfo.SPS,
+                policyInfo.enteredEpochIndex,
+                true
+            );
             aUSD.transfer(policyInfo.beneficiary, policyInfo.fee);
             emit PolicyClaimed(policyId);
         } else {
@@ -652,15 +540,10 @@ contract MetaDefender is
      *
      * @param policyId the policy id
      */
-     //modifier check epoch deleted since this is only callable after 10 days
-    function policyClaimApply(
-        uint256 policyId
-    ) external override  {
-        // only for aseed option
-        if(epochManage.daysAboveStrikePrice()<7){
-            revert NotExerciseable();
+    function policyClaimApply(uint256 policyId) external override {
+        if (epochManage.daysAboveStrikePrice() < 7) {
+            revert exerciseNotAvailable();
         }
-        //else，option exercise allowed
 
         IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
         IEpochManage.EpochInfo memory enteredEpochInfo = epochManage
@@ -668,103 +551,45 @@ contract MetaDefender is
         IEpochManage.EpochInfo memory currentEpochInfo = epochManage
             .getCurrentEpochInfo();
 
-        // in aseed option, once striked, exerciseable at any time
-        // if (
-        //     currentEpochInfo.epochId >
-        //     enteredEpochInfo.epochId.add(policyInfo.duration).add(BUFFER)
-        // ) {
-        //     revert PolicyAlreadyStale(policyId);
-        // }
-
         if (policyInfo.isClaimed == true) {
             revert PolicyAlreadyClaimed(policyId);
         }
-        if (policyInfo.isSettled == true) { // kept although settle is not used in aseed option
+        if (policyInfo.isSettled == true) {
             revert PolicyAlreadySettled(policyId);
         }
         if (policyInfo.beneficiary != msg.sender) {
             revert SenderNotBeneficiary(policyInfo.beneficiary, msg.sender);
         }
-        if (policyInfo.isClaimApplying == true) { // kept although claimable or not is decided while apply
+        if (policyInfo.isClaimApplying == true) {
             revert ClaimUnderProcessing(policyId);
         }
         policy.changeStatusIsClaimApplying(policyId, true);
-        
-        //migrated from appove apply function for immediate exercise
-        //claimPolicy(policyId, false);
+
         claimPolicy(policyId);
         aUSD.transfer(policyInfo.beneficiary, policyInfo.coverage);
         policy.changeStatusIsClaimed(policyId, true);
     }
 
-
-     // no official refuse in aseed option
-    // function refuseApply(uint256 policyId) external override {
-    //     if (msg.sender != judger) {
-    //         revert InsufficientPrivilege();
-    //     }
-    //     IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
-    //     if (policyInfo.isClaimApplying == false) {
-    //         revert ClaimNotUnderProcessing(policyId);
-    //     }
-    //     policy.changeStatusIsClaimApplying(policyId, false);
-    // }
-
-
-     //no official approve in aseed option,some inner feature moved to claim apply function
-    // function approveApply(uint256 policyId) external override {
-    //     if (msg.sender != judger) {
-    //         revert InsufficientPrivilege();
-    //     }
-    //     IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
-    //     if (policyInfo.isClaimApplying == false) {
-    //         revert ClaimNotUnderProcessing(policyId);
-    //     }
-    //     if (aUSD.balanceOf(address(mockRiskReserve)) >= policyInfo.coverage) {
-    //         claimPolicy(policyId, true);
-    //         mockRiskReserve.payTo(policyInfo.beneficiary, policyInfo.coverage);
-    //     } else {
-    //         // we will pay as more as we can.
-    //         claimPolicy(policyId, false);
-    //         aUSD.transfer(policyInfo.beneficiary, policyInfo.coverage);
-    //     }
-    //     policy.changeStatusIsClaimApplying(policyId, false);
-    //     policy.changeStatusIsClaimed(policyId, true);
-    // }
-
-
-     // no mine function in aseed option currently
-    // function mine(uint256 _amount, address _to) external override {
-    //     if (msg.sender != judger) {
-    //         revert InsufficientPrivilege();
-    //     }
-    //     if (_to == address(0)) {
-    //         revert InvalidAddress(_to);
-    //     }
-    //     if (validMiningProxy[_to] == false) {
-    //         revert InvalidMiningProxy(_to);
-    //     }
-    //     aUSD.transfer(_to, _amount);
-    // }
-
-    // reward earned at day 10 would be checkable at day 11
-    // so official address manually call this function to "execute" day 11
-    // only callable once
+    /**
+     * @dev manually check the new epoch at day 11(the eleven day 8:00 GMT +8)
+     */
     function epochCheck() external override checkNewEpoch {
         require(msg.sender == official && !manuallyChecked);
-        require(block.timestamp > epochManage.startTime()+epochManage.optionTradeableDuration());
+        require(
+            block.timestamp >
+                epochManage.startTime() + epochManage.optionTradeDuration()
+        );
         manuallyChecked = true;
     }
 
     modifier checkNewEpoch() virtual {
-        if(!manuallyChecked){
+        if (!manuallyChecked) {
             epochManage.checkAndCreateNewEpochAndUpdateLiquidity();
-            }
+        }
         _;
-        if(!manuallyChecked){
+        if (!manuallyChecked) {
             epochManage.checkAndCreateNewEpochAndUpdateAccRPSAccSPS();
-            }
-            
+        }
     }
 
     /**
@@ -824,9 +649,9 @@ contract MetaDefender is
     error NoRewards();
     error NotClaimAvailable();
     error ShouldNotDelete();
-    error optionTradeableDurationPassed();
-    error NotExerciseable();
+    error optionTradeDurationPassed();
+    error exerciseNotAvailable();
     error invalidAseedOptionPeriod();
-    error priceStiked();
+    error priceStrike();
     error totalCoverageExceed();
 }

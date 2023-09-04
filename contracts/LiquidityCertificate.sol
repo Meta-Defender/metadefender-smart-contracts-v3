@@ -181,18 +181,8 @@ contract LiquidityCertificate is
      * @notice decreaseLiquidity. decrease the liquidity when user withdraws from the pool.
      *
      * @param certificateId The id of the LiquidityCertificate.
-     * @param isForce Whether the certificate is force withdrawn.
      */
-    function decreaseLiquidity(
-        uint256 certificateId,
-        bool isForce
-    ) external override onlyMetaDefender {
-        if (!isForce) {
-            require(
-                _isApprovedOrOwner(tx.origin, certificateId),
-                'attempted to expire nonexistent certificate, or not owner'
-            );
-        }
+    function decreaseLiquidity(uint256 certificateId) external override onlyMetaDefender {
         totalValidCertificateLiquidity = totalValidCertificateLiquidity.sub(
             _certificateInfo[certificateId].liquidity
         );
@@ -209,15 +199,8 @@ contract LiquidityCertificate is
      */
     function expire(
         uint256 certificateId,
-        uint64 currentEpochIndex,
-        bool isForce
+        uint64 currentEpochIndex
     ) external override onlyMetaDefender {
-        if (!isForce) {
-            require(
-                _isApprovedOrOwner(tx.origin, certificateId),
-                'attempted to expire nonexistent certificate, or not owner'
-            );
-        }
         _certificateInfo[certificateId].exitedEpochIndex = currentEpochIndex;
         _certificateInfo[certificateId].isValid = false;
         emit Expired(certificateId);

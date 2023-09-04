@@ -16,10 +16,8 @@ interface IPolicy {
         bool isSettled;
     }
 
-    // get the protocol address
     function protocol() external view returns (address);
 
-    // get the metaDefender address
     function metaDefender() external view returns (address);
 
     function MIN_COVERAGE() external view returns (uint256);
