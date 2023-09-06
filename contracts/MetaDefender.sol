@@ -1,9 +1,6 @@
 //SPDX-License-Identifier: ISC
 pragma solidity ^0.8.9;
 
-// test contracts
-import 'hardhat/console.sol';
-
 // openzeppelin contracts
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
@@ -121,17 +118,6 @@ contract MetaDefender is
     }
 
     /**
-     * @dev transfer judger to another address
-     * @param _judger is the origin judger of the pool
-     */
-    function transferJudger(address _judger) external override {
-        if (msg.sender != judger) {
-            revert InsufficientPrivilege();
-        }
-        judger = _judger;
-    }
-
-    /**
      * @dev transfer official to another address
      * @param _official is the origin official of the pool
      */
@@ -140,6 +126,7 @@ contract MetaDefender is
             revert InsufficientPrivilege();
         }
         official = _official;
+        emit officialChanged(official);
     }
 
     /**
@@ -151,23 +138,8 @@ contract MetaDefender is
         }
         aUSD.transfer(official, globalInfo.reward4Team);
         globalInfo.reward4Team = 0;
+        emit teamClaimed();
     }
-
-    /**
-     * @dev validate the mining route
-     * @param proxy is the proxy address
-     * @param isValid is the mining route is valid or not
-     */
-    // no need for aseed option
-    // function validMiningProxyManage(
-    //     address proxy,
-    //     bool isValid
-    // ) external override {
-    //     if (msg.sender != official) {
-    //         revert InsufficientPrivilege();
-    //     }
-    //     validMiningProxy[proxy] = isValid;
-    // }
 
     /**
      * @dev updateStandardRisk
@@ -178,6 +150,7 @@ contract MetaDefender is
             revert InsufficientPrivilege();
         }
         globalInfo.standardRisk = standardRisk;
+        emit standardRiskUpdated(standardRisk);
     }
 
     /**
@@ -331,6 +304,12 @@ contract MetaDefender is
         uint256 fee = withdrawal.multiplyDecimal(WITHDRAWAL_FEE_RATE);
         globalInfo.reward4Team = globalInfo.reward4Team.add(fee);
         if (withdrawal.add(rewards) > 0) {
+            // update the epochIndex
+            uint64 previousEpochIndex = epochManage.currentEpochIndex() - 1;
+            liquidityCertificate.updateRewardDebtEpochIndex(
+                certificateId,
+                previousEpochIndex
+            );
             aUSD.transfer(msg.sender, withdrawal.add(rewards).sub(fee));
         }
         emit ProviderExit(msg.sender);
@@ -404,36 +383,6 @@ contract MetaDefender is
                 return certificateInfoSPSLocked.sub(SPSLocked);
             }
         }
-    }
-
-    /**
-     * @dev getRealAndLostLiquidityByCertificateId calculates the real/lost liquidity by the certificateId
-     * @param certificateId the certificateId
-     */
-    function getRealAndLostLiquidityByCertificateId(
-        uint256 certificateId
-    ) public view override returns (uint256, uint256) {
-        ILiquidityCertificate.CertificateInfo
-            memory certificateInfo = liquidityCertificate.getCertificateInfo(
-                certificateId
-            );
-        if (certificateInfo.isValid == false) {
-            revert CertificateExit();
-        }
-        IEpochManage.EpochInfo memory epochInfoEntered = epochManage
-            .getEpochInfo(certificateInfo.enteredEpochIndex);
-        uint256 multForCertificate = SafeDecimalMath.UNIT.add(
-            epochInfoEntered.accRealSPSComp
-        ) >= globalInfo.accRealSPS
-            ? SafeDecimalMath.UNIT.add(epochInfoEntered.accRealSPSComp).sub(
-                globalInfo.accRealSPS
-            )
-            : 0;
-        uint256 realLiquidity = certificateInfo.liquidity.multiplyDecimal(
-            multForCertificate
-        );
-        uint256 lostLiquidity = certificateInfo.liquidity.sub(realLiquidity);
-        return (realLiquidity, lostLiquidity);
     }
 
     /**
@@ -521,8 +470,6 @@ contract MetaDefender is
         IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
         if (policy.isClaimAvailable(policyId)) {
             policy.changeStatusIsSettled(policyId, true);
-
-            globalInfo.accRealSPS = globalInfo.accRealSPS.add(policyInfo.SPS);
             epochManage.updateCrossShadow(
                 policyInfo.SPS,
                 policyInfo.enteredEpochIndex,
@@ -546,10 +493,6 @@ contract MetaDefender is
         }
 
         IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
-        IEpochManage.EpochInfo memory enteredEpochInfo = epochManage
-            .getEpochInfo(policyInfo.enteredEpochIndex);
-        IEpochManage.EpochInfo memory currentEpochInfo = epochManage
-            .getCurrentEpochInfo();
 
         if (policyInfo.isClaimed == true) {
             revert PolicyAlreadyClaimed(policyId);
@@ -616,6 +559,21 @@ contract MetaDefender is
      * @dev Claimed when the user bought the cover.
      */
     event PolicyClaimed(uint256 id);
+
+    /**
+     * @dev Emitted when the official changed.
+     */
+    event officialChanged(address official);
+
+    /**
+     * @dev Emitted when the team has claimed their rewards.
+     */
+    event teamClaimed();
+
+    /**
+     * @dev Emitted when the standard risk has been updated.
+     */
+    event standardRiskUpdated(uint256 standardRisk);
 
     /**
      * @notice errors

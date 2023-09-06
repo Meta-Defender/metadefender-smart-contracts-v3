@@ -1,5 +1,5 @@
 import * as fs from 'fs-extra';
-import { AcalaTxParams, toBN, txParams, ZERO_ADDRESS } from './util/web3utils';
+import { toBN, ZERO_ADDRESS } from './util/web3utils';
 import { Contract, Signer } from 'ethers';
 import { providerOverrides } from './util/overrideProvider';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -25,7 +25,6 @@ export type Market = {
     metaDefender: string;
     liquidityCertificate: string;
     policy: string;
-    mockRiskReserve: string;
     epochManage: string;
 };
 async function main(
@@ -57,7 +56,7 @@ async function main(
         String(hre.network.name) != 'mandala' &&
         String(hre.network.name) != 'mandala_localhost'
     ) {
-        console.log('detected network' + hre.network.name);
+        console.log('detected network ' + hre.network.name);
         signers = await hre.ethers.getSigners();
     } else {
         const res = await providerOverrides(String(hre.network.name));
@@ -77,9 +76,7 @@ async function main(
         'MetaDefender',
         signers[0],
     );
-    const MetaDefender = await upgrades.deployProxy(_MetaDefender, [], {
-        useDeployedImplementation: false,
-    });
+    const MetaDefender = await _MetaDefender.deploy();
     console.log(
         'successfully deployed MetaDefender: ' +
             MetaDefender.address +
@@ -90,13 +87,7 @@ async function main(
         'LiquidityCertificate',
         signers[0],
     );
-    const LiquidityCertificate = await upgrades.deployProxy(
-        _LiquidityCertificate,
-        [],
-        {
-            useDeployedImplementation: false,
-        },
-    );
+    const LiquidityCertificate = await _LiquidityCertificate.deploy();
     console.log(
         'successfully deployed LiquidityCertificate: ' +
             LiquidityCertificate.address +
@@ -104,41 +95,18 @@ async function main(
             LiquidityCertificate.deployTransaction.hash,
     );
     const _Policy = await hre.ethers.getContractFactory('Policy', signers[0]);
-    const Policy = await upgrades.deployProxy(_Policy, [], {
-        useDeployedImplementation: false,
-    });
+    const Policy = await _Policy.deploy();
     console.log(
         'successfully deployed Policy: ' +
             Policy.address +
             ' ' +
             Policy.deployTransaction.hash,
     );
-    const _MockRiskReserve = await hre.ethers.getContractFactory(
-        'MockRiskReserve',
-        signers[0],
-    );
-    const MockRiskReserve = await upgrades.deployProxy(_MockRiskReserve, [], {
-        useDeployedImplementation: false,
-    });
-    console.log(
-        'successfully deployed MockRiskReserve: ' +
-            MockRiskReserve.address +
-            ' ' +
-            MockRiskReserve.deployTransaction.hash,
-    );
     const _EpochManage = await hre.ethers.getContractFactory(
         'EpochManage',
         signers[0],
     );
-    const EpochManage = await upgrades.deployProxy(_EpochManage, [], {
-        useDeployedImplementation: false,
-    });
-    console.log(
-        'successfully deployed EpochManage: ' +
-            EpochManage.address +
-            ' ' +
-            EpochManage.deployTransaction.hash,
-    );
+    const EpochManage = await _EpochManage.deploy();
     const _AmericanBinaryOptions = await hre.ethers.getContractFactory(
         'AmericanBinaryOptions',
         signers[0],
@@ -228,7 +196,6 @@ async function main(
         metaDefender: String(MetaDefender.address),
         liquidityCertificate: String(LiquidityCertificate.address),
         policy: String(Policy.address),
-        mockRiskReserve: String(MockRiskReserve.address),
         epochManage: String(EpochManage.address),
     });
     res['network'] = hre.network.name;
@@ -246,7 +213,6 @@ async function main(
         TestERC20.address,
         signers[0].getAddress(),
         signers[0].getAddress(),
-        MockRiskReserve.address,
         LiquidityCertificate.address,
         Policy.address,
         AmericanBinaryOptions.address,
@@ -271,7 +237,6 @@ async function main(
         'POL',
     );
     console.log('successfully init the Policy contract');
-    await MockRiskReserve.init(MetaDefender.address, TestERC20.address);
     console.log('successfully init the MockRiskReserve contract');
     await EpochManage.init(
         MetaDefender.address,

@@ -8,9 +8,6 @@ import '../interfaces/IMetaDefenderMarketsRegistry.sol';
 
 import '../Lib/SafeDecimalMath.sol';
 
-// console
-import 'hardhat/console.sol';
-
 /**
  * @title OptionMarketViewer
  * @author MetaDefender

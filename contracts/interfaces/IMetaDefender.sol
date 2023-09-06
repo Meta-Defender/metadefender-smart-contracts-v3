@@ -15,8 +15,6 @@ interface IMetaDefender {
 
     function getGlobalInfo() external view returns (GlobalInfo memory);
 
-    function transferJudger(address judger) external;
-
     function transferOfficial(address official) external;
 
     function updateStandardRisk(uint256 standardRisk) external;
@@ -49,10 +47,6 @@ interface IMetaDefender {
     ) external view returns (uint256);
 
     function withdrawAfterExit(uint256 medalId) external;
-
-    function getRealAndLostLiquidityByCertificateId(
-        uint256 certificateId
-    ) external view returns (uint256, uint256);
 
     function epochCheck() external;
 }

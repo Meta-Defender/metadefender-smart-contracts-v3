@@ -2,7 +2,7 @@
   "devDependencies": {
     "@acala-network/eth-providers": "^2.6.1",
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.3",
-    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@openzeppelin/truffle-upgrades": "^1.17.0",
     "@types/fs-extra": "^9.0.13",
     "@types/inquirer": "^9.0.3",

@@ -208,7 +208,7 @@ contract EpochManage is IEpochManage, Initializable {
     /**
      @dev get the withdrawDay
      */
-    // withdraw is allowed after 10 tradable days
+    // withdraw is allowed after 10 days can be traded
     function isWithdrawDay() public view override returns (bool) {
         uint startEpoch = (startTime.sub(startTime % 1 days)).div(1 days);
         uint currentEpoch = getCurrentEpoch();

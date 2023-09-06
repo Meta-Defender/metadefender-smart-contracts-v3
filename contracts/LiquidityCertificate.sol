@@ -37,11 +37,9 @@ contract LiquidityCertificate is
     /**
      * @dev Initialize the contract.
      * @param _metaDefender MetaDefender address.
-     * @param _protocol Protocol address.
      */
     function init(
         address _metaDefender,
-        address _protocol,
         string memory _name,
         string memory _symbol
     ) external initializer {
@@ -51,7 +49,6 @@ contract LiquidityCertificate is
         );
         require(!initialized, 'already initialized');
         metaDefender = _metaDefender;
-        protocol = _protocol;
         __ERC721_init(_name, _symbol);
         initialized = true;
     }
@@ -194,7 +191,7 @@ contract LiquidityCertificate is
     }
 
     /**
-     * @notice expire. LiquidityCertificate.
+     * @notice expire the LiquidityCertificate.
      *
      * @param certificateId The id of the LiquidityCertificate.
      * @param currentEpochIndex the currentEpochIndex.
@@ -226,7 +223,7 @@ contract LiquidityCertificate is
         uint256 certificateId,
         uint256 enteredEpochIndex,
         uint256 liquidity,
-        address protocol
+        address metaDefender
     );
     event Expired(uint256 certificateId);
 }
