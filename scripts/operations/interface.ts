@@ -2,13 +2,11 @@ import * as readline from 'readline';
 import hre, { ethers } from 'hardhat';
 import { toBN } from '../util/web3utils';
 import inquirer from 'inquirer';
-import * as dotenv from 'dotenv';
 import chalk from 'chalk';
 import * as fs from 'fs-extra';
 import { DeployedContracts } from '../deploy';
 import { Signer } from 'ethers';
 import { LiquidityCertificate } from '../../typechain-types';
-import { calculateGasLimitAndGasPrice } from '../util/overrideProvider';
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -114,39 +112,41 @@ async function main() {
         }
     }
 
-    const gasLimitAndGasPrice =
-        hre.network.name ==
-        ('mandala' || hre.network.name == 'mandala_localhost')
-            ? await calculateGasLimitAndGasPrice()
-            : {};
     const signers = await hre.ethers.getSigners();
     const _metaDefender = await hre.ethers.getContractFactory('MetaDefender');
-    const metaDefender = await _metaDefender.attach(
-        res.markets[marketIndex].metaDefender,
+    const metaDefender = _metaDefender.attach(
+      res.markets[marketIndex].metaDefender
     );
 
     const _liquidityCertificate = await hre.ethers.getContractFactory(
         'LiquidityCertificate',
     );
-    const liquidityCertificate = await _liquidityCertificate.attach(
-        res.markets[marketIndex].liquidityCertificate,
+    const liquidityCertificate = _liquidityCertificate.attach(
+      res.markets[marketIndex].liquidityCertificate
     );
 
     const _policy = await hre.ethers.getContractFactory('Policy');
-    const policy = await _policy.attach(res.markets[marketIndex].policy);
+    const policy = _policy.attach(res.markets[marketIndex].policy);
+
+    const _epochManage = await hre.ethers.getContractFactory(
+        'EpochManage',
+    );
+    const epochManage = _epochManage.attach(
+      res.markets[marketIndex].epochManage
+    );
 
     const _quoteToken = await hre.ethers.getContractFactory('TestERC20');
-    const quoteToken = await _quoteToken.attach(res.testERC20);
+    const quoteToken = _quoteToken.attach(res.testERC20);
 
     const _metaDefenderMarketsRegistry = await hre.ethers.getContractFactory(
         'MetaDefenderMarketsRegistry',
     );
-    const marketRegistry = await _metaDefenderMarketsRegistry.attach(
-        res.metaDefenderMarketsRegistry,
+    const marketRegistry = _metaDefenderMarketsRegistry.attach(
+      res.metaDefenderMarketsRegistry
     );
 
     const _globalsViewer = await hre.ethers.getContractFactory('GlobalsViewer');
-    const globalsViewer = await _globalsViewer.attach(res.globalsViewer);
+    const globalsViewer = _globalsViewer.attach(res.globalsViewer);
 
     let currentSigner = await signers[0];
     const choices = [
@@ -159,7 +159,6 @@ async function main() {
         'Query My Account',
         'Query Insurance Price',
         'Query Global Views',
-        'Calculate Premium',
         'Register Market',
         'Query Market Addresses',
         'Time Travel',
@@ -170,6 +169,8 @@ async function main() {
         'Choose Address',
         'Add Market',
         'Remove Market',
+        'Get Aseed Price',
+        'Get AcalaOracle Price',
         'Exit',
     ];
 
@@ -183,6 +184,14 @@ async function main() {
             choices,
         });
         switch (answers.operation) {
+            case 'Get AcalaOracle Price':
+                const acaPrice = await epochManage.getAcaOraclePrice();
+                console.log('current aca price is ' + acaPrice);
+                break;
+            case 'Get Aseed Price':
+                const aseedPrice = await epochManage.getAseedPrice();
+                console.log('current aseed price is ' + aseedPrice);
+                break;
             case 'Query Market Addresses':
                 console.log(markets_available);
                 break;
@@ -197,7 +206,6 @@ async function main() {
                     if (markets_available[1][i] == markets.name) {
                         await marketRegistry.removeMarket(
                             markets_available[0][i],
-                            gasLimitAndGasPrice,
                         );
                         break;
                     }
@@ -217,7 +225,6 @@ async function main() {
                 });
                 await metaDefender.claimRewards(
                     claim_rewards.certificateId,
-                    gasLimitAndGasPrice,
                 );
                 break;
             case 'Get Rewards':
@@ -256,30 +263,8 @@ async function main() {
                 await quoteToken.transfer(
                     chooseAddress_transfer.address,
                     toBN(transferQuery.amount),
-                    gasLimitAndGasPrice,
                 );
                 break;
-            case 'Calculate Premium': {
-                const policyCoverageQuery = await prompt({
-                    type: 'input',
-                    name: 'coverage',
-                    message: 'How much coverage do you want to buy?',
-                });
-                const policyDurationQuery = await prompt({
-                    type: 'input',
-                    name: 'duration',
-                    message: 'How long do you want to buy? (in days)',
-                });
-                const premium = await globalsViewer
-                    .connect(currentSigner)
-                    .getPremium(
-                        toBN(String(policyCoverageQuery.coverage)),
-                        String(policyDurationQuery.duration),
-                        metaDefender.address,
-                    );
-                console.log(premium);
-                break;
-            }
             case 'Query Global Views':
                 const globals = await globalsViewer
                     .connect(currentSigner)
@@ -310,20 +295,13 @@ async function main() {
                     name: 'coverage',
                     message: 'How much coverage do you want to buy?',
                 });
-                const policyDurationQuery = await prompt({
-                    type: 'input',
-                    name: 'duration',
-                    message: 'How long do you want to buy? (in days)',
-                });
                 if (
-                    !isNaN(Number(policyCoverageQuery.coverage)) &&
-                    !isNaN(Number(policyDurationQuery.duration))
+                    !isNaN(Number(policyCoverageQuery.coverage))
                 ) {
                     const price = await globalsViewer
                         .connect(currentSigner)
                         .getPremium(
                             toBN(String(policyCoverageQuery.coverage)),
-                            String(policyDurationQuery.duration),
                             metaDefender.address,
                         );
                     console.log(chalk.green('Price: ' + price));
@@ -385,7 +363,6 @@ async function main() {
                         .connect(currentSigner)
                         .certificateProviderEntrance(
                             String(toBN(provideLiquidity.amount)),
-                            gasLimitAndGasPrice,
                         );
                 } else {
                     throw new Error('invalid number');
@@ -412,8 +389,6 @@ async function main() {
                     .connect(currentSigner)
                     .certificateProviderExit(
                         String(withdraw.certificateId),
-                        false,
-                        gasLimitAndGasPrice,
                     );
                 break;
             case 'Buy Policy':
@@ -422,22 +397,13 @@ async function main() {
                     name: 'coverage',
                     message: 'How much coverage do you want to buy?',
                 });
-                const policyDuration = await prompt({
-                    type: 'input',
-                    name: 'duration',
-                    message: 'How long do you want to buy? (in days)',
-                });
                 if (
-                    !isNaN(Number(policyCoverage.coverage)) &&
-                    !isNaN(Number(policyDuration.duration))
-                ) {
+                    !isNaN(Number(policyCoverage.coverage))) {
                     await metaDefender
                         .connect(currentSigner)
                         .buyPolicy(
                             await currentSigner.getAddress(),
-                            toBN(String(policyCoverage.coverage)),
-                            String(policyDuration.duration),
-                            gasLimitAndGasPrice,
+                            toBN(String(policyCoverage.coverage))
                         );
                 }
                 break;

@@ -24,7 +24,7 @@ contract TestAmericanBinaryOptions is AmericanBinaryOptions {
         return abs(x);
     }
 
-    function erf_pub(int x) external view returns (int) {
+    function erf_pub(int x) external pure returns (int) {
         return erf(x).preciseDecimalToDecimal();
     }
 

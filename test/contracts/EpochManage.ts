@@ -33,6 +33,9 @@ describe('EpochManage - uint tests', async () => {
                     contracts.metaDefender.address,
                     contracts.liquidityCertificate.address,
                     contracts.policy.address,
+                    oracleAddress,
+                    IDEX,
+                    oracleOperator,
                 ),
             ).to.be.revertedWith(
                 'Initializable: contract is already initialized',

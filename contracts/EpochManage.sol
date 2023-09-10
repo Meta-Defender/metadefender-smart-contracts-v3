@@ -9,11 +9,11 @@ import './interfaces/IEpochManage.sol';
 import './interfaces/IMetaDefender.sol';
 import './interfaces/ILiquidityCertificate.sol';
 import './interfaces/IPolicy.sol';
-import './interfaces/IOracle.sol';
 import './interfaces/IDEX.sol';
 
-// oz
-import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
+// acala-network
+import "@acala-network/contracts/oracle/IOracle.sol";
+import "@acala-network/contracts/utils/MandalaTokens.sol";
 
 /// @title Epoch
 /// @notice Contains functions for managing epoch processes and relevant calculations
@@ -22,7 +22,7 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 // off-chain oracle feed asseed price into epoch manage,
 // together with the time passed or the current epoch index, we decide weither to allow option exercise or not
 // only the first 10days allow user to buy or underwrite,but as the reward
-contract EpochManage is IEpochManage, Initializable {
+contract EpochManage is IEpochManage {
     using SafeMath for uint256;
     using SafeMath for uint64;
     using SafeDecimalMath for uint256;
@@ -44,15 +44,16 @@ contract EpochManage is IEpochManage, Initializable {
     uint public daysAboveStrikePrice;
     mapping(uint => bool) public isAboveStrike;
 
-    address internal aca = address(0x0000000000000000000100000000000000000000);
-    address internal aseed =
-        address(0x0000000000000000000100000000000000000001);
+    address constant ORACLE = 0x0000000000000000000000000000000000000801;
+    address constant DEX = 0x0000000000000000000000000000000000000803;
+
+    IOracle oracle = IOracle(ORACLE);
+    IDEX dex = IDEX(DEX);
 
     ILiquidityCertificate internal liquidityCertificate;
     IPolicy internal policy;
     IMetaDefender internal metaDefender;
-    IOracle internal oracle;
-    IDEX internal dex;
+
     mapping(uint64 => EpochInfo) internal _epochInfo;
     uint internal lastPriceFeedTime;
     uint internal lastPriceUpdateTime;
@@ -68,10 +69,9 @@ contract EpochManage is IEpochManage, Initializable {
         IMetaDefender _metaDefender,
         ILiquidityCertificate _liquidityCertificate,
         IPolicy _policy,
-        IOracle _oracle,
-        IDEX _dex,
         address _oracleOperator
-    ) external initializer {
+    ) external {
+        require(initialized == false, 'already initialized');
         require(
             address(_metaDefender) != address(0),
             'liquidityPool cannot be 0 address'
@@ -79,11 +79,9 @@ contract EpochManage is IEpochManage, Initializable {
         metaDefender = _metaDefender;
         liquidityCertificate = _liquidityCertificate;
         policy = _policy;
-        oracle = _oracle;
-        dex = _dex;
         startTime = block.timestamp; //init start time
-        initialized = true;
         oracleOperator = _oracleOperator;
+        initialized = true;
     }
 
     /**
@@ -154,19 +152,25 @@ contract EpochManage is IEpochManage, Initializable {
         strikePrice = _price;
     }
 
+    function getAcaOraclePrice() external view returns (uint) {
+        // get aca oracle price
+        uint acaPrice = oracle.getPrice(ACA);
+        return acaPrice;
+    }
+
     function getAseedPrice() public view returns (uint) {
-        // aseed price feed logic
-        address[] memory path1; //= [aseed,aca];
-        path1[0] = aseed;
-        path1[1] = aca;
-        address[] memory path2; //= [aca,aseed];
-        path2[0] = aca;
-        path2[1] = aseed;
+        address[] memory path1 = new address[](2);
+        path1[0] = AUSD;
+        path1[1] = ACA;
+        address[] memory path2 = new address[](2);
+        path2[0] = ACA;
+        path2[1] = AUSD;
+
         uint aseed2aca1 = dex.getSwapTargetAmount(path1, 10 ** 12);
         uint aseed2aca2 = dex.getSwapSupplyAmount(path2, 10 ** 12);
-        uint aseed2aca = aseed2aca1.add(aseed2aca2).div(2);
 
-        uint acaPrice = oracle.getPrice(aca);
+        uint aseed2aca = aseed2aca1.add(aseed2aca2).div(2);
+        uint acaPrice = oracle.getPrice(ACA);
         uint aseedPrice = aseed2aca.mul(acaPrice).div(10 ** 12);
         return aseedPrice;
     }

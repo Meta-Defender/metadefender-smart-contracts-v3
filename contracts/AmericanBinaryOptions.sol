@@ -156,7 +156,7 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
                 .divideDecimalRoundPrecise(SQRT_TWOPI);
     }
 
-    function erf(int x) internal view returns (int) {
+    function erf(int x) internal pure returns (int) {
         return
             int(
                 stdNormalCDF(
@@ -181,7 +181,7 @@ contract AmericanBinaryOptions is IAmericanBinaryOptions {
         uint256 spotDecimal,
         uint256 strikeDecimal,
         int rateDecimal
-    ) external view override returns (int call) {
+    ) external pure override returns (int) {
         uint256 tAnnualised = annualise(timeToExpirySec);
         uint256 spotPrecise = spotDecimal.decimalToPreciseDecimal();
         uint256 strikePrecise = strikeDecimal.decimalToPreciseDecimal();

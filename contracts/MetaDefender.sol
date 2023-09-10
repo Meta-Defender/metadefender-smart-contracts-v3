@@ -5,9 +5,7 @@ pragma solidity ^0.8.9;
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
-import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 // interfaces
 import './interfaces/ILiquidityCertificate.sol';
@@ -21,8 +19,8 @@ import './Lib/SafeDecimalMath.sol';
 
 contract MetaDefender is
     IMetaDefender,
-    ReentrancyGuardUpgradeable,
-    OwnableUpgradeable
+    ReentrancyGuard,
+    Ownable
 {
     using SafeMath for uint256;
     using SafeMath for uint64;
@@ -45,7 +43,9 @@ contract MetaDefender is
     address public official;
     address public protocol;
     uint256 public teamReserveRate;
+    uint256 public baseRate;
     uint256 public constant FEE_RATE = 5e16;
+    uint256 public constant DURATION = 25;
     uint256 public constant FEE = 10e18;
     uint256 public constant MAX_COVERAGE_PERCENTAGE = 2e17;
     uint256 public constant WITHDRAWAL_FEE_RATE = 3e15;
@@ -74,14 +74,12 @@ contract MetaDefender is
      * @dev Initialize the contract.
      *
      * @param _aUSD the IERC20 instance of AcalaUSD
-     * @param _judger the address of judger
      * @param _official the address of official
      * @param _epochManage the address of epoch manage contract
      */
     function init(
         // basic information
         IERC20 _aUSD,
-        address _judger,
         address _official,
         // NFT LPs and policy NFT
         ILiquidityCertificate _liquidityCertificate,
@@ -93,10 +91,12 @@ contract MetaDefender is
         // params
         uint256 _initialRisk,
         uint256 _teamReserveRate,
-        uint256 _standardRisk
-    ) external initializer {
+        uint256 _standardRisk,
+        uint256 _strikeRate,
+        uint256 _baseRate
+    ) external {
+        require(!initialized, 'Contract already initialized');
         aUSD = _aUSD;
-        judger = _judger;
         official = _official;
         liquidityCertificate = _liquidityCertificate;
         policy = _policy;
@@ -104,6 +104,8 @@ contract MetaDefender is
         americanBinaryOptions = _americanBinaryOptions;
         globalInfo.risk = _initialRisk;
         globalInfo.standardRisk = _standardRisk;
+        globalInfo.strikeRate = _strikeRate;
+        globalInfo.baseRate = _baseRate;
         teamReserveRate = _teamReserveRate;
         initialized = true;
     }
@@ -157,17 +159,11 @@ contract MetaDefender is
      * @dev buy Cover
      * @param beneficiary is the address to can claim the coverage.
      * @param coverage is the coverage to be secured.
-     * @param duration is the time (in epoch) the policy lasts.
      */
     function buyPolicy(
         address beneficiary,
-        uint256 coverage,
-        uint256 duration
+        uint256 coverage
     ) external override nonReentrant checkNewEpoch {
-        //only for aseed options. 30 days fixed
-        if (duration != 30) {
-            revert invalidAseedOptionPeriod();
-        }
         if (epochManage.daysAboveStrikePrice() >= 7) {
             revert priceStrike();
         }
@@ -194,17 +190,17 @@ contract MetaDefender is
             )
         );
         int256 premium = americanBinaryOptions.americanBinaryOptionPrices(
-            duration * 1 days,
+            DURATION * 1 days,
             globalInfo.risk,
             1000e18,
-            1500e18,
+            uint(1000e18).multiplyDecimal(globalInfo.strikeRate),
             FREE_RATE
         );
         if (premium < 0) {
             premium = 0;
         }
         // 15% base rate
-        uint256 basePayment = coverage.mul(15).div(100);
+        uint256 basePayment = coverage.mul(baseRate).div(100);
         uint256 totalPayment = uint256(premium).multiplyDecimal(coverage).add(
             basePayment
         );
@@ -237,7 +233,7 @@ contract MetaDefender is
             coverage,
             FEE,
             epochManage.currentEpochIndex(),
-            duration,
+            DURATION,
             deltaSPS,
             globalInfo.standardRisk,
             block.timestamp

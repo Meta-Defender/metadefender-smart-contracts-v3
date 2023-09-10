@@ -5,7 +5,7 @@ pragma solidity 0.8.9;
 import './Lib/SafeDecimalMath.sol';
 
 // Inherited
-import '@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol';
+import '@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol';
 import './interfaces/IPolicy.sol';
 import './interfaces/IEpochManage.sol';
 
@@ -15,7 +15,7 @@ import './interfaces/IEpochManage.sol';
  * @dev An ERC721 token which represents a policy.
  * It is minted when users buy the cover.
  */
-contract Policy is IPolicy, ERC721EnumerableUpgradeable {
+contract Policy is IPolicy, ERC721Enumerable {
     using SafeMath for uint256;
     using SafeDecimalMath for uint256;
 
@@ -25,33 +25,32 @@ contract Policy is IPolicy, ERC721EnumerableUpgradeable {
     uint256 internal nextId;
     mapping(uint256 => PolicyInfo) internal _policyInfo;
     address public override metaDefender;
-    address public override protocol;
     bool internal initialized;
     IEpochManage internal epochManage;
     uint256 public override totalCoverage;
     uint256 public override totalPendingCoverage;
 
     /**
+   * @param _name Token collection name
+   * @param _symbol Token collection symbol
+   */
+    constructor(string memory _name, string memory _symbol) ERC721(_name, _symbol) {}
+
+    /**
      * @dev Initialize the contract.
      * @param _metaDefender MetaDefender address.
-     * @param _protocol Protocol address.
      */
     function init(
         address _metaDefender,
-        address _protocol,
-        IEpochManage _epochManage,
-        string memory _name,
-        string memory _symbol
-    ) external initializer {
+        IEpochManage _epochManage
+    ) external {
         require(!initialized, 'already initialized');
         require(
             _metaDefender != address(0),
             'liquidityPool cannot be 0 address'
         );
         metaDefender = _metaDefender;
-        protocol = _protocol;
         epochManage = _epochManage;
-        __ERC721_init(_name, _symbol);
         initialized = true;
     }
 

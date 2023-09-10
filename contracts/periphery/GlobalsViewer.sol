@@ -39,6 +39,7 @@ contract GlobalsViewer {
 
     bool public initialized = false;
     uint256 public constant BASE_POINT = 1e16;
+    uint256 public constant DURATION = 25;
 
     constructor() {}
 
@@ -61,7 +62,6 @@ contract GlobalsViewer {
      */
     function getPremium(
         uint256 coverage,
-        uint256 duration,
         address _metaDefender
     ) public view returns (TradeInsuranceView memory) {
         IMetaDefender.GlobalInfo memory globalInfo = IMetaDefender(
@@ -73,18 +73,19 @@ contract GlobalsViewer {
             )
         );
         int premium = americanBinaryOptions.americanBinaryOptionPrices(
-            duration * 1 days,
+            DURATION * 1 days,
             newRisk,
             1000e18,
-            1500e18,
+            uint(1000e18).multiplyDecimal(globalInfo.strikeRate),
             6e16
         );
         if (premium < 0) {
             premium = 0;
         }
+        uint256 basePayment = coverage.mul(globalInfo.baseRate).div(100);
         return
             TradeInsuranceView(
-                uint256(premium).multiplyDecimal(coverage),
+                uint256(premium).multiplyDecimal(coverage).add(basePayment),
                 10e18,
                 newRisk
             );

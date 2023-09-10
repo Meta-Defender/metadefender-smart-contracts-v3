@@ -16,8 +16,6 @@ interface IPolicy {
         bool isSettled;
     }
 
-    function protocol() external view returns (address);
-
     function metaDefender() external view returns (address);
 
     function MIN_COVERAGE() external view returns (uint256);

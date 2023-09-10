@@ -65,27 +65,6 @@ describe('MetaDefender - uint tests', async () => {
         });
     });
 
-    describe('transferJudger', async () => {
-        it('should not allow transfer when the msg.sender is not the judger', async () => {
-            await expect(
-                contracts.metaDefender
-                    .connect(user)
-                    .transferJudger(await user.getAddress()),
-            ).to.be.revertedWithCustomError(
-                contracts.metaDefender,
-                'InsufficientPrivilege',
-            );
-        });
-        it('should successfully transfer the judger', async () => {
-            await contracts.metaDefender
-                .connect(deployer)
-                .transferJudger(await user.getAddress());
-            expect(await contracts.metaDefender.judger()).to.be.equal(
-                await user.getAddress(),
-            );
-        });
-    });
-
     describe('update standardRisk', async () => {
         it('should not allow update when the msg.sender is not the official', async () => {
             await expect(
@@ -250,32 +229,11 @@ describe('MetaDefender - uint tests', async () => {
         });
     });
 
-    describe('get real/loss liquidity', async () => {
-        it('should revert if the liquidity is invalid', async () => {
-            await seedTestSystem(deployer, contracts, 20000, [provider1]);
-            await contracts.metaDefender
-                .connect(provider1)
-                .certificateProviderEntrance(toBN('10000'));
-            await fastForward(86400);
-            await contracts.metaDefender
-                .connect(provider1)
-                .certificateProviderExit('0', false);
-            await expect(
-                contracts.metaDefender.getRealAndLostLiquidityByCertificateId(
-                    '0',
-                ),
-            ).to.be.revertedWithCustomError(
-                contracts.metaDefender,
-                'CertificateExit',
-            );
-        });
-    });
-
     describe('certificateProvider exit', async () => {
         it('should revert if the certificate is invalid', async () => {
             await fastForward(86400);
             await expect(
-                contracts.metaDefender.certificateProviderExit('7777', false),
+                contracts.metaDefender.certificateProviderExit('7777'),
             ).to.be.revertedWith('ERC721: invalid token ID');
         });
         it('should revert if the certificate not belongs to the msg.sender', async () => {
@@ -313,7 +271,7 @@ describe('MetaDefender - uint tests', async () => {
             await fastForward(86400);
             await contracts.metaDefender
                 .connect(provider1)
-                .certificateProviderExit('0', false);
+                .certificateProviderExit('0');
             const premium = americanBinaryOptions(
                 tAnnualised,
                 initialRisk + (1000 / standardRisk) * 0.01,

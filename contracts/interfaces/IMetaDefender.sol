@@ -11,6 +11,8 @@ interface IMetaDefender {
         uint256 risk;
         uint256 reward4Team;
         uint256 standardRisk;
+        uint256 strikeRate;
+        uint256 baseRate;
     }
 
     function getGlobalInfo() external view returns (GlobalInfo memory);
@@ -25,8 +27,7 @@ interface IMetaDefender {
 
     function buyPolicy(
         address beneficiary,
-        uint256 coverage,
-        uint256 duration
+        uint256 coverage
     ) external;
 
     function claimRewards(uint256 certificateId) external;

@@ -5,9 +5,7 @@ pragma solidity 0.8.9;
 import './Lib/SafeDecimalMath.sol';
 
 // oz
-import '@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
-
+import '@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol';
 import './interfaces/ILiquidityCertificate.sol';
 
 /**
@@ -18,7 +16,7 @@ import './interfaces/ILiquidityCertificate.sol';
  */
 contract LiquidityCertificate is
     ILiquidityCertificate,
-    ERC721EnumerableUpgradeable
+    ERC721Enumerable
 {
     using SafeMath for uint256;
     using SafeDecimalMath for uint256;
@@ -35,21 +33,24 @@ contract LiquidityCertificate is
     bool internal initialized;
 
     /**
+    * @param _name Token collection name
+    * @param _symbol Token collection symbol
+   */
+    constructor(string memory _name, string memory _symbol) ERC721(_name, _symbol) {}
+
+    /**
      * @dev Initialize the contract.
      * @param _metaDefender MetaDefender address.
      */
     function init(
-        address _metaDefender,
-        string memory _name,
-        string memory _symbol
-    ) external initializer {
+        address _metaDefender
+    ) external {
         require(
             _metaDefender != address(0),
             'liquidityPool cannot be 0 address'
         );
         require(!initialized, 'already initialized');
         metaDefender = _metaDefender;
-        __ERC721_init(_name, _symbol);
         initialized = true;
     }
 
