@@ -3,7 +3,6 @@ import { ethers } from 'hardhat';
 import { fromBN, toBN } from '../../scripts/util/web3utils';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
-import moment from 'moment';
 
 export function send(method: string, params?: Array<any>) {
     return ethers.provider.send(method, params === undefined ? [] : params);
