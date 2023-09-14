@@ -92,8 +92,8 @@ contract EpochManage is IEpochManage {
      * @dev feed the price every hour
      */
     function updatePriceList() external {
-        // require(msg.sender == oracleOperator && isWithdrawDay(), "insufficient permission or not withdraw day");
-        require(msg.sender == oracleOperator, "insufficient permission");
+        require(msg.sender == oracleOperator && isWithdrawDay(), "insufficient permission or not withdraw day");
+        // require(msg.sender == oracleOperator, "insufficient permission");
         require(block.timestamp.sub(lastPriceUpdateTime) >= 3600);
         if (daysAboveStrikePrice >= 8) {
             return;
