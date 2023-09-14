@@ -1,7 +1,7 @@
 {
-  "name": "metadefender-subql",
-  "version": "1.0.0",
-  "description": "l",
+  "name": "evm-starter",
+  "version": "0.0.1",
+  "description": "This project can be use as a starting point for developing your new Ethereum SubQuery project",
   "main": "dist/index.js",
   "scripts": {
     "build": "subql build",
@@ -9,36 +9,31 @@
     "start:docker": "docker-compose pull && docker-compose up --remove-orphans",
     "dev": "subql codegen && subql build && docker-compose pull && docker-compose up --remove-orphans",
     "prepack": "rm -rf dist && npm run build",
-    "test": "subql build && subql-node test"
+    "test": "subql build && subql-node-ethereum test"
   },
-  "homepage": "https://github.com/subquery/tutorials-frontier-evm-starter",
-  "repository": "github:subquery/tutorials-frontier-evm-starter",
+  "homepage": "https://github.com/subquery/ethereum-subql-starter",
+  "repository": "github:subquery/ethereum-subql-starter",
   "files": [
     "dist",
     "schema.graphql",
     "project.yaml"
   ],
-  "author": "vl",
-  "license": "Apache-2.0",
-  "resolutions": {
-    "ipfs-unixfs": "6.0.6"
-  },
+  "author": "SubQuery Team",
+  "license": "MIT",
   "dependencies": {
-    "@acala-network/type-definitions": "^4.1.1",
-    "@subql/acala-evm-processor": "latest",
-    "atob": "^2.1.2",
-    "abab": "^2.0.6"
+    "@subql/common": "latest",
+    "@subql/types-ethereum": "latest",
+    "@subql/validator": "latest",
+    "abab": "^2.0.6",
+    "assert": "^2.0.0",
+    "atob": "^2.1.2"
   },
   "devDependencies": {
-    "@polkadot/api": "^10",
     "@subql/cli": "latest",
-    "@subql/node": "latest",
+    "@subql/node-ethereum": "latest",
     "@subql/testing": "latest",
     "@subql/types": "latest",
-    "@subql/types-ethereum": "latest",
-    "typescript": "^4.6.2"
-  },
-  "exports": {
-    "chaintypes": "./src/chaintypes.ts"
+    "ethers": "^5.7.2",
+    "typescript": "4.5.5"
   }
 }
