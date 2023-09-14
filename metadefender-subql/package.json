@@ -25,7 +25,9 @@
   },
   "dependencies": {
     "@acala-network/type-definitions": "^4.1.1",
-    "@subql/acala-evm-processor": "latest"
+    "@subql/acala-evm-processor": "latest",
+    "atob": "^2.1.2",
+    "abab": "^2.0.6"
   },
   "devDependencies": {
     "@polkadot/api": "^10",

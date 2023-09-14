@@ -171,6 +171,8 @@ async function main() {
         'Remove Market',
         'Get Aseed Price',
         'Get AcalaOracle Price',
+        'Update Price List',
+        'Check Price List',
         'Exit',
     ];
 
@@ -184,6 +186,20 @@ async function main() {
             choices,
         });
         switch (answers.operation) {
+            case 'Update Price List':
+                let lastUpdateTime = 0
+                while (true) {
+                    if (Math.floor(Date.now() / 1000) - lastUpdateTime > 3600) {
+                        await epochManage.updatePriceList();
+                        console.log('successfully updated the price list');
+                        lastUpdateTime = Math.floor(Date.now() / 1000)
+                        // break;
+                    }
+                }
+            case 'Check Price List':
+                const priceList = await epochManage.getPriceList();
+                console.log('successfully get the price list', priceList);
+                break;
             case 'Get AcalaOracle Price':
                 const acaPrice = await epochManage.getAcaOraclePrice();
                 console.log('current aca price is ' + acaPrice);

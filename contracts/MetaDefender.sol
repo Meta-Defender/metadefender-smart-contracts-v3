@@ -26,7 +26,7 @@ contract MetaDefender is
     using SafeMath for uint64;
     using SafeDecimalMath for uint256;
 
-    GlobalInfo internal globalInfo;
+    GlobalInfo public globalInfo;
 
     IERC20 internal aUSD;
     // validMiningProxy, no need for aseed option
@@ -35,7 +35,7 @@ contract MetaDefender is
     // interfaces
     ILiquidityCertificate internal liquidityCertificate;
     IPolicy internal policy;
-    IEpochManage internal epochManage;
+    IEpochManage public epochManage;
     IAmericanBinaryOptions internal americanBinaryOptions;
 
     bool private initialized;

@@ -84,11 +84,16 @@ contract EpochManage is IEpochManage {
         initialized = true;
     }
 
+    function getPriceList() external view returns (uint[] memory) {
+        return priceList;
+    }
+
     /**
      * @dev feed the price every hour
      */
     function updatePriceList() external {
-        require(msg.sender == oracleOperator && isWithdrawDay());
+        // require(msg.sender == oracleOperator && isWithdrawDay(), "insufficient permission or not withdraw day");
+        require(msg.sender == oracleOperator, "insufficient permission");
         require(block.timestamp.sub(lastPriceUpdateTime) >= 3600);
         if (daysAboveStrikePrice >= 8) {
             return;
@@ -120,7 +125,7 @@ contract EpochManage is IEpochManage {
         require(
             block.timestamp.sub(lastPriceFeedTime) >= 12 * 3600 &&
                 priceList[11] != 0
-        ); //feed only 1 time every 12 hours&&12 slots all fulfilled
+        );
 
         if (daysAboveStrikePrice > 7) {
             return;
@@ -170,6 +175,7 @@ contract EpochManage is IEpochManage {
         uint aseed2aca2 = dex.getSwapSupplyAmount(path2, 10 ** 12);
 
         uint aseed2aca = aseed2aca1.add(aseed2aca2).div(2);
+
         uint acaPrice = oracle.getPrice(ACA);
         uint aseedPrice = aseed2aca.mul(acaPrice).div(10 ** 12);
         return aseedPrice;

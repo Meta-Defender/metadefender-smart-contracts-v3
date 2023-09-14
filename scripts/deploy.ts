@@ -241,7 +241,7 @@ async function main(
         MetaDefender.address,
         LiquidityCertificate.address,
         Policy.address,
-        MetaDefender.address
+        signers[0].getAddress()
     );
     console.log('successfully init the EpochManage contract');
 

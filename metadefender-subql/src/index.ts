@@ -1,3 +1,6 @@
-//Exports all handler functions
-import "@polkadot/api-augment";
-export * from "./mappings/mappingHandlers";
+import { atob } from 'abab';
+if (!global.atob) {
+  global.atob = atob;
+}
+export * from './mappings/mappingHandlers';
+import '@polkadot/api-augment';

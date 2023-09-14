@@ -32,11 +32,11 @@ network:
 
 dataSources:
   - kind: ethereum/Runtime
-    startBlock: 3548000
+    startBlock: 613258
     options:
       # Must be a key of assets
       abi: MetaDefenderMarketRegistry
-      address: "0x2b70C99C59d9Df43751647987B7942dC84cfA150" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0x46bE2A41bDA3407842c3d426478c67AE4057B517" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       MetaDefenderMarketRegistry:
         file: artifacts/contracts/periphery/MetaDefenderMarketsRegistry.sol/MetaDefenderMarketsRegistry.json
@@ -49,11 +49,11 @@ dataSources:
             topics:
               - MarketAdded(address metaDefender,address liquidityCertificate,address policy,address epochManage,string marketName,string marketDescription,string marketPaymentToken,string marketProtectionType,string network)
   - kind: ethereum/Runtime
-    startBlock: 3548000
+    startBlock: 613258
     options:
       # Must be a key of assets
       abi: LiquidityCertificate
-      address: "0x975348230509fA880572478c16Db0b3A6b502507" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0xA6D458D170E4B51Bc3BB8dDefDdA5799917Ec1be" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       LiquidityCertificate:
         file: artifacts/contracts/LiquidityCertificate.sol/LiquidityCertificate.json
@@ -76,11 +76,11 @@ dataSources:
             topics:
               - NewLPMinted(address owner,uint256 certificateId,uint256 enteredEpochIndex,uint256 liquidity,address metadefender)
   - kind: ethereum/Runtime
-    startBlock: 3548000
+    startBlock: 613258
     options:
       # Must be a key of assets
       abi: Policy
-      address: "0xEA568A6Cc9fd379f4BA9a11ddfD46eEd1603d05d" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0x598B2456073B3d9E0AdA902dAc30f4662Eb2d625" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       Policy:
         file: artifacts/contracts/Policy.sol/Policy.json
