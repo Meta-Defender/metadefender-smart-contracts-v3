@@ -52,7 +52,7 @@ dataSources:
     startBlock: 613258
     options:
       # Must be a key of assets
-      abi: LiquidityCertificate
+      abi: LiquidityCertificate_glimmer
       address: "0xA6D458D170E4B51Bc3BB8dDefDdA5799917Ec1be" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       LiquidityCertificate:
@@ -60,17 +60,56 @@ dataSources:
     mapping:
       file: "./dist/index.js"
       handlers:
-        - handler: handleLPTransfer
-          kind: ethereum/LogHandler
-          filter:
-            topics:
-              - Transfer(address indexed from,address indexed to,uint256 indexed tokenId)
-        - handler: handleLPExpired
+        - handler: handleLPExpired_glimmer
           kind: ethereum/LogHandler
           filter:
             topics:
               - Expired(uint256 certificateId)
-        - handler: handleNewLPMinted
+        - handler: handleNewLPMinted_glimmer
+          kind: ethereum/LogHandler
+          filter:
+            topics:
+              - NewLPMinted(address owner,uint256 certificateId,uint256 enteredEpochIndex,uint256 liquidity,address metadefender)
+  - kind: ethereum/Runtime
+    startBlock: 613258
+    options:
+      # Must be a key of assets
+      abi: LiquidityCertificate_flame
+      address: "0xA6D458D170E4B51Bc3BB8dDefDdA5799917Ec1be" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+    assets:
+      LiquidityCertificate:
+        file: artifacts/contracts/LiquidityCertificate.sol/LiquidityCertificate.json
+    mapping:
+      file: "./dist/index.js"
+      handlers:
+        - handler: handleLPExpired_flame
+          kind: ethereum/LogHandler
+          filter:
+            topics:
+              - Expired(uint256 certificateId)
+        - handler: handleNewLPMinted_flame
+          kind: ethereum/LogHandler
+          filter:
+            topics:
+              - NewLPMinted(address owner,uint256 certificateId,uint256 enteredEpochIndex,uint256 liquidity,address metadefender)
+  - kind: ethereum/Runtime
+    startBlock: 613258
+    options:
+      # Must be a key of assets
+      abi: LiquidityCertificate_blaze
+      address: "0xA6D458D170E4B51Bc3BB8dDefDdA5799917Ec1be" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+    assets:
+      LiquidityCertificate:
+        file: artifacts/contracts/LiquidityCertificate.sol/LiquidityCertificate.json
+    mapping:
+      file: "./dist/index.js"
+      handlers:
+        - handler: handleLPExpired_blaze
+          kind: ethereum/LogHandler
+          filter:
+            topics:
+              - Expired(uint256 certificateId)
+        - handler: handleNewLPMinted_blaze
           kind: ethereum/LogHandler
           filter:
             topics:

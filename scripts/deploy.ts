@@ -71,7 +71,7 @@ async function main(
     );
 
     // deploy liquidity certificate with low-risk/medium-risk/high-risk
-    const LiquidityCertificate = await _LiquidityCertificate.deploy('L_231007_LC', 'L_231007_LC');
+    const LiquidityCertificate = await _LiquidityCertificate.deploy('aseed_20231020_blaze_c', 'aseed_20231020_blaze_c');
     console.log(
         'successfully deployed LiquidityCertificate: ' +
             LiquidityCertificate.address +
@@ -81,7 +81,7 @@ async function main(
 
     // deploy policy with low-risk/medium-risk/high-risk
     const _Policy = await hre.ethers.getContractFactory('Policy', signers[0]);
-    const Policy = await _Policy.deploy('L_231007_P', 'L_231007_P');
+    const Policy = await _Policy.deploy('aseed_20231020_blaze_p', 'aseed_20231020_blaze_p');
     console.log(
         'successfully deployed Policy: ' +
             Policy.address +
@@ -159,7 +159,7 @@ async function main(
             AmericanBinaryOptions.address,
         );
         console.log('successfully init the GlobalsViewer contract');
-        TestERC20 = await _TestERC20.deploy('TQA', 'TQA');
+        TestERC20 = await _TestERC20.deploy('mUSDT', 'mUSDT');
         console.log('successfully deployed TestERC20: ' + TestERC20.address);
         // mint 10M tokens for the owner
         await TestERC20.mint(
@@ -224,7 +224,7 @@ async function main(
         toBN('0.10'),
         toBN('0.00'),
         toBN('200'),
-        toBN('1.1'),
+        toBN('1.15'),
         3
     );
     console.log('successfully init the MetaDefender contract');
@@ -261,11 +261,11 @@ async function main(
 }
 
 main(
-    'Test_StableCoin1_Pool',
-    'Stable_Coin_Pool',
-    'USDT',
-    'DePeg Safety',
-    'Arbitrum',
+    'aseed_option_20231020_blaze',
+    'aseed_option_20231020_blaze',
+    'mUSDT',
+    'aseed_option',
+    'mandala',
 )
     .then(() => process.exit(0))
     .catch((error) => {
