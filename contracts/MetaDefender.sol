@@ -462,6 +462,11 @@ contract MetaDefender is
         aUSD.transfer(msg.sender, withdrawal.sub(fee));
     }
 
+    /**
+     * @dev claim the policy
+     *
+     * @param policyId the policy id
+     */
     function claimPolicy(uint256 policyId) internal {
         IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
         if (policy.isClaimAvailable(policyId)) {
@@ -476,37 +481,6 @@ contract MetaDefender is
         } else {
             revert NotClaimAvailable();
         }
-    }
-
-    /**
-     * @dev the process the policy holder applies for.
-     *
-     * @param policyId the policy id
-     */
-    function policyClaimApply(uint256 policyId) external override {
-        if (epochManage.daysAboveStrikePrice() < 7) {
-            revert exerciseNotAvailable();
-        }
-
-        IPolicy.PolicyInfo memory policyInfo = policy.getPolicyInfo(policyId);
-
-        if (policyInfo.isClaimed == true) {
-            revert PolicyAlreadyClaimed(policyId);
-        }
-        if (policyInfo.isSettled == true) {
-            revert PolicyAlreadySettled(policyId);
-        }
-        if (policyInfo.beneficiary != msg.sender) {
-            revert SenderNotBeneficiary(policyInfo.beneficiary, msg.sender);
-        }
-        if (policyInfo.isClaimApplying == true) {
-            revert ClaimUnderProcessing(policyId);
-        }
-        policy.changeStatusIsClaimApplying(policyId, true);
-
-        claimPolicy(policyId);
-        aUSD.transfer(policyInfo.beneficiary, policyInfo.coverage);
-        policy.changeStatusIsClaimed(policyId, true);
     }
 
     /**

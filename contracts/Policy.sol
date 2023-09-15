@@ -257,46 +257,6 @@ contract Policy is IPolicy, ERC721Enumerable {
         emit PolicyClaimed(policyId, status);
     }
 
-    /**
-     * @dev Change the status of whether the policy has been cancelled.
-     * @param policyId The id of the policy.
-     * @param status The status of whether the policy has been cancelled.
-     */
-    function changeStatusIsSettled(
-        uint256 policyId,
-        bool status
-    ) external override onlyMetaDefender {
-        if (msg.sender != metaDefender) {
-            revert InsufficientPrivilege();
-        }
-        require(
-            _policyInfo[policyId].enteredEpochIndex != 0,
-            'policy does not exist'
-        );
-        _policyInfo[policyId].isSettled = status;
-        // if the policy is settled with any reason(expire to settle or claim to settle), the totalCoverage will be reduced;
-        totalPendingCoverage = totalPendingCoverage.sub(
-            _policyInfo[policyId].coverage
-        );
-        emit PolicySettled(policyId, status);
-    }
-
-    /**
-     * @dev Change the status of whether the policy is under claim applying.
-     * @param policyId The id of the policy.
-     * @param status The status of whether the policy is under claim applying.
-     */
-    function changeStatusIsClaimApplying(
-        uint256 policyId,
-        bool status
-    ) external override onlyMetaDefender {
-        if (msg.sender != metaDefender) {
-            revert InsufficientPrivilege();
-        }
-        _policyInfo[policyId].isClaimApplying = status;
-        emit PolicyUnderClaimApplying(policyId, status);
-    }
-
     modifier onlyMetaDefender() virtual {
         require(msg.sender == address(metaDefender), 'Only MetaDefender');
         _;
