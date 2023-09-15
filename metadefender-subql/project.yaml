@@ -60,7 +60,7 @@ dataSources:
     mapping:
       file: "./dist/index.js"
       handlers:
-        - handler: handleLPExpired_glimmer
+        - handler: handleLPExpired
           kind: ethereum/LogHandler
           filter:
             topics:
@@ -82,7 +82,7 @@ dataSources:
     mapping:
       file: "./dist/index.js"
       handlers:
-        - handler: handleLPExpired_flame
+        - handler: handleLPExpired
           kind: ethereum/LogHandler
           filter:
             topics:
@@ -104,7 +104,7 @@ dataSources:
     mapping:
       file: "./dist/index.js"
       handlers:
-        - handler: handleLPExpired_blaze
+        - handler: handleLPExpired
           kind: ethereum/LogHandler
           filter:
             topics:
@@ -118,7 +118,7 @@ dataSources:
     startBlock: 613258
     options:
       # Must be a key of assets
-      abi: Policy
+      abi: Policy_glimmer
       address: "0x598B2456073B3d9E0AdA902dAc30f4662Eb2d625" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       Policy:
@@ -131,17 +131,51 @@ dataSources:
           filter:
             topics:
               - PolicyClaimed(uint256 policyId,bool status)
-        - handler: handlePolicySettled
+        - handler: handleNewPolicyMinted_glimmer
           kind: ethereum/LogHandler
           filter:
             topics:
-              - PolicySettled(uint256 policyId,bool status)
-        - handler: handlePolicyUnderClaimApplying
+              - NewPolicyMinted(address beneficiary,uint256 policyId,uint256 timestamp,uint256 coverage,uint256 fee,uint256 duration,uint256 standardRisk,uint256 enteredEpochIndex,uint256 SPS,address protocol,address epochManage)
+  - kind: ethereum/Runtime
+    startBlock: 613258
+    options:
+      # Must be a key of assets
+      abi: Policy_flame
+      address: "0x598B2456073B3d9E0AdA902dAc30f4662Eb2d625" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+    assets:
+      Policy:
+        file: artifacts/contracts/Policy.sol/Policy.json
+    mapping:
+      file: "./dist/index.js"
+      handlers:
+        - handler: handlePolicyClaimed
           kind: ethereum/LogHandler
           filter:
             topics:
-              - PolicyUnderClaimApplying(uint256 policyId,bool status)
-        - handler: handleNewPolicyMinted
+              - PolicyClaimed(uint256 policyId,bool status)
+        - handler: handleNewPolicyMinted_flame
+          kind: ethereum/LogHandler
+          filter:
+            topics:
+              - NewPolicyMinted(address beneficiary,uint256 policyId,uint256 timestamp,uint256 coverage,uint256 fee,uint256 duration,uint256 standardRisk,uint256 enteredEpochIndex,uint256 SPS,address protocol,address epochManage)
+  - kind: ethereum/Runtime
+    startBlock: 613258
+    options:
+      # Must be a key of assets
+      abi: Policy_blaze
+      address: "0x598B2456073B3d9E0AdA902dAc30f4662Eb2d625" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+    assets:
+      Policy:
+        file: artifacts/contracts/Policy.sol/Policy.json
+    mapping:
+      file: "./dist/index.js"
+      handlers:
+        - handler: handlePolicyClaimed
+          kind: ethereum/LogHandler
+          filter:
+            topics:
+              - PolicyClaimed(uint256 policyId,bool status)
+        - handler: handleNewPolicyMinted_blaze
           kind: ethereum/LogHandler
           filter:
             topics:

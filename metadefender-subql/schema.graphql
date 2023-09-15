@@ -18,6 +18,7 @@ type Policy @entity {
   isClaimed: Boolean!
   isClaimApplying: Boolean!
   isSettled: Boolean!
+  risk: String!
 }
 
 type LiquidityCertificate @entity {
@@ -32,6 +33,7 @@ type LiquidityCertificate @entity {
   liquidity: BigInt!
   SPSLocked: BigInt!
   isValid: Boolean!
+  risk: String!
 }
 
 type Market @entity {

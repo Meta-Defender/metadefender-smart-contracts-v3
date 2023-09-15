@@ -12,23 +12,6 @@ import {
     PolicySettledEvent,
 } from '../types/contracts/Policy';
 
-export async function handleLPTransfer(event: TransferEvent) {
-    const to = event.args.to;
-    const hashId = utils.keccak256(
-        utils.toUtf8Bytes(
-            event.address.toString() + event.args.tokenId.toString(),
-        ),
-    );
-    const entity = await LiquidityCertificate.get(hashId);
-    if (entity != null) {
-        if (entity.owner != to.toString()) {
-            entity.owner = to.toString();
-            await entity.save();
-        }
-    }
-    return;
-}
-
 export async function handleLPExpired(event: ExpiredEvent) {
     const hashId = utils.keccak256(
         utils.toUtf8Bytes(
@@ -44,7 +27,7 @@ export async function handleLPExpired(event: ExpiredEvent) {
     return;
 }
 
-export async function handleNewLPMinted(event: NewLPMintedEvent) {
+export async function handleNewLPMinted_glimmer(event: NewLPMintedEvent) {
     const hashId = utils.keccak256(
         utils.toUtf8Bytes(
             event.address.toString() + event.args.certificateId.toString(),
@@ -61,6 +44,53 @@ export async function handleNewLPMinted(event: NewLPMintedEvent) {
         rewardDebtEpochIndex: event.args.enteredEpochIndex.toBigInt(),
         SPSLocked: BigInt(0),
         isValid: true,
+        risk: 'glimmer'
+    });
+
+    await LP.save();
+}
+
+export async function handleNewLPMinted_flame(event: NewLPMintedEvent) {
+    const hashId = utils.keccak256(
+      utils.toUtf8Bytes(
+        event.address.toString() + event.args.certificateId.toString(),
+      ),
+    );
+    const LP = LiquidityCertificate.create({
+        id: hashId,
+        protocol: event.args.metaDefender,
+        owner: event.args.owner,
+        liquidity: event.args.liquidity.toBigInt(),
+        certificateId: event.args.certificateId.toBigInt(),
+        enteredEpochIndex: event.args.enteredEpochIndex.toBigInt(),
+        exitedEpochIndex: BigInt(0),
+        rewardDebtEpochIndex: event.args.enteredEpochIndex.toBigInt(),
+        SPSLocked: BigInt(0),
+        isValid: true,
+        risk: 'flame'
+    });
+
+    await LP.save();
+}
+
+export async function handleNewLPMinted_blaze(event: NewLPMintedEvent) {
+    const hashId = utils.keccak256(
+      utils.toUtf8Bytes(
+        event.address.toString() + event.args.certificateId.toString(),
+      ),
+    );
+    const LP = LiquidityCertificate.create({
+        id: hashId,
+        protocol: event.args.metaDefender,
+        owner: event.args.owner,
+        liquidity: event.args.liquidity.toBigInt(),
+        certificateId: event.args.certificateId.toBigInt(),
+        enteredEpochIndex: event.args.enteredEpochIndex.toBigInt(),
+        exitedEpochIndex: BigInt(0),
+        rewardDebtEpochIndex: event.args.enteredEpochIndex.toBigInt(),
+        SPSLocked: BigInt(0),
+        isValid: true,
+        risk: 'blaze'
     });
 
     await LP.save();
@@ -90,7 +120,7 @@ export async function handleMarketAdded(event: MarketAddedEvent) {
     await market.save();
 }
 
-export async function handleNewPolicyMinted(event: NewPolicyMintedEvent) {
+export async function handleNewPolicyMinted_glimmer(event: NewPolicyMintedEvent) {
     const hashId = utils.keccak256(
         utils.toUtf8Bytes(
             event.address.toString() + event.args.policyId.toString(),
@@ -112,6 +142,61 @@ export async function handleNewPolicyMinted(event: NewPolicyMintedEvent) {
         isClaimed: false,
         isClaimApplying: false,
         isSettled: false,
+        risk: 'glimmer'
+    });
+    await entity.save();
+}
+
+export async function handleNewPolicyMinted_flame(event: NewPolicyMintedEvent) {
+    const hashId = utils.keccak256(
+      utils.toUtf8Bytes(
+        event.address.toString() + event.args.policyId.toString(),
+      ),
+    );
+    const entity = Policy.create({
+        id: hashId,
+        epochManage: event.args.epochManage,
+        protocol: event.args.protocol,
+        beneficiary: event.args.beneficiary,
+        policyId: event.args.policyId.toBigInt(),
+        timestamp: event.args.timestamp.toBigInt(),
+        coverage: event.args.coverage.toBigInt(),
+        fee: event.args.fee.toBigInt(),
+        duration: event.args.duration.toBigInt(),
+        standardRisk: event.args.standardRisk.toBigInt(),
+        enteredEpochIndex: event.args.enteredEpochIndex.toBigInt(),
+        SPS: event.args.SPS.toBigInt(),
+        isClaimed: false,
+        isClaimApplying: false,
+        isSettled: false,
+        risk: 'flame'
+    });
+    await entity.save();
+}
+
+export async function handleNewPolicyMinted_blaze(event: NewPolicyMintedEvent) {
+    const hashId = utils.keccak256(
+      utils.toUtf8Bytes(
+        event.address.toString() + event.args.policyId.toString(),
+      ),
+    );
+    const entity = Policy.create({
+        id: hashId,
+        epochManage: event.args.epochManage,
+        protocol: event.args.protocol,
+        beneficiary: event.args.beneficiary,
+        policyId: event.args.policyId.toBigInt(),
+        timestamp: event.args.timestamp.toBigInt(),
+        coverage: event.args.coverage.toBigInt(),
+        fee: event.args.fee.toBigInt(),
+        duration: event.args.duration.toBigInt(),
+        standardRisk: event.args.standardRisk.toBigInt(),
+        enteredEpochIndex: event.args.enteredEpochIndex.toBigInt(),
+        SPS: event.args.SPS.toBigInt(),
+        isClaimed: false,
+        isClaimApplying: false,
+        isSettled: false,
+        risk: 'blaze'
     });
     await entity.save();
 }
