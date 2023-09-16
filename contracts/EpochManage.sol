@@ -69,6 +69,7 @@ contract EpochManage is IEpochManage {
         IMetaDefender _metaDefender,
         ILiquidityCertificate _liquidityCertificate,
         IPolicy _policy,
+        uint256 _startTime,
         address _oracleOperator
     ) external {
         require(initialized == false, 'already initialized');
@@ -79,7 +80,7 @@ contract EpochManage is IEpochManage {
         metaDefender = _metaDefender;
         liquidityCertificate = _liquidityCertificate;
         policy = _policy;
-        startTime = block.timestamp; //init start time
+        startTime = _startTime;
         oracleOperator = _oracleOperator;
         initialized = true;
     }

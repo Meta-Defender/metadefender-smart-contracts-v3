@@ -21,6 +21,7 @@
   "author": "SubQuery Team",
   "license": "MIT",
   "dependencies": {
+    "@polkadot/api-augment": "^10.9.1",
     "@subql/common": "latest",
     "@subql/types-ethereum": "latest",
     "@subql/validator": "latest",

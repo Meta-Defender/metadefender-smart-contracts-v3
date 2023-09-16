@@ -54,11 +54,4 @@ interface IPolicy {
     function newEpochCreated() external;
 
     function changeStatusIsClaimed(uint256 policyId, bool status) external;
-
-    function changeStatusIsClaimApplying(
-        uint256 policyId,
-        bool status
-    ) external;
-
-    function changeStatusIsSettled(uint256 policyId, bool status) external;
 }

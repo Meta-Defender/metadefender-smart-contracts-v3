@@ -40,6 +40,8 @@ interface IMetaDefender {
 
     function certificateProviderExit(uint256 certificateId) external;
 
+    function policyClaimApply(uint256 _id) external;
+
     function getRewards(
         uint256 certificateId,
         bool isExit

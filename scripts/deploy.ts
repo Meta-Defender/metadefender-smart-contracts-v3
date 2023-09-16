@@ -5,6 +5,7 @@ import { Contract, Signer } from 'ethers';
 const hre = require('hardhat');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { upgrades } = require('hardhat');
+const moment = require('moment');
 
 export type DeployedContracts = {
     network: string;
@@ -32,6 +33,8 @@ async function main(
     marketPaymentToken: string,
     marketProtectionType: string,
     network: string,
+    risk: string,
+    dateString: string
 ) {
     let res: DeployedContracts;
     let signers: Signer[] = [];
@@ -213,7 +216,26 @@ async function main(
     );
     // begin init the contracts
     // init the metaDefender contract
-    console.log("begin init the smart contracts");
+    let strike;
+    let _baseRate;
+    switch (risk) {
+        case 'low':
+            strike = 1.10;
+            _baseRate = 30;
+            break;
+        case 'medium':
+            strike = 1.15;
+            _baseRate = 27
+            break;
+        case 'high':
+            strike = 1.30;
+            _baseRate = 22
+            break;
+        default:
+            strike = 0;
+            _baseRate = 0;
+    }
+    console.log("begin init the smart contracts, now init the " + risk + " risk");
     await MetaDefender.init(
         TestERC20.address,
         signers[0].getAddress(),
@@ -224,8 +246,8 @@ async function main(
         toBN('0.10'),
         toBN('0.00'),
         toBN('200'),
-        toBN('1.15'),
-        3
+        toBN(String(strike)),
+        _baseRate
     );
     console.log('successfully init the MetaDefender contract');
     await LiquidityCertificate.init(
@@ -237,10 +259,16 @@ async function main(
         EpochManage.address,
     );
     console.log('successfully init the Policy contract');
+
+    const date = moment(dateString, 'YYYYMMDD');
+    const timestampInSeconds = date.unix();
+    console.log('the contract will begin at', timestampInSeconds);
+
     await EpochManage.init(
         MetaDefender.address,
         LiquidityCertificate.address,
         Policy.address,
+        timestampInSeconds,
         signers[0].getAddress()
     );
     console.log('successfully init the EpochManage contract');
@@ -261,11 +289,13 @@ async function main(
 }
 
 main(
-    'aseed_option_20231020_blaze',
-    'aseed_option_20231020_blaze',
+    'aseed_option_20231019_blaze',
+    'aseed_option_20231019_blaze',
     'mUSDT',
     'aseed_option',
     'mandala',
+    'high',
+    '20230919'
 )
     .then(() => process.exit(0))
     .catch((error) => {
