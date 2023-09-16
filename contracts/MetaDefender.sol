@@ -518,6 +518,7 @@ contract MetaDefender is
                 epochManage.startTime() + epochManage.optionTradeDuration()
         );
         manuallyChecked = true;
+        epochManage.checkAndCreateNewEpochAndUpdateAccRPSAccSPS();
     }
 
     modifier checkNewEpoch() virtual {
