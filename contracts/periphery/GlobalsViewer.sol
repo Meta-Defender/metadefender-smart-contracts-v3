@@ -82,7 +82,7 @@ contract GlobalsViewer {
         if (premium < 0) {
             premium = 0;
         }
-        uint256 basePayment = coverage.mul(globalInfo.baseRate).div(100);
+        uint256 basePayment = coverage.mul(globalInfo.baseRate).div(1000);
         return
             TradeInsuranceView(
                 uint256(premium).multiplyDecimal(coverage).add(basePayment),

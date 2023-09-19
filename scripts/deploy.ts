@@ -34,7 +34,8 @@ async function main(
     marketProtectionType: string,
     network: string,
     risk: string,
-    dateString: string
+    dateString: string,
+    expiryDateString: string,
 ) {
     let res: DeployedContracts;
     let signers: Signer[] = [];
@@ -73,8 +74,25 @@ async function main(
         signers[0],
     );
 
+    let r: string;
+    switch (risk) {
+        case 'low':
+            r = 'glimmer';
+            break;
+        case 'medium':
+            r = 'flame';
+            break;
+        case 'high':
+            r = 'blaze';
+            break;
+        default:
+            r = 'undefined';
+    }
+
+    const name_c = 'aseed' + '_' + expiryDateString + '_' + r+ '_' + risk + '_' +  'c';
+
     // deploy liquidity certificate with low-risk/medium-risk/high-risk
-    const LiquidityCertificate = await _LiquidityCertificate.deploy('aseed_20231020_blaze_c', 'aseed_20231020_blaze_c');
+    const LiquidityCertificate = await _LiquidityCertificate.deploy(name_c, name_c);
     console.log(
         'successfully deployed LiquidityCertificate: ' +
             LiquidityCertificate.address +
@@ -82,9 +100,10 @@ async function main(
             LiquidityCertificate.deployTransaction.hash,
     );
 
+    const name_p = 'aseed' + '_' + expiryDateString + '_' + r+ '_' + risk + '_' +  'p';
     // deploy policy with low-risk/medium-risk/high-risk
     const _Policy = await hre.ethers.getContractFactory('Policy', signers[0]);
-    const Policy = await _Policy.deploy('aseed_20231020_blaze_p', 'aseed_20231020_blaze_p');
+    const Policy = await _Policy.deploy(name_p, name_p);
     console.log(
         'successfully deployed Policy: ' +
             Policy.address +
@@ -295,7 +314,8 @@ main(
     'aseed_option',
     'mandala',
     'high',
-    '20230919'
+    '20230919',
+    '20231019'
 )
     .then(() => process.exit(0))
     .catch((error) => {

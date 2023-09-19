@@ -205,10 +205,6 @@ contract Policy is IPolicy, ERC721Enumerable {
             'policy is already cancelled'
         );
         require(
-            _policyInfo[policyId].isClaimApplying == true,
-            'policy is not applying for claim'
-        );
-        require(
             _policyInfo[policyId].isClaimed == false,
             'policy is already claimed'
         );

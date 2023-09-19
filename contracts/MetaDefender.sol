@@ -45,7 +45,7 @@ contract MetaDefender is
     uint256 public teamReserveRate;
     uint256 public constant FEE_RATE = 5e16;
     uint256 public constant DURATION = 25;
-    uint256 public constant FEE = 10e18;
+    uint256 public constant FEE = 0;
     uint256 public constant MAX_COVERAGE_PERCENTAGE = 2e17;
     uint256 public constant WITHDRAWAL_FEE_RATE = 3e15;
     uint256 public constant BUFFER = 3;
@@ -479,9 +479,6 @@ contract MetaDefender is
         }
         if (policyInfo.beneficiary != msg.sender) {
             revert SenderNotBeneficiary(policyInfo.beneficiary, msg.sender);
-        }
-        if (policyInfo.isClaimApplying == true) {
-            revert ClaimUnderProcessing(policyId);
         }
         claimPolicy(policyId);
         aUSD.transfer(policyInfo.beneficiary, policyInfo.coverage);
