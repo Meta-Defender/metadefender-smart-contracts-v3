@@ -60,6 +60,11 @@ dataSources:
     mapping:
       file: "./dist/index.js"
       handlers:
+        - handler: handleLPTransfer
+          kind: ethereum/LogHandler
+          filter:
+            topics:
+              - Transfer(address indexed from,address indexed to,uint256 indexed tokenId)
         - handler: handleLPExpired
           kind: ethereum/LogHandler
           filter:
@@ -82,6 +87,11 @@ dataSources:
     mapping:
       file: "./dist/index.js"
       handlers:
+        - handler: handleLPTransfer
+          kind: ethereum/LogHandler
+          filter:
+            topics:
+              - Transfer(address indexed from,address indexed to,uint256 indexed tokenId)
         - handler: handleLPExpired
           kind: ethereum/LogHandler
           filter:
@@ -104,6 +114,11 @@ dataSources:
     mapping:
       file: "./dist/index.js"
       handlers:
+        - handler: handleLPTransfer
+          kind: ethereum/LogHandler
+          filter:
+            topics:
+              - Transfer(address indexed from,address indexed to,uint256 indexed tokenId)
         - handler: handleLPExpired
           kind: ethereum/LogHandler
           filter:

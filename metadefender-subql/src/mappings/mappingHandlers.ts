@@ -1,5 +1,5 @@
 import { LiquidityCertificate, Market, Policy } from '../types';
-import { utils } from 'ethers';
+import { logger, utils } from "ethers";
 import { MarketAddedEvent } from '../types/contracts/MetaDefenderMarketsRegistry';
 import {
     ExpiredEvent,
@@ -24,6 +24,23 @@ export async function handleLPExpired(event: ExpiredEvent) {
     }
     entity.isValid = false;
     await entity.save();
+    return;
+}
+
+export async function handleLPTransfer(event: TransferEvent) {
+    const to = event.args.to;
+    const hashId = utils.keccak256(
+      utils.toUtf8Bytes(
+        event.address.toString() + event.args.tokenId.toString(),
+      ),
+    );
+    const entity = await LiquidityCertificate.get(hashId);
+    if (entity != null) {
+        if (entity.owner != to.toString()) {
+            entity.owner = to.toString();
+            await entity.save();
+        }
+    }
     return;
 }
 
