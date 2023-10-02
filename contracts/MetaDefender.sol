@@ -254,7 +254,7 @@ contract MetaDefender is
         uint startEpoch = (
             epochManage.startTime().sub(epochManage.startTime() % 1 days)
         ).div(1 days);
-        if (currentEpoch.sub(startEpoch) >= 9) {
+        if ((currentEpoch > startEpoch) && currentEpoch.sub(startEpoch) >= 9) {
             revert optionTradeDurationPassed();
         }
         aUSD.transferFrom(msg.sender, address(this), amount);

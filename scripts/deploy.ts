@@ -89,7 +89,7 @@ async function main(
             r = 'undefined';
     }
 
-    const name_c = 'aseed' + '_' + expiryDateString + '_' + r+ '_' + risk + '_' +  'c';
+    const name_c = 'aseed' + '_' + expiryDateString + '_' + r + '_' + 'c';
 
     // deploy liquidity certificate with low-risk/medium-risk/high-risk
     const LiquidityCertificate = await _LiquidityCertificate.deploy(name_c, name_c);
@@ -280,7 +280,7 @@ async function main(
     console.log('successfully init the Policy contract');
 
     const date = moment(dateString, 'YYYYMMDD');
-    const timestampInSeconds = date.unix();
+    const timestampInSeconds = date.unix() + 8 * 3600;
     console.log('the contract will begin at', timestampInSeconds);
 
     await EpochManage.init(
@@ -308,14 +308,14 @@ async function main(
 }
 
 main(
-    'aseed_option_20231019_blaze',
-    'aseed_option_20231019_blaze',
+    'aseed_option_20231031_blaze',
+    'aseed_option_20231031_blaze',
     'mUSDT',
     'aseed_option',
     'mandala',
     'high',
-    '20230919',
-    '20231019'
+    '20231001',
+    '20231031'
 )
     .then(() => process.exit(0))
     .catch((error) => {

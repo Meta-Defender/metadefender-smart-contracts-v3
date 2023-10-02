@@ -54,6 +54,10 @@ async function availableAddresses() {
     return addresses;
 }
 
+function delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function getCurrentSignerAvailableCertificates(
     liquidityCertificate: LiquidityCertificate,
     currentSigner: Signer,
@@ -189,12 +193,9 @@ async function main() {
             case 'Update Price List':
                 let lastUpdateTime = 0
                 while (true) {
-                    if (Math.floor(Date.now() / 1000) - lastUpdateTime > 3600) {
-                        await epochManage.updatePriceList();
-                        console.log('successfully updated the price list');
-                        lastUpdateTime = Math.floor(Date.now() / 1000)
-                        // break;
-                    }
+                    await epochManage.updatePriceList();
+                    console.log('successfully updated the price list');
+                    await delay(3700 * 1000);
                 }
             case 'Check Price List':
                 const priceList = await epochManage.getPriceList();
