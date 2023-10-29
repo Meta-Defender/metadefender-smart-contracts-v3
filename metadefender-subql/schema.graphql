@@ -48,4 +48,5 @@ type Market @entity {
   marketProtectionType: String!
   network: String!
   isValid: Boolean!
+  timestamp: BigInt!
 }

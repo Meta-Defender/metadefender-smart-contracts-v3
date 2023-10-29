@@ -303,19 +303,20 @@ async function main(
         marketPaymentToken,
         marketProtectionType,
         network,
+        Date.now()
     );
     console.log('successfully registry the market');
 }
 
 main(
-    'aseed_option_20231031_blaze',
-    'aseed_option_20231031_blaze',
+    'aseed_option_20231117_blaze',
+    'aseed_option_20231117_blaze',
     'mUSDT',
     'aseed_option',
     'mandala',
     'high',
-    '20231001',
-    '20231031'
+    '20231019',
+    '20231117'
 )
     .then(() => process.exit(0))
     .catch((error) => {

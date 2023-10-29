@@ -14,6 +14,7 @@ interface IMetaDefenderMarketsRegistry {
         string marketPaymentToken;
         string protectionType;
         string network;
+        uint256 timestamp;
     }
 
     function getInsuranceMarkets()

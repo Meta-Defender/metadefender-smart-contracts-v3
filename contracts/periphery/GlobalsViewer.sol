@@ -7,6 +7,7 @@ import '../interfaces/IPolicy.sol';
 import '../interfaces/IMetaDefenderMarketsRegistry.sol';
 
 import '../Lib/SafeDecimalMath.sol';
+import 'hardhat/console.sol';
 
 /**
  * @title OptionMarketViewer

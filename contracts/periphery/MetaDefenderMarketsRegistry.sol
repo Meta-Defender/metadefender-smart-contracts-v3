@@ -5,6 +5,8 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import '../interfaces/IMetaDefenderMarketsRegistry.sol';
 
+import 'hardhat/console.sol';
+
 /**
  * @title MetaDefenderMarketsRegistry
  * @author MetaDefender
@@ -34,7 +36,8 @@ contract MetaDefenderMarketsRegistry is Ownable, IMetaDefenderMarketsRegistry {
         string memory marketDescription,
         string memory marketPaymentToken,
         string memory marketProtectionType,
-        string memory network
+        string memory network,
+        uint256 timestamp
     ) external onlyOwner {
         require(insuranceMarkets.add(metaDefender), 'market already present');
         insuranceMarketsAddresses[metaDefender] = MarketAddresses(
@@ -47,7 +50,8 @@ contract MetaDefenderMarketsRegistry is Ownable, IMetaDefenderMarketsRegistry {
             marketDescription,
             marketPaymentToken,
             marketProtectionType,
-            network
+            network,
+            timestamp
         );
         emit MarketAdded(
             metaDefender,
@@ -58,7 +62,8 @@ contract MetaDefenderMarketsRegistry is Ownable, IMetaDefenderMarketsRegistry {
             marketDescription,
             marketPaymentToken,
             marketProtectionType,
-            network
+            network,
+            timestamp
         );
     }
 
@@ -88,11 +93,11 @@ contract MetaDefenderMarketsRegistry is Ownable, IMetaDefenderMarketsRegistry {
     {
         address[] memory addresses = new address[](insuranceMarkets.length());
         for (uint256 i = 0; i < insuranceMarkets.length(); i++) {
-            addresses[i] = insuranceMarkets.at(i);
+            addresses[insuranceMarkets.length() - 1 - i] = insuranceMarkets.at(i);
         }
         string[] memory messages = new string[](insuranceMarkets.length());
         for (uint256 i = 0; i < insuranceMarkets.length(); i++) {
-            messages[i] = insuranceMarketsMessages[insuranceMarkets.at(i)]
+            messages[insuranceMarkets.length() - 1 - i] = insuranceMarketsMessages[insuranceMarkets.at(i)]
                 .marketName;
         }
         return (addresses, messages);
@@ -139,7 +144,8 @@ contract MetaDefenderMarketsRegistry is Ownable, IMetaDefenderMarketsRegistry {
         string marketDescription,
         string marketPaymentToken,
         string marketProtectionType,
-        string network
+        string network,
+        uint256 timestamp
     );
     event MarketRemoved(address metaDefender);
 }

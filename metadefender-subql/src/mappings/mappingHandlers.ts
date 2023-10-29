@@ -132,6 +132,7 @@ export async function handleMarketAdded(event: MarketAddedEvent) {
         marketProtectionType: event.args.marketProtectionType,
         network: event.args.network,
         isValid: true,
+        timestamp: event.args.timestamp.toBigInt(),
     });
 
     await market.save();
