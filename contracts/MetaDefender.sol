@@ -127,7 +127,7 @@ contract MetaDefender is
             revert InsufficientPrivilege();
         }
         official = _official;
-        emit officialChanged(official);
+        emit officialChanged(_official);
     }
 
     /**

@@ -15,11 +15,19 @@ contract Prices {
     using SafeMath for uint64;
     using SafeDecimalMath for uint256;
 
-    address constant ORACLE = 0x0000000000000000000000000000000000000801;
-    address constant DEX = 0x0000000000000000000000000000000000000803;
+    IOracle internal oracle;
+    IDEX internal dex;
+    bool public initialized;
 
-    IOracle oracle = IOracle(ORACLE);
-    IDEX dex = IDEX(DEX);
+    function init(
+        address _oracle,
+        address _dex
+    ) external {
+        require(initialized == false, 'already initialized');
+        oracle = IOracle(_oracle);
+        dex = IDEX(_dex);
+        initialized = true;
+    }
 
     function getAcaPrice() public view returns (uint256) {
         uint256 price = oracle.getPrice(ACA);

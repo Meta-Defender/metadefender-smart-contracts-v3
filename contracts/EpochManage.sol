@@ -44,11 +44,8 @@ contract EpochManage is IEpochManage {
     uint public daysAboveStrikePrice;
     mapping(uint => bool) public isAboveStrike;
 
-    address constant ORACLE = 0x0000000000000000000000000000000000000801;
-    address constant DEX = 0x0000000000000000000000000000000000000803;
-
-    IOracle oracle = IOracle(ORACLE);
-    IDEX dex = IDEX(DEX);
+    IOracle internal oracle;
+    IDEX internal dex;
 
     ILiquidityCertificate internal liquidityCertificate;
     IPolicy internal policy;
@@ -70,7 +67,9 @@ contract EpochManage is IEpochManage {
         ILiquidityCertificate _liquidityCertificate,
         IPolicy _policy,
         uint256 _startTime,
-        address _oracleOperator
+        address _oracleOperator,
+        address _oracle,
+        address _dex
     ) external {
         require(initialized == false, 'already initialized');
         require(
@@ -82,6 +81,8 @@ contract EpochManage is IEpochManage {
         policy = _policy;
         startTime = _startTime;
         oracleOperator = _oracleOperator;
+        oracle = IOracle(_oracle);
+        dex = IDEX(_dex);
         initialized = true;
     }
 

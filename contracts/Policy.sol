@@ -221,9 +221,6 @@ contract Policy is IPolicy, ERC721Enumerable {
         address spender,
         uint256 policyId
     ) external override onlyMetaDefender {
-        if (msg.sender != metaDefender) {
-            revert InsufficientPrivilege();
-        }
         require(
             _isApprovedOrOwner(spender, policyId),
             'attempted to burn nonexistent certificate, or not owner'
@@ -246,9 +243,6 @@ contract Policy is IPolicy, ERC721Enumerable {
         uint256 policyId,
         bool status
     ) external override onlyMetaDefender {
-        if (msg.sender != metaDefender) {
-            revert InsufficientPrivilege();
-        }
         _policyInfo[policyId].isClaimed = status;
         emit PolicyClaimed(policyId, status);
     }
