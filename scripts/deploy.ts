@@ -190,6 +190,12 @@ async function main(
               'successfully deployed Prices: ' + Prices.address,
             );
 
+            await Prices.init(
+              '0x0000000000000000000000000000000000000801',
+              '0x0000000000000000000000000000000000000803'
+            );
+            console.log('successfully init the Prices contract');
+
             GlobalsViewer = await _GlobalsViewer.deploy();
             AmericanBinaryOptions = await _AmericanBinaryOptions.deploy();
             console.log(
@@ -205,18 +211,18 @@ async function main(
               AmericanBinaryOptions.address,
             );
             console.log('successfully init the GlobalsViewer contract');
-            TestERC20 = await _TestERC20.deploy('mUSDT', 'mUSDT');
-            console.log('successfully deployed TestERC20: ' + TestERC20.address);
+            // TestERC20 = await _TestERC20.deploy('mUSDT', 'mUSDT');
+            // console.log('successfully deployed TestERC20: ' + TestERC20.address);
             // mint 10M tokens for the owner
-            await TestERC20.mint(
-              await signers[0].getAddress(),
-              '10000000000000000000000000',
-            );
+            // await TestERC20.mint(
+            //   await signers[0].getAddress(),
+            //   '10000000000000000000000000',
+            // );
             metaDefenderMarketsRegistryAddress =
               MetaDefenderMarketsRegistry.address;
             globalsViewerAddress = GlobalsViewer.address;
             americanBinaryOptionsAddress = AmericanBinaryOptions.address;
-            testERC20Address = TestERC20.address;
+            testERC20Address = '0x0000000000000000000100000000000000000001';
         } else {
             for (let i = 0; i < res.markets.length; i++) {
                 if (res.markets[i].marketName === marketName) {
@@ -227,7 +233,7 @@ async function main(
             metaDefenderMarketsRegistryAddress = res.metaDefenderMarketsRegistry;
             globalsViewerAddress = res.globalsViewer;
             americanBinaryOptionsAddress = res.americanBinaryOptions;
-            testERC20Address = res.testERC20;
+            testERC20Address = '0x0000000000000000000100000000000000000001';
             MetaDefenderMarketsRegistry = await _MetaDefenderMarketsRegistry.attach(
               metaDefenderMarketsRegistryAddress,
             );
@@ -235,7 +241,6 @@ async function main(
             AmericanBinaryOptions = await _AmericanBinaryOptions.attach(
               americanBinaryOptionsAddress,
             );
-            TestERC20 = await _TestERC20.attach(testERC20Address);
         }
         res.markets.push({
             marketName: marketName,
@@ -280,7 +285,7 @@ async function main(
         }
         console.log("begin init the smart contracts, now init the " + risk + " risk");
         await MetaDefender.init(
-          TestERC20.address,
+          '0x0000000000000000000100000000000000000001',
           signers[0].getAddress(),
           LiquidityCertificate.address,
           Policy.address,
@@ -312,7 +317,9 @@ async function main(
           LiquidityCertificate.address,
           Policy.address,
           timestampInSeconds,
-          signers[0].getAddress()
+          signers[0].getAddress(),
+          '0x0000000000000000000000000000000000000801',
+          '0x0000000000000000000000000000000000000803'
         );
         console.log('successfully init the EpochManage contract');
 
@@ -336,11 +343,11 @@ async function main(
 main(
     'aseed_option',
     'aseed_option',
-    'mUSDT',
+    'aseed',
     'aseed_option',
     'mandala',
-    '20231019',
-    '20230130'
+    '20231101',
+    '20231130'
 )
     .then(() => process.exit(0))
     .catch((error) => {
