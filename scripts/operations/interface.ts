@@ -318,7 +318,7 @@ async function main() {
                     const price = await globalsViewer
                         .connect(currentSigner)
                         .getPremium(
-                            toBN(String(policyCoverageQuery.coverage)),
+                          (toBN(String(policyCoverageQuery.coverage)).div(1e6)),
                             metaDefender.address,
                         );
                     console.log(chalk.green('Price: ' + price));
