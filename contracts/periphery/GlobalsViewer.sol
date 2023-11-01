@@ -41,6 +41,7 @@ contract GlobalsViewer {
     bool public initialized = false;
     uint256 public constant BASE_POINT = 1e16;
     uint256 public constant DURATION = 25;
+    uint256 public constant DECIMAL_CONVERT = 1e24;
 
     constructor() {}
 
@@ -69,7 +70,7 @@ contract GlobalsViewer {
             _metaDefender
         ).getGlobalInfo();
         uint256 newRisk = globalInfo.risk.add(
-            coverage.divideDecimal(globalInfo.standardRisk).multiplyDecimal(
+            coverage.multiplyDecimal(DECIMAL_CONVERT).divideDecimal(globalInfo.standardRisk).multiplyDecimal(
                 BASE_POINT
             )
         );

@@ -375,11 +375,12 @@ async function main() {
                     name: 'amount',
                     message: 'how much USDTs do you want to provide',
                 });
+                console.log(String(toBN(provideLiquidity.amount).div(1e6)));
                 if (isNaN(Number(provideLiquidity))) {
                     await metaDefender
                         .connect(currentSigner)
                         .certificateProviderEntrance(
-                            String(toBN(provideLiquidity.amount)),
+                            String(toBN(provideLiquidity.amount).div(1e6)),
                         );
                 } else {
                     throw new Error('invalid number');

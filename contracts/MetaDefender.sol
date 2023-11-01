@@ -51,6 +51,7 @@ contract MetaDefender is
     uint256 public constant BUFFER = 3;
     int256 public constant FREE_RATE = 6e16;
     uint256 public constant BASE_POINT = 1e16;
+    uint256 public constant DECIMAL_CONVERT = 1e24;
 
     // index the providers
     uint256 public providerCount;
@@ -184,7 +185,7 @@ contract MetaDefender is
         totalCoverage = totalCoverage.add(coverage);
 
         globalInfo.risk = globalInfo.risk.add(
-            coverage.divideDecimal(globalInfo.standardRisk).multiplyDecimal(
+            coverage.multiplyDecimal(DECIMAL_CONVERT).divideDecimal(globalInfo.standardRisk).multiplyDecimal(
                 BASE_POINT
             )
         );

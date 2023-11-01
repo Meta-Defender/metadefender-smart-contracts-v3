@@ -146,10 +146,6 @@ contract LiquidityCertificate is
         uint64 enteredEpochIndex,
         uint256 liquidity
     ) external override onlyMetaDefender returns (uint256) {
-        if (liquidity < MIN_LIQUIDITY) {
-            revert InsufficientLiquidity();
-        }
-
         uint256 certificateId = nextId++;
         _certificateInfo[certificateId] = CertificateInfo(
             enteredEpochIndex,

@@ -119,10 +119,6 @@ contract Policy is IPolicy, ERC721Enumerable {
             revert InsufficientPrivilege();
         }
 
-        if (coverage < MIN_COVERAGE) {
-            revert InsufficientCoverage();
-        }
-
         totalPendingCoverage = totalPendingCoverage.add(coverage);
 
         uint256 policyId = nextId++;
