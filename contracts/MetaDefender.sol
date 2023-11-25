@@ -128,7 +128,7 @@ contract MetaDefender is
             revert InsufficientPrivilege();
         }
         official = _official;
-        emit officialChanged(_official);
+        emit OfficialChanged(_official);
     }
 
     /**
@@ -140,7 +140,7 @@ contract MetaDefender is
         }
         aUSD.transfer(official, globalInfo.reward4Team);
         globalInfo.reward4Team = 0;
-        emit teamClaimed();
+        emit TeamClaimed();
     }
 
     /**
@@ -152,7 +152,7 @@ contract MetaDefender is
             revert InsufficientPrivilege();
         }
         globalInfo.standardRisk = standardRisk;
-        emit standardRiskUpdated(standardRisk);
+        emit StandardRiskUpdated(standardRisk);
     }
 
     /**
@@ -238,7 +238,7 @@ contract MetaDefender is
             globalInfo.standardRisk,
             block.timestamp
         );
-        emit NewPolicyMinted(policyId);
+        emit NewPolicyBought(policyId, msg.sender, totalPayment.add(FEE).add(reward4Team));
     }
 
     /**
@@ -431,6 +431,7 @@ contract MetaDefender is
                 previousEpochIndex
             );
             aUSD.transfer(msg.sender, rewards);
+            emit RewardsClaimed(msg.sender, rewards);
         } else {
             revert NoRewards();
         }
@@ -500,7 +501,7 @@ contract MetaDefender is
                 true
             );
             aUSD.transfer(policyInfo.beneficiary, policyInfo.fee);
-            emit PolicyClaimed(policyId);
+            emit CoverageClaimedAndTransferred(policyId, msg.sender, policyInfo.coverage);
         } else {
             revert NotClaimAvailable();
         }
@@ -535,9 +536,14 @@ contract MetaDefender is
     event ProviderEntered(uint256 provider);
 
     /**
+     * @dev Emitted when the provider entered.
+     */
+    event RewardsClaimed(address provider, uint256 amount);
+
+    /**
      * @dev Emitted when the user bought the cover.
      */
-    event NewPolicyMinted(uint256 policyId);
+    event NewPolicyBought(uint256 policyId, address policyBuyer, uint256 amount);
 
     /**
      * @dev Emitted when the user bought the cover.
@@ -550,24 +556,24 @@ contract MetaDefender is
     event PolicyCancelled(uint256 id);
 
     /**
-     * @dev Claimed when the user bought the cover.
-     */
-    event PolicyClaimed(uint256 id);
-
-    /**
      * @dev Emitted when the official changed.
      */
-    event officialChanged(address official);
+    event OfficialChanged(address official);
 
     /**
      * @dev Emitted when the team has claimed their rewards.
      */
-    event teamClaimed();
+    event TeamClaimed();
 
     /**
      * @dev Emitted when the standard risk has been updated.
      */
-    event standardRiskUpdated(uint256 standardRisk);
+    event StandardRiskUpdated(uint256 standardRisk);
+
+    /**
+     * @dev Emitted when the policy has been claimed.
+     */
+    event CoverageClaimedAndTransferred(uint256 id, address policyBuyer, uint256 coverage);
 
     /**
      * @notice errors

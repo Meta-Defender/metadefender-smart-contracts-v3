@@ -1,4 +1,5 @@
 node_modules
+artifacts
 .env
 .env.json
 coverage
@@ -12,7 +13,7 @@ hardhat.config.ts
 
 #Hardhat files
 cache
-artifacts
+metadefender-subql/artifacts
 
 #Mac files
 .DS_Store

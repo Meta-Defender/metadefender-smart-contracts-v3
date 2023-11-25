@@ -1,0 +1,102 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IMetaDefenderMarketsRegistry",
+  "sourceName": "contracts/interfaces/IMetaDefenderMarketsRegistry.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "getInsuranceMarkets",
+      "outputs": [
+        {
+          "internalType": "address[]",
+          "name": "",
+          "type": "address[]"
+        },
+        {
+          "internalType": "string[]",
+          "name": "",
+          "type": "string[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "name": "getInsuranceMarketsAddressesAndMessages",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "liquidityCertificate",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "policy",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "epochManage",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct IMetaDefenderMarketsRegistry.MarketAddresses[]",
+          "name": "",
+          "type": "tuple[]"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "marketName",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "marketDescription",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "marketPaymentToken",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "protectionType",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "network",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct IMetaDefenderMarketsRegistry.MarketMessages[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

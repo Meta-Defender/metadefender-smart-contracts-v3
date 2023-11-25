@@ -2,6 +2,13 @@
 # Add the `@index` or `@index(unique: true)` annotation after any non-key field
 # https://academy.subquery.network/build/graphql.html#indexing-by-non-primary-key-field
 
+type LeaderBoard @entity {
+  id: ID!
+  user: String!
+  pnl: BigInt!
+  isNegative: Boolean!
+}
+
 type Policy @entity {
   id: ID!
   protocol: String!

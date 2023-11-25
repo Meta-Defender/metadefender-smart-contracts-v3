@@ -1,6 +1,7 @@
-import { LiquidityCertificate, Market, Policy } from '../types';
+import { LeaderBoard, LiquidityCertificate, Market, Policy } from "../types";
 import { logger, utils } from "ethers";
 import { MarketAddedEvent } from '../types/contracts/MetaDefenderMarketsRegistry';
+import { NewPolicyBoughtEvent, RewardsClaimedEvent, CoverageClaimedAndTransferredEvent } from "../types/contracts/MetaDefender";
 import {
     ExpiredEvent,
     NewLPMintedEvent,
@@ -136,6 +137,82 @@ export async function handleMarketAdded(event: MarketAddedEvent) {
     });
 
     await market.save();
+}
+
+export async function handleCoverageClaimedAndTransferred(event: CoverageClaimedAndTransferredEvent) {
+    const owner = event.args.policyBuyer;
+    if (await LeaderBoard.get(owner) == null) {
+        const entity = LeaderBoard.create({
+            id: owner,
+            user: owner,
+            pnl: event.args.coverage.toBigInt(),
+            isNegative: false,
+        })
+    } else {
+        const entity = await LeaderBoard.get(owner);
+        if (entity.isNegative) {
+            if (entity.pnl > event.args.coverage.toBigInt()) {
+                entity.pnl = entity.pnl - event.args.coverage.toBigInt();
+            } else {
+                entity.pnl = event.args.coverage.toBigInt() - entity.pnl;
+                entity.isNegative = false;
+            }
+        } else {
+            entity.pnl = entity.pnl + event.args.coverage.toBigInt();
+        }
+        await entity.save();
+    }
+}
+
+
+export async function handleRewardsClaimed(event: RewardsClaimedEvent) {
+    const owner = event.args.provider;
+    if (await LeaderBoard.get(owner) == null) {
+        const entity = LeaderBoard.create({
+            id: owner,
+            user: owner,
+            pnl: event.args.amount.toBigInt(),
+            isNegative: false,
+        })
+    } else {
+        const entity = await LeaderBoard.get(owner);
+        if (entity.isNegative) {
+            if (entity.pnl > event.args.amount.toBigInt()) {
+                entity.pnl = entity.pnl - event.args.amount.toBigInt();
+            } else {
+                entity.pnl = event.args.amount.toBigInt() - entity.pnl;
+                entity.isNegative = false;
+            }
+        } else {
+            entity.pnl = entity.pnl + event.args.amount.toBigInt();
+        }
+        await entity.save();
+    }
+}
+
+export async function handleNewPolicyBuyer_MetaDefender(event: NewPolicyBoughtEvent) {
+    const owner = event.args.policyBuyer;
+    if (await LeaderBoard.get(owner) == null) {
+       const entity = LeaderBoard.create({
+           id: owner,
+           user: owner,
+           pnl: event.args.amount.toBigInt(),
+           isNegative: true,
+       })
+    } else {
+        const entity = await LeaderBoard.get(owner);
+        if (entity.isNegative) {
+            entity.pnl = entity.pnl + event.args.amount.toBigInt();
+        } else {
+            if (entity.pnl > event.args.amount.toBigInt()) {
+                entity.pnl = entity.pnl - event.args.amount.toBigInt();
+            } else {
+                entity.pnl = event.args.amount.toBigInt() - entity.pnl;
+                entity.isNegative = true;
+            }
+        }
+        await entity.save();
+    }
 }
 
 export async function handleNewPolicyMinted_glimmer(event: NewPolicyMintedEvent) {

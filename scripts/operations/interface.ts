@@ -7,6 +7,7 @@ import * as fs from 'fs-extra';
 import { DeployedContracts } from '../deploy';
 import { Signer } from 'ethers';
 import { LiquidityCertificate } from '../../typechain-types';
+import { meta } from "@typescript-eslint/parser";
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -140,7 +141,7 @@ async function main() {
     );
 
     const _quoteToken = await hre.ethers.getContractFactory('TestERC20');
-    const quoteToken = _quoteToken.attach(res.testERC20);
+    const quoteToken = _quoteToken.attach(hre.network.name == "acala" ? "0x0000000000000000000100000000000000000001" : res.testERC20);
 
     const _metaDefenderMarketsRegistry = await hre.ethers.getContractFactory(
         'MetaDefenderMarketsRegistry',
@@ -376,6 +377,7 @@ async function main() {
                     message: 'how much USDTs do you want to provide',
                 });
                 console.log(String(toBN(provideLiquidity.amount).div(1e6)));
+                console.log(metaDefender.address);
                 if (isNaN(Number(provideLiquidity))) {
                     await metaDefender
                         .connect(currentSigner)

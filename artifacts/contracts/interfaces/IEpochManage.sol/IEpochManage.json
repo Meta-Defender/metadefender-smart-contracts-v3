@@ -1,0 +1,250 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IEpochManage",
+  "sourceName": "contracts/interfaces/IEpochManage.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "checkAndCreateNewEpochAndUpdateAccRPSAccSPS",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "checkAndCreateNewEpochAndUpdateLiquidity",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "contractPeriod",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "currentEpochIndex",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "daysAboveStrikePrice",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getCurrentEpoch",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getCurrentEpochInfo",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "epochId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "crossSPS",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "accRealSPSComp",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "accRPS",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "accSPS",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct IEpochManage.EpochInfo",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "epochIndex",
+          "type": "uint64"
+        }
+      ],
+      "name": "getEpochInfo",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "epochId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "crossSPS",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "accRealSPSComp",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "accRPS",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "accSPS",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct IEpochManage.EpochInfo",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "epochIndex",
+          "type": "uint64"
+        }
+      ],
+      "name": "getTimestampFromEpoch",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "isWithdrawDay",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "optionTradeDuration",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "startTime",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "SPS",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint64",
+          "name": "enteredEpochIndex",
+          "type": "uint64"
+        },
+        {
+          "internalType": "bool",
+          "name": "isClaimed",
+          "type": "bool"
+        }
+      ],
+      "name": "updateCrossShadow",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

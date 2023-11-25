@@ -177,6 +177,19 @@ async function main(
         let americanBinaryOptionsAddress: string;
         let testERC20Address: string;
 
+        TestERC20 = await _TestERC20.deploy('mUSDT', 'mUSDT');
+        console.log('successfully deployed TestERC20: ' + TestERC20.address);
+        // mint 10M tokens for the owner
+        await TestERC20.mint(
+          await signers[0].getAddress(),
+          '10000000000000000000000000',
+        );
+        if (hre.network.name != 'acala') {
+            testERC20Address = TestERC20.address;
+        } else {
+            testERC20Address = '0x0000000000000000000100000000000000000001';
+        }
+
         if (!res.metaDefenderMarketsRegistry) {
             MetaDefenderMarketsRegistry =
               await _MetaDefenderMarketsRegistry.deploy();
@@ -211,18 +224,10 @@ async function main(
               AmericanBinaryOptions.address,
             );
             console.log('successfully init the GlobalsViewer contract');
-            // TestERC20 = await _TestERC20.deploy('mUSDT', 'mUSDT');
-            // console.log('successfully deployed TestERC20: ' + TestERC20.address);
-            // mint 10M tokens for the owner
-            // await TestERC20.mint(
-            //   await signers[0].getAddress(),
-            //   '10000000000000000000000000',
-            // );
             metaDefenderMarketsRegistryAddress =
               MetaDefenderMarketsRegistry.address;
             globalsViewerAddress = GlobalsViewer.address;
             americanBinaryOptionsAddress = AmericanBinaryOptions.address;
-            testERC20Address = '0x0000000000000000000100000000000000000001';
         } else {
             for (let i = 0; i < res.markets.length; i++) {
                 if (res.markets[i].marketName === marketName) {
@@ -233,7 +238,6 @@ async function main(
             metaDefenderMarketsRegistryAddress = res.metaDefenderMarketsRegistry;
             globalsViewerAddress = res.globalsViewer;
             americanBinaryOptionsAddress = res.americanBinaryOptions;
-            testERC20Address = '0x0000000000000000000100000000000000000001';
             MetaDefenderMarketsRegistry = await _MetaDefenderMarketsRegistry.attach(
               metaDefenderMarketsRegistryAddress,
             );
@@ -253,11 +257,13 @@ async function main(
             policy: String(Policy.address),
             epochManage: String(EpochManage.address),
         });
-        res['network'] = hre.network.name;
-        res['globalsViewer'] = globalsViewerAddress;
-        res['metaDefenderMarketsRegistry'] = metaDefenderMarketsRegistryAddress;
-        res['testERC20'] = testERC20Address;
-        res['americanBinaryOptions'] = americanBinaryOptionsAddress;
+        if (!res.metaDefenderMarketsRegistry) {
+            res['network'] = hre.network.name;
+            res['globalsViewer'] = globalsViewerAddress;
+            res['metaDefenderMarketsRegistry'] = metaDefenderMarketsRegistryAddress;
+            res['testERC20'] = testERC20Address;
+            res['americanBinaryOptions'] = americanBinaryOptionsAddress;
+        }
         fs.writeFileSync(
           './deployments/.env.' + String(hre.network.name) + '.json',
           JSON.stringify(res, null, 2),
@@ -285,7 +291,7 @@ async function main(
         }
         console.log("begin init the smart contracts, now init the " + risk + " risk");
         await MetaDefender.init(
-          '0x0000000000000000000100000000000000000001',
+          hre.network.name == 'acala' ? '0x0000000000000000000100000000000000000001' : testERC20Address,
           signers[0].getAddress(),
           LiquidityCertificate.address,
           Policy.address,
@@ -346,8 +352,8 @@ main(
     'aseed',
     'aseed_option',
     'mandala',
-    '20231101',
-    '20231130'
+    '20231125',
+    '20231224'
 )
     .then(() => process.exit(0))
     .catch((error) => {

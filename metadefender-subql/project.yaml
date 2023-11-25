@@ -36,7 +36,7 @@ dataSources:
     options:
       # Must be a key of assets
       abi: MetaDefenderMarketRegistry
-      address: "0xc68B3520B76D9f0eBD203199e1768175FEA894DF" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0x5D7D17A491426dd9579329443Dd7A5eE13a9BE77" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       MetaDefenderMarketRegistry:
         file: artifacts/contracts/periphery/MetaDefenderMarketsRegistry.sol/MetaDefenderMarketsRegistry.json
@@ -51,9 +51,87 @@ dataSources:
   - kind: ethereum/Runtime
     startBlock: 4770000
     options:
+      abi: MetaDefender
+      address: "0x0BbAe9ab5d45c323D66cA910BF1647B14C980384"
+    assets:
+      MetaDefender:
+        file: artifacts/contracts/MetaDefender.sol/MetaDefender.json
+    mapping:
+        file: "./dist/index.js"
+        handlers:
+            - handler: handleNewPolicyBuyer_MetaDefender
+              kind: ethereum/LogHandler
+              filter:
+                topics:
+                  - NewPolicyBought(uint256 policyId, address policyBuyer, uint256 amount);
+            - handler: handleNewPolicyBuyer_MetaDefender
+              kind: ethereum/LogHandler
+              filter:
+                topics:
+                  - RewardsClaimed(address provider, uint256 rewards);
+            - handler: handleCoverageClaimedAndTransferred
+              kind: ethereum/LogHandler
+              filter:
+                topics:
+                  - CoverageClaimedAndTransferred(uint256 id, address policyBuyer, uint256 coverage);
+  - kind: ethereum/Runtime
+    startBlock: 4770000
+    options:
+      abi: MetaDefender
+      address: "0x450d9D9547bFc956270df2Ab4651631cBb4c69ac"
+    assets:
+      MetaDefender:
+        file: artifacts/contracts/MetaDefender.sol/MetaDefender.json
+    mapping:
+      file: "./dist/index.js"
+      handlers:
+        - handler: handleNewPolicyBuyer_MetaDefender
+          kind: ethereum/LogHandler
+          filter:
+            topics:
+              - NewPolicyBought(uint256 policyId, address policyBuyer, uint256 amount);
+        - handler: handleNewPolicyBuyer_MetaDefender
+          kind: ethereum/LogHandler
+          filter:
+            topics:
+              - RewardsClaimed(address provider, uint256 amount);
+        - handler: handleCoverageClaimedAndTransferred
+          kind: ethereum/LogHandler
+          filter:
+            topics:
+              - CoverageClaimedAndTransferred(uint256 id, address policyBuyer, uint256 coverage);
+  - kind: ethereum/Runtime
+    startBlock: 4770000
+    options:
+      abi: MetaDefender
+      address: "0x0817AA283052AE164910D1335A4d7f491a441f28"
+    assets:
+      MetaDefender:
+        file: artifacts/contracts/MetaDefender.sol/MetaDefender.json
+    mapping:
+      file: "./dist/index.js"
+      handlers:
+        - handler: handleNewPolicyBuyer_MetaDefender
+          kind: ethereum/LogHandler
+          filter:
+            topics:
+              - NewPolicyBought(uint256 policyId, address policyBuyer, uint256 amount);
+        - handler: handleNewPolicyBuyer_MetaDefender
+          kind: ethereum/LogHandler
+          filter:
+            topics:
+              - RewardsClaimed(address provider, uint256 amount);
+        - handler: handleCoverageClaimedAndTransferred
+          kind: ethereum/LogHandler
+          filter:
+            topics:
+              - CoverageClaimedAndTransferred(uint256 id, address policyBuyer, uint256 coverage);
+  - kind: ethereum/Runtime
+    startBlock: 4770000
+    options:
       # Must be a key of assets
       abi: LiquidityCertificate
-      address: "0xfbb454C7ABcd986E8b06d7633E7AC25cb3D45648" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0xeECdEbeeE8c11f8e8ac09dcc3CC04469A59f67e1" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       LiquidityCertificate:
         file: artifacts/contracts/LiquidityCertificate.sol/LiquidityCertificate.json
@@ -80,7 +158,7 @@ dataSources:
     options:
       # Must be a key of assets
       abi: LiquidityCertificate
-      address: "0x9458aAcDFb2655FFE8cf239fa3F6B28847672240" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0x4Eb03D4d8a1A5ed16345300E6E4f5b829FD87f4e" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       LiquidityCertificate:
         file: artifacts/contracts/LiquidityCertificate.sol/LiquidityCertificate.json
@@ -107,7 +185,7 @@ dataSources:
     options:
       # Must be a key of assets
       abi: LiquidityCertificate
-      address: "0x9c7153DCB04266DA72378Cc59904277AF1CD6409" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0xBC8b08Fe2A05099066807F339041778786e293c6" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       LiquidityCertificate:
         file: artifacts/contracts/LiquidityCertificate.sol/LiquidityCertificate.json
@@ -134,7 +212,7 @@ dataSources:
     options:
       # Must be a key of assets
       abi: Policy
-      address: "0x144e9691B8E2BEBE965e2B61077C215b1851ec95" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0xfA467995CaDCeabac266E2BcbeC8E0eF937AbF2B" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       Policy:
         file: artifacts/contracts/Policy.sol/Policy.json
@@ -145,7 +223,7 @@ dataSources:
           kind: ethereum/LogHandler
           filter:
             topics:
-              - PolicyClaimed(uint256 policyId,bool status)
+              - PolicyClaimed(uint256 policyId, bool status)
         - handler: handleNewPolicyMinted_glimmer
           kind: ethereum/LogHandler
           filter:
@@ -156,7 +234,7 @@ dataSources:
     options:
       # Must be a key of assets
       abi: Policy
-      address: "0x4caD0A1657679944Bf9e48110BD1348948aDC32D" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0xaA5a08bdf689FD14fb44114fCDC9aBf0D1174BE9" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       Policy:
         file: artifacts/contracts/Policy.sol/Policy.json
@@ -167,7 +245,7 @@ dataSources:
           kind: ethereum/LogHandler
           filter:
             topics:
-              - PolicyClaimed(uint256 policyId,bool status)
+              - PolicyClaimed(uint256 policyId, bool status)
         - handler: handleNewPolicyMinted_flame
           kind: ethereum/LogHandler
           filter:
@@ -178,7 +256,7 @@ dataSources:
     options:
       # Must be a key of assets
       abi: Policy
-      address: "0x8aCe925680be2a23bdC98bD2BB64472520862c7D" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0x1006a5F10063466C04a312ea4bd190EB92E8A5b7" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       Policy:
         file: artifacts/contracts/Policy.sol/Policy.json
@@ -189,7 +267,7 @@ dataSources:
           kind: ethereum/LogHandler
           filter:
             topics:
-              - PolicyClaimed(uint256 policyId,bool status)
+              - PolicyClaimed(uint256 policyId, bool status)
         - handler: handleNewPolicyMinted_blaze
           kind: ethereum/LogHandler
           filter:

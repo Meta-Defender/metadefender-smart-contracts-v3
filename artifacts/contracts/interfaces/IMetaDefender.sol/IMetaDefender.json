@@ -1,0 +1,237 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IMetaDefender",
+  "sourceName": "contracts/interfaces/IMetaDefender.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "beneficiary",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "coverage",
+          "type": "uint256"
+        }
+      ],
+      "name": "buyPolicy",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "certificateProviderEntrance",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "certificateId",
+          "type": "uint256"
+        }
+      ],
+      "name": "certificateProviderExit",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "certificateId",
+          "type": "uint256"
+        }
+      ],
+      "name": "claimRewards",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "epochCheck",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getGlobalInfo",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "accSPS",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "accRPS",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "accRealSPS",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "risk",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "reward4Team",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "standardRisk",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "strikeRate",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "baseRate",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct IMetaDefender.GlobalInfo",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "certificateId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "isExit",
+          "type": "bool"
+        }
+      ],
+      "name": "getRewards",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "certificateId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getSPSLockedByCertificateId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        }
+      ],
+      "name": "policyClaimApply",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "teamClaim",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "official",
+          "type": "address"
+        }
+      ],
+      "name": "transferOfficial",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "standardRisk",
+          "type": "uint256"
+        }
+      ],
+      "name": "updateStandardRisk",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "medalId",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdrawAfterExit",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
