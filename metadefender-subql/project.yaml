@@ -59,12 +59,12 @@ dataSources:
     mapping:
         file: "./dist/index.js"
         handlers:
-            - handler: handleNewPolicyBuyer_MetaDefender
+            - handler: handleNewPolicyBuyer
               kind: ethereum/LogHandler
               filter:
                 topics:
                   - NewPolicyBought(uint256 policyId, address policyBuyer, uint256 amount);
-            - handler: handleNewPolicyBuyer_MetaDefender
+            - handler: handleRewardsClaimed
               kind: ethereum/LogHandler
               filter:
                 topics:
@@ -85,12 +85,12 @@ dataSources:
     mapping:
       file: "./dist/index.js"
       handlers:
-        - handler: handleNewPolicyBuyer_MetaDefender
+        - handler: handleNewPolicyBuyer
           kind: ethereum/LogHandler
           filter:
             topics:
               - NewPolicyBought(uint256 policyId, address policyBuyer, uint256 amount);
-        - handler: handleNewPolicyBuyer_MetaDefender
+        - handler: handleRewardsClaimed
           kind: ethereum/LogHandler
           filter:
             topics:
@@ -111,12 +111,12 @@ dataSources:
     mapping:
       file: "./dist/index.js"
       handlers:
-        - handler: handleNewPolicyBuyer_MetaDefender
+        - handler: handleNewPolicyBuyer
           kind: ethereum/LogHandler
           filter:
             topics:
               - NewPolicyBought(uint256 policyId, address policyBuyer, uint256 amount);
-        - handler: handleNewPolicyBuyer_MetaDefender
+        - handler: handleRewardsClaimed
           kind: ethereum/LogHandler
           filter:
             topics:

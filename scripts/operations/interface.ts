@@ -376,7 +376,6 @@ async function main() {
                     name: 'amount',
                     message: 'how much USDTs do you want to provide',
                 });
-                console.log(String(toBN(provideLiquidity.amount).div(1e6)));
                 console.log(metaDefender.address);
                 if (isNaN(Number(provideLiquidity))) {
                     await metaDefender
@@ -423,7 +422,7 @@ async function main() {
                         .connect(currentSigner)
                         .buyPolicy(
                             await currentSigner.getAddress(),
-                            toBN(String(policyCoverage.coverage))
+                            toBN(policyCoverage.coverage).div(1e6)
                         );
                 }
                 break;

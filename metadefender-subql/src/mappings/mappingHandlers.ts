@@ -199,6 +199,7 @@ export async function handleNewPolicyBuyer_MetaDefender(event: NewPolicyBoughtEv
            pnl: event.args.amount.toBigInt(),
            isNegative: true,
        })
+       await entity.save();
     } else {
         const entity = await LeaderBoard.get(owner);
         if (entity.isNegative) {
