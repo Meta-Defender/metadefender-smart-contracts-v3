@@ -190,7 +190,7 @@ export async function handleRewardsClaimed(event: RewardsClaimedEvent) {
     }
 }
 
-export async function handleNewPolicyBuyer_MetaDefender(event: NewPolicyBoughtEvent) {
+export async function handleNewPolicyBuyer(event: NewPolicyBoughtEvent) {
     const owner = event.args.policyBuyer;
     if (await LeaderBoard.get(owner) == null) {
        const entity = LeaderBoard.create({
