@@ -143,6 +143,9 @@ async function main() {
     const _quoteToken = await hre.ethers.getContractFactory('TestERC20');
     const quoteToken = _quoteToken.attach(hre.network.name == "acala" ? "0x0000000000000000000100000000000000000001" : res.testERC20);
 
+    const _EVM = await hre.ethers.getContractFactory('EVM');
+    const EVM = _EVM.attach("0x0000000000000000000000000000000000000800");
+
     const _metaDefenderMarketsRegistry = await hre.ethers.getContractFactory(
         'MetaDefenderMarketsRegistry',
     );
@@ -155,6 +158,7 @@ async function main() {
 
     let currentSigner = await signers[0];
     const choices = [
+        'Publish',
         'Get Rewards',
         'Claim Rewards',
         'Provide Liquidity',
@@ -191,6 +195,9 @@ async function main() {
             choices,
         });
         switch (answers.operation) {
+            case 'Publish':
+                const publish = await EVM.publishContract(metaDefender.address);
+                break;
             case 'Update Price List':
                 let lastUpdateTime = 0
                 while (true) {

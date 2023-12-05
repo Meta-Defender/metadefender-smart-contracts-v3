@@ -352,8 +352,8 @@ main(
     'aseed',
     'aseed_option',
     'mandala',
-    '20231125',
-    '20231224'
+    '20231201',
+    '20231230'
 )
     .then(() => process.exit(0))
     .catch((error) => {

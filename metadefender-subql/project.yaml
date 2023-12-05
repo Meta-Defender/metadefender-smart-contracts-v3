@@ -36,7 +36,7 @@ dataSources:
     options:
       # Must be a key of assets
       abi: MetaDefenderMarketRegistry
-      address: "0x5D7D17A491426dd9579329443Dd7A5eE13a9BE77" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0x022EC7DA43b6DECD855D622c4d23Ec5b19f3b639" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       MetaDefenderMarketRegistry:
         file: artifacts/contracts/periphery/MetaDefenderMarketsRegistry.sol/MetaDefenderMarketsRegistry.json
@@ -52,7 +52,7 @@ dataSources:
     startBlock: 4770000
     options:
       abi: MetaDefender
-      address: "0x0BbAe9ab5d45c323D66cA910BF1647B14C980384"
+      address: "0xE536403755845474Ce072f5dF79Be46CDc7C676D"
     assets:
       MetaDefender:
         file: artifacts/contracts/MetaDefender.sol/MetaDefender.json
@@ -78,7 +78,7 @@ dataSources:
     startBlock: 4770000
     options:
       abi: MetaDefender
-      address: "0x450d9D9547bFc956270df2Ab4651631cBb4c69ac"
+      address: "0x1c17C65971dE5eD472bdc8636E4A2abf55fF9097"
     assets:
       MetaDefender:
         file: artifacts/contracts/MetaDefender.sol/MetaDefender.json
@@ -104,7 +104,7 @@ dataSources:
     startBlock: 4770000
     options:
       abi: MetaDefender
-      address: "0x0817AA283052AE164910D1335A4d7f491a441f28"
+      address: "0x03e7D1B12535a61875df74d86c80693F4F3b8dD8"
     assets:
       MetaDefender:
         file: artifacts/contracts/MetaDefender.sol/MetaDefender.json
@@ -131,7 +131,7 @@ dataSources:
     options:
       # Must be a key of assets
       abi: LiquidityCertificate
-      address: "0xeECdEbeeE8c11f8e8ac09dcc3CC04469A59f67e1" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0x15566670b9442e84d1B48453c00135f07174a998" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       LiquidityCertificate:
         file: artifacts/contracts/LiquidityCertificate.sol/LiquidityCertificate.json
@@ -158,7 +158,7 @@ dataSources:
     options:
       # Must be a key of assets
       abi: LiquidityCertificate
-      address: "0x4Eb03D4d8a1A5ed16345300E6E4f5b829FD87f4e" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0xf42D71934d0a7B664f08b92fDd06C1037D166dA4" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       LiquidityCertificate:
         file: artifacts/contracts/LiquidityCertificate.sol/LiquidityCertificate.json
@@ -185,7 +185,7 @@ dataSources:
     options:
       # Must be a key of assets
       abi: LiquidityCertificate
-      address: "0xBC8b08Fe2A05099066807F339041778786e293c6" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0xD504f61c0C494911B99f03d13F0D71dF9E210E3f" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       LiquidityCertificate:
         file: artifacts/contracts/LiquidityCertificate.sol/LiquidityCertificate.json
@@ -212,7 +212,7 @@ dataSources:
     options:
       # Must be a key of assets
       abi: Policy
-      address: "0xfA467995CaDCeabac266E2BcbeC8E0eF937AbF2B" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0xe494eAa03d2B4c81EB2fabD09A364594D63E6265" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       Policy:
         file: artifacts/contracts/Policy.sol/Policy.json
@@ -234,7 +234,7 @@ dataSources:
     options:
       # Must be a key of assets
       abi: Policy
-      address: "0xaA5a08bdf689FD14fb44114fCDC9aBf0D1174BE9" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0x309681F8Ab89B1167756db28FD999EE5F8aB1C35" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       Policy:
         file: artifacts/contracts/Policy.sol/Policy.json
@@ -256,7 +256,7 @@ dataSources:
     options:
       # Must be a key of assets
       abi: Policy
-      address: "0x1006a5F10063466C04a312ea4bd190EB92E8A5b7" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+      address: "0x9FD5932D946268457Fcd14F94f6b8A3Ec82FcC08" # this is the contract address for wrapped ether https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     assets:
       Policy:
         file: artifacts/contracts/Policy.sol/Policy.json
